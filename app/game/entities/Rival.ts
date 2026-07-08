@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { RIVAL } from '../constants'
 import { clamp } from '~/helpers/math.helper'
+import { formatCompact } from '~/helpers/format.helper'
 
 const CRIMSON = 0xff5a5a
 
@@ -49,7 +50,7 @@ export class Rival extends Phaser.GameObjects.Container {
   /** Update the live sword count; ring + aura scale to reflect it. */
   setCount(count: number): void {
     this.swordCount = count
-    this.label.setText(String(Math.max(0, Math.round(count))))
+    this.label.setText(formatCompact(Math.max(0, Math.round(count))))
     const scale = clamp(0.8 + count / 180, 0.55, 2.4)
     this.ring.setScale(scale)
     this.aura.setScale(scale * 1.3).setAlpha(0.4)
