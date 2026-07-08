@@ -11,7 +11,7 @@ export const ARENA = {
 } as const
 
 /** Tileable arena backgrounds; one is picked at random per run. */
-export const MAP_TILE = 128
+export const MAP_TILE = 256
 export const MAPS = [
   { key: 'map0', name: 'Verdant Meadow' },
   { key: 'map1', name: 'Sunscar Desert' },
@@ -176,6 +176,9 @@ export const BOSS = {
   summonMs: 5000,
   summonCount: 4,
   scoreMul: 6,
+  // While a boss is up, big multiplier gates (×N) appear so you can power up.
+  gateIntervalMs: 2600,
+  gateValues: [3, 3, 5, 5, 10] as const,
 } as const
 
 /** Rapid kills build a combo that multiplies SCORE (not power). */

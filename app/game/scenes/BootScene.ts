@@ -113,6 +113,7 @@ export class BootScene extends Phaser.Scene {
     this.bake('map2', MAP_TILE, MAP_TILE, (g) => this.drawTundra(g))
     this.bake('map3', MAP_TILE, MAP_TILE, (g) => this.drawCaldera(g))
     this.bake('map4', MAP_TILE, MAP_TILE, (g) => this.drawVoid(g))
+    this.makeVignette()
     this.bake('sword', 16, 46, (g) => this.drawSword(g))
     SWORD_SHAPES.forEach((shape, i) => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape)))
     this.bake('swordRing', 140, 140, (g) => this.drawSwordRing(g))
@@ -338,57 +339,83 @@ export class BootScene extends Phaser.Scene {
 
   // ---- Arena backgrounds (tileable 128x128) -------------------------------
 
+  /** Soft radial vignette (dark edges) stretched over the arena for depth. */
+  private makeVignette(): void {
+    const s = 256
+    const tex = this.textures.createCanvas('vignette', s, s)
+    if (!tex) return
+    const c = tex.getContext()
+    const grd = c.createRadialGradient(s / 2, s / 2, s * 0.16, s / 2, s / 2, s * 0.62)
+    grd.addColorStop(0, 'rgba(0,0,0,0)')
+    grd.addColorStop(1, 'rgba(0,0,0,0.5)')
+    c.fillStyle = grd
+    c.fillRect(0, 0, s, s)
+    tex.refresh()
+  }
+
+  private patches(g: Phaser.GameObjects.Graphics, color: number, alpha: number, n: number, min: number, vary: number): void {
+    g.fillStyle(color, alpha)
+    for (let i = 0; i < n; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), min + rnd(vary), min * 0.7 + rnd(vary))
+  }
+
   private drawMeadow(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0x2f5a26, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
-    g.fillStyle(0x376a2c, 1)
-    for (let i = 0; i < 10; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 22 + rnd(24), 14 + rnd(14))
+    this.patches(g, 0x376a2c, 1, 22, 40, 70)
+    this.patches(g, 0x274c1c, 1, 16, 30, 60)
+    this.patches(g, 0x3f7a32, 0.5, 14, 18, 34)
     g.fillStyle(0x244a1e, 1)
-    for (let i = 0; i < 44; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 2, 4 + rnd(4))
+    for (let i = 0; i < 200; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 2, 4 + rnd(5))
+    g.fillStyle(0x4a8a3a, 0.6)
+    for (let i = 0; i < 90; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
   }
 
   private drawDesert(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0xc9a86a, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    this.patches(g, 0xc19f60, 1, 18, 44, 80)
+    this.patches(g, 0xbb9552, 1, 14, 34, 66)
     g.fillStyle(0xbd9a58, 1)
-    for (let i = 0; i < 16; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 12 + rnd(14), 2)
-    g.fillStyle(0xd8ba7e, 1)
-    for (let i = 0; i < 30; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+    for (let i = 0; i < 60; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 14 + rnd(20), 2)
     g.fillStyle(0x8a6f3e, 1)
-    for (let i = 0; i < 5; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 2 + rnd(2))
+    for (let i = 0; i < 12; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 2 + rnd(3))
+    g.fillStyle(0xd8ba7e, 0.8)
+    for (let i = 0; i < 130; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
   }
 
   private drawTundra(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0xcfe0ee, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
-    g.fillStyle(0xbcd2e6, 1)
-    for (let i = 0; i < 10; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 20 + rnd(24), 14 + rnd(12))
+    this.patches(g, 0xc2d4e8, 1, 18, 44, 80)
+    this.patches(g, 0xb4c8de, 1, 12, 34, 60)
     g.fillStyle(0x9fb8d0, 1)
-    for (let i = 0; i < 12; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 8 + rnd(10), 1)
+    for (let i = 0; i < 34; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 10 + rnd(18), 1)
     g.fillStyle(0xffffff, 1)
-    for (let i = 0; i < 34; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+    for (let i = 0; i < 160; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.15 ? 1.6 : 1)
   }
 
   private drawCaldera(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0x241a18, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
-    g.fillStyle(0x171010, 1)
-    for (let i = 0; i < 10; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 20 + rnd(26), 14 + rnd(16))
+    this.patches(g, 0x171010, 1, 22, 40, 80)
+    this.patches(g, 0x3a2018, 1, 14, 30, 60)
+    this.patches(g, 0xff5a1a, 0.12, 8, 30, 60)
     g.fillStyle(0xff5a1a, 0.85)
-    for (let i = 0; i < 14; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 6 + rnd(10), 2)
+    for (let i = 0; i < 40; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 6 + rnd(14), 2)
     g.fillStyle(0xffb020, 0.9)
-    for (let i = 0; i < 22; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+    for (let i = 0; i < 70; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
   }
 
   private drawVoid(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0x160e26, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
-    g.fillStyle(0x241542, 0.85)
-    for (let i = 0; i < 8; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 26 + rnd(30), 20 + rnd(20))
+    this.patches(g, 0x241542, 0.8, 16, 50, 110)
+    this.patches(g, 0x1a0f36, 0.9, 10, 40, 80)
+    this.patches(g, 0x3a1a6a, 0.25, 8, 40, 90)
     g.fillStyle(0x9d74ff, 0.8)
-    for (let i = 0; i < 16; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+    for (let i = 0; i < 40; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
     g.fillStyle(0xffffff, 1)
-    for (let i = 0; i < 40; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.2 ? 1.6 : 0.8)
+    for (let i = 0; i < 130; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.15 ? 1.8 : 0.9)
   }
 
   /** EASY — tiny green slime with an antenna. */

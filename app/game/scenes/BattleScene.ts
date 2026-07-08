@@ -32,6 +32,7 @@ const TAU = Math.PI * 2
 export class BattleScene extends Phaser.Scene {
   private player!: Player
   private bg!: Phaser.GameObjects.TileSprite
+  private vignette!: Phaser.GameObjects.Image
   private auraLayers: Phaser.GameObjects.Image[] = []
   private sparks!: Phaser.GameObjects.Particles.ParticleEmitter
   private enemies!: Phaser.Physics.Arcade.Group
@@ -63,6 +64,7 @@ export class BattleScene extends Phaser.Scene {
   private nextBossMs: number = BOSS.firstMs
   private bossActive = false
   private bossSummonAcc = 0
+  private bossGateAcc = 0
   private comboCount = 0
   private comboUntil = 0
   private readonly skillReadyAt: Record<string, number> = { fury: 0, nova: 0 }
@@ -97,6 +99,7 @@ export class BattleScene extends Phaser.Scene {
     this.nextBossMs = BOSS.firstMs
     this.bossActive = false
     this.bossSummonAcc = 0
+    this.bossGateAcc = 0
     this.comboCount = 0
     this.comboUntil = 0
     this.skillReadyAt.fury = 0
@@ -110,6 +113,11 @@ export class BattleScene extends Phaser.Scene {
     // Random themed arena background (tiling + subtle parallax).
     const map = MAPS[randomInt(0, MAPS.length - 1)] ?? MAPS[0]
     this.bg = this.add.tileSprite(0, 0, this.worldW, this.worldH, map.key).setOrigin(0, 0).setDepth(-10)
+    this.vignette = this.add
+      .image(0, 0, 'vignette')
+      .setOrigin(0, 0)
+      .setDepth(-9)
+      .setDisplaySize(this.worldW, this.worldH)
     const mapLabel = this.add
       .text(this.worldW / 2, 72, map.name, {
         fontFamily: 'Segoe UI, sans-serif',
@@ -199,8 +207,8 @@ export class BattleScene extends Phaser.Scene {
     const elapsedSec = this.elapsedMs / 1000
 
     this.player.moveToward(deltaMs, { width: this.worldW, height: this.worldH })
-    this.bg.tilePositionX = this.player.x * 0.15
-    this.bg.tilePositionY = this.player.y * 0.15
+    this.bg.tilePositionX = this.player.x * 0.08
+    this.bg.tilePositionY = this.player.y * 0.08
 
     this.enemyAcc += deltaMs
     if (this.enemyAcc >= this.spawner.enemyInterval(elapsedSec)) {
@@ -330,6 +338,7 @@ export class BattleScene extends Phaser.Scene {
     this.boss.spawn(x, y, hp, BOSS.speed, 1.5)
     this.bossActive = true
     this.bossSummonAcc = 0
+    this.bossGateAcc = 0
     this.bossAngle = 0
     const weaponKey = pickOne(['wMace', 'wAxe', 'wSpear'])
     this.bossWeapons.forEach((wpn) => wpn.setTexture(weaponKey).setScale(1.7).setVisible(true))
@@ -368,6 +377,20 @@ export class BattleScene extends Phaser.Scene {
         if (enemy) enemy.spawn(this.boss.x, this.boss.y, this.spawner.createEnemy(elapsedSec))
       }
     }
+
+    // Drop big ×N power gates so the player can scale up for the fight.
+    this.bossGateAcc += deltaMs
+    if (this.bossGateAcc >= BOSS.gateIntervalMs) {
+      this.bossGateAcc = 0
+      this.spawnMultiplierGate()
+    }
+  }
+
+  private spawnMultiplierGate(): void {
+    const gate = this.gatePool.find((g) => !g.active)
+    if (!gate) return
+    const x = randomRange(GATE.width / 2, this.worldW - GATE.width / 2)
+    gate.spawn(x, -GATE.height, { op: 'mul', value: pickOne(BOSS.gateValues) })
   }
 
   private bossDefeat(): void {
@@ -754,6 +777,7 @@ export class BattleScene extends Phaser.Scene {
   private onResize = (gameSize: Phaser.Structs.Size): void => {
     this.physics.world.setBounds(0, 0, gameSize.width, gameSize.height)
     this.bg.setSize(gameSize.width, gameSize.height)
+    this.vignette.setDisplaySize(gameSize.width, gameSize.height)
   }
 
   private onRestart = (): void => {
