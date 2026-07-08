@@ -6,24 +6,14 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
-  padding: $space-6 $space-4 $space-8;
+  padding: $space-8 $space-4;
   overflow: hidden;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgba($color-primary, 0.22), transparent 55%),
-    radial-gradient(90% 60% at 50% 118%, rgba($color-success, 0.1), transparent 60%),
+    radial-gradient(120% 80% at 50% -10%, rgba($color-primary, 0.2), transparent 55%),
+    radial-gradient(90% 60% at 50% 118%, rgba($color-success, 0.08), transparent 60%),
     linear-gradient(180deg, $color-bg-alt, $color-bg 74%);
-
-  // Scrim so the lower content stays readable over the animated hero.
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 40% 0 0;
-    z-index: 0;
-    background: linear-gradient(180deg, transparent, rgba($color-bg, 0.82) 62%);
-    pointer-events: none;
-  }
 }
 
 .menu-bg {
@@ -45,6 +35,21 @@
   width: 100%;
   max-width: 620px;
   text-align: center;
+}
+
+.menu-emblem {
+  width: clamp(160px, 40vw, 240px);
+  aspect-ratio: 1;
+
+  &__canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+}
+
+.menu__emblem {
+  margin-bottom: -$space-2;
 }
 
 .menu__badge {

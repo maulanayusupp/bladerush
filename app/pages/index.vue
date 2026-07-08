@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '~/components/ui/LanguageSwitcher.vue'
 import MenuBackground from '~/components/menu/MenuBackground.vue'
+import MenuEmblem from '~/components/menu/MenuEmblem.vue'
 import MenuFeature from '~/components/menu/MenuFeature.vue'
 import { useGameStore } from '~/stores/useGameStore'
 import { formatCompact } from '~/helpers/format.helper'
@@ -25,6 +26,8 @@ const features = computed(() => [
     <LanguageSwitcher />
 
     <div class="menu__content">
+      <MenuEmblem class="menu__emblem" />
+
       <span class="menu__badge">⚔️ {{ $t('menu.badge') }}</span>
 
       <h1 class="menu__title">
