@@ -114,6 +114,7 @@ export class BootScene extends Phaser.Scene {
     this.bake('map3', MAP_TILE, MAP_TILE, (g) => this.drawCaldera(g))
     this.bake('map4', MAP_TILE, MAP_TILE, (g) => this.drawVoid(g))
     this.makeVignette()
+    this.drawProps()
     this.bake('sword', 16, 46, (g) => this.drawSword(g))
     SWORD_SHAPES.forEach((shape, i) => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape)))
     this.bake('swordRing', 140, 140, (g) => this.drawSwordRing(g))
@@ -353,69 +354,124 @@ export class BootScene extends Phaser.Scene {
     tex.refresh()
   }
 
-  private patches(g: Phaser.GameObjects.Graphics, color: number, alpha: number, n: number, min: number, vary: number): void {
-    g.fillStyle(color, alpha)
-    for (let i = 0; i < n; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), min + rnd(vary), min * 0.7 + rnd(vary))
+  /** Fine two-tone grain that tiles without an obvious repeat. */
+  private grain(g: Phaser.GameObjects.Graphics, light: number, dark: number, density: number): void {
+    g.fillStyle(dark, 0.5)
+    for (let i = 0; i < density; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.3 ? 1.4 : 0.8)
+    g.fillStyle(light, 0.5)
+    for (let i = 0; i < density; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.3 ? 1.4 : 0.8)
   }
 
   private drawMeadow(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0x2f5a26, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
-    this.patches(g, 0x376a2c, 1, 22, 40, 70)
-    this.patches(g, 0x274c1c, 1, 16, 30, 60)
-    this.patches(g, 0x3f7a32, 0.5, 14, 18, 34)
-    g.fillStyle(0x244a1e, 1)
-    for (let i = 0; i < 200; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 2, 4 + rnd(5))
-    g.fillStyle(0x4a8a3a, 0.6)
-    for (let i = 0; i < 90; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+    g.fillStyle(0x264c1e, 1)
+    for (let i = 0; i < 180; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 2, 3 + rnd(4))
+    this.grain(g, 0x3f7a32, 0x24471b, 150)
   }
 
   private drawDesert(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0xc9a86a, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
-    this.patches(g, 0xc19f60, 1, 18, 44, 80)
-    this.patches(g, 0xbb9552, 1, 14, 34, 66)
-    g.fillStyle(0xbd9a58, 1)
-    for (let i = 0; i < 60; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 14 + rnd(20), 2)
-    g.fillStyle(0x8a6f3e, 1)
-    for (let i = 0; i < 12; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 2 + rnd(3))
-    g.fillStyle(0xd8ba7e, 0.8)
-    for (let i = 0; i < 130; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+    g.fillStyle(0xbf9c58, 0.6)
+    for (let i = 0; i < 70; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 10 + rnd(16), 1)
+    this.grain(g, 0xd8ba7e, 0xa9884c, 150)
   }
 
   private drawTundra(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0xcfe0ee, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
-    this.patches(g, 0xc2d4e8, 1, 18, 44, 80)
-    this.patches(g, 0xb4c8de, 1, 12, 34, 60)
-    g.fillStyle(0x9fb8d0, 1)
-    for (let i = 0; i < 34; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 10 + rnd(18), 1)
-    g.fillStyle(0xffffff, 1)
-    for (let i = 0; i < 160; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.15 ? 1.6 : 1)
+    this.grain(g, 0xffffff, 0xa9c0d6, 170)
   }
 
   private drawCaldera(g: Phaser.GameObjects.Graphics): void {
-    g.fillStyle(0x241a18, 1)
+    g.fillStyle(0x201613, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
-    this.patches(g, 0x171010, 1, 22, 40, 80)
-    this.patches(g, 0x3a2018, 1, 14, 30, 60)
-    this.patches(g, 0xff5a1a, 0.12, 8, 30, 60)
-    g.fillStyle(0xff5a1a, 0.85)
-    for (let i = 0; i < 40; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 6 + rnd(14), 2)
-    g.fillStyle(0xffb020, 0.9)
-    for (let i = 0; i < 70; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+    g.fillStyle(0xff5a1a, 0.5)
+    for (let i = 0; i < 40; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 4 + rnd(10), 1)
+    this.grain(g, 0x4a2a1c, 0x140c0a, 150)
+    g.fillStyle(0xffb020, 0.8)
+    for (let i = 0; i < 40; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
   }
 
   private drawVoid(g: Phaser.GameObjects.Graphics): void {
-    g.fillStyle(0x160e26, 1)
+    g.fillStyle(0x140c22, 1)
     g.fillRect(0, 0, MAP_TILE, MAP_TILE)
-    this.patches(g, 0x241542, 0.8, 16, 50, 110)
-    this.patches(g, 0x1a0f36, 0.9, 10, 40, 80)
-    this.patches(g, 0x3a1a6a, 0.25, 8, 40, 90)
-    g.fillStyle(0x9d74ff, 0.8)
+    g.fillStyle(0x9d74ff, 0.7)
     for (let i = 0; i < 40; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
     g.fillStyle(0xffffff, 1)
-    for (let i = 0; i < 130; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.15 ? 1.8 : 0.9)
+    for (let i = 0; i < 120; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.15 ? 1.8 : 0.9)
+  }
+
+  // ---- Decoration props (scattered at random world positions) -------------
+
+  private drawProps(): void {
+    this.bake('treePine', 40, 52, (g) => {
+      g.fillStyle(0x5c3b22, 1); g.fillRect(18, 38, 4, 12)
+      g.fillStyle(0x2f6a34, 1); g.fillTriangle(20, 2, 6, 26, 34, 26)
+      g.fillTriangle(20, 14, 4, 40, 36, 40)
+      g.fillStyle(0x3f8a44, 1); g.fillTriangle(20, 8, 12, 24, 28, 24)
+    })
+    this.bake('rockGray', 40, 32, (g) => {
+      g.fillStyle(0x8a8f9a, 1); g.fillPoints(this.pts([6, 28, 12, 12, 24, 8, 34, 18, 32, 28]), true)
+      g.fillStyle(0xb0b5c0, 1); g.fillPoints(this.pts([12, 14, 22, 11, 26, 16]), true)
+    })
+    this.bake('bushGreen', 40, 30, (g) => {
+      g.fillStyle(0x2f6a34, 1); g.fillCircle(12, 20, 9); g.fillCircle(26, 20, 10); g.fillCircle(20, 14, 9)
+      g.fillStyle(0x3f8a44, 1); g.fillCircle(18, 15, 4)
+    })
+    this.bake('cactus', 36, 52, (g) => {
+      g.fillStyle(0x3f8a44, 1); g.fillRoundedRect(15, 10, 8, 40, 4)
+      g.fillRoundedRect(5, 24, 6, 16, 3); g.fillRoundedRect(4, 24, 6, 6, 3)
+      g.fillRoundedRect(27, 18, 6, 18, 3); g.fillRoundedRect(27, 18, 6, 6, 3)
+    })
+    this.bake('rockSand', 40, 30, (g) => {
+      g.fillStyle(0xb28f52, 1); g.fillPoints(this.pts([6, 26, 12, 12, 26, 9, 34, 20, 30, 26]), true)
+      g.fillStyle(0xcaa76a, 1); g.fillPoints(this.pts([12, 14, 24, 12, 26, 17]), true)
+    })
+    this.bake('deadBush', 36, 30, (g) => {
+      g.lineStyle(2, 0x7a5a34, 1)
+      g.beginPath(); g.moveTo(18, 28); g.lineTo(18, 12); g.moveTo(18, 18); g.lineTo(8, 8)
+      g.moveTo(18, 16); g.lineTo(28, 8); g.moveTo(18, 20); g.lineTo(26, 16); g.strokePath()
+    })
+    this.bake('treeSnow', 40, 52, (g) => {
+      g.fillStyle(0x5c3b22, 1); g.fillRect(18, 38, 4, 12)
+      g.fillStyle(0x2f6a44, 1); g.fillTriangle(20, 2, 6, 26, 34, 26); g.fillTriangle(20, 14, 4, 40, 36, 40)
+      g.fillStyle(0xffffff, 1); g.fillTriangle(20, 2, 13, 14, 27, 14); g.fillTriangle(20, 16, 10, 30, 30, 30)
+    })
+    this.bake('rockIce', 40, 30, (g) => {
+      g.fillStyle(0x9fbcd6, 1); g.fillPoints(this.pts([6, 26, 12, 12, 26, 9, 34, 20, 30, 26]), true)
+      g.fillStyle(0xdff0ff, 1); g.fillPoints(this.pts([12, 14, 24, 12, 26, 17]), true)
+    })
+    this.bake('snowMound', 44, 24, (g) => {
+      g.fillStyle(0xffffff, 1); g.fillEllipse(22, 18, 40, 20)
+      g.fillStyle(0xe6f0fb, 1); g.fillEllipse(16, 16, 16, 8)
+    })
+    this.bake('deadTree', 40, 52, (g) => {
+      g.lineStyle(3, 0x3a2418, 1)
+      g.beginPath(); g.moveTo(20, 50); g.lineTo(20, 16); g.moveTo(20, 26); g.lineTo(8, 12)
+      g.moveTo(20, 22); g.lineTo(32, 10); g.moveTo(20, 32); g.lineTo(30, 24); g.strokePath()
+    })
+    this.bake('rockChar', 40, 32, (g) => {
+      g.fillStyle(0x2a201c, 1); g.fillPoints(this.pts([6, 28, 12, 12, 24, 8, 34, 18, 32, 28]), true)
+      g.fillStyle(0xff5a1a, 0.9); g.fillRect(14, 18, 10, 2); g.fillRect(18, 14, 2, 10)
+    })
+    this.bake('lavaCrystal', 30, 44, (g) => {
+      g.fillStyle(0xff6a00, 1); g.fillPoints(this.pts([15, 2, 24, 22, 15, 42, 6, 22]), true)
+      g.fillStyle(0xffd08a, 0.9); g.fillPoints(this.pts([15, 6, 20, 22, 15, 30]), true)
+    })
+    this.bake('crystalVoid', 30, 46, (g) => {
+      g.fillStyle(0x9d5cff, 1); g.fillPoints(this.pts([15, 2, 25, 24, 15, 44, 5, 24]), true)
+      g.fillStyle(0xe0c8ff, 0.9); g.fillPoints(this.pts([15, 6, 21, 24, 15, 32]), true)
+    })
+    this.bake('asteroid', 40, 34, (g) => {
+      g.fillStyle(0x3a3450, 1); g.fillPoints(this.pts([6, 26, 12, 10, 26, 8, 34, 20, 28, 30]), true)
+      g.fillStyle(0x2a2440, 1); g.fillCircle(16, 18, 3); g.fillCircle(26, 22, 2)
+    })
+    this.bake('starCluster', 30, 30, (g) => {
+      g.fillStyle(0xffffff, 1); g.fillCircle(15, 15, 2)
+      g.fillStyle(0xb794ff, 0.9); g.fillCircle(8, 8, 1.4); g.fillCircle(23, 10, 1.2); g.fillCircle(20, 22, 1.4); g.fillCircle(9, 22, 1)
+    })
   }
 
   /** EASY — tiny green slime with an antenna. */

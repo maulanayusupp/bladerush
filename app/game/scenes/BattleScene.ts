@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, COMBO, ENEMY, GATE, HEAL, HERO, MAPS, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
+import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, MAPS, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
 import { Boss } from '../entities/Boss'
 import { Enemy } from '../entities/Enemy'
 import { Gate } from '../entities/Gate'
@@ -33,6 +33,7 @@ export class BattleScene extends Phaser.Scene {
   private player!: Player
   private bg!: Phaser.GameObjects.TileSprite
   private vignette!: Phaser.GameObjects.Image
+  private decor: { img: Phaser.GameObjects.Image; nx: number; ny: number }[] = []
   private auraLayers: Phaser.GameObjects.Image[] = []
   private sparks!: Phaser.GameObjects.Particles.ParticleEmitter
   private enemies!: Phaser.Physics.Arcade.Group
@@ -113,10 +114,21 @@ export class BattleScene extends Phaser.Scene {
     // Random themed arena background (tiling + subtle parallax).
     const map = MAPS[randomInt(0, MAPS.length - 1)] ?? MAPS[0]
     this.bg = this.add.tileSprite(0, 0, this.worldW, this.worldH, map.key).setOrigin(0, 0).setDepth(-10)
+    // Scatter decoration props (trees/rocks/…) at random world positions.
+    this.decor = Array.from({ length: DECOR_COUNT }, () => {
+      const img = this.add
+        .image(0, 0, pickOne(map.props))
+        .setDepth(-9)
+        .setScale(0.7 + Math.random() * 0.9)
+        .setAlpha(0.94)
+      if (Math.random() < 0.5) img.setFlipX(true)
+      return { img, nx: Math.random(), ny: Math.random() }
+    })
+    this.positionDecor()
     this.vignette = this.add
       .image(0, 0, 'vignette')
       .setOrigin(0, 0)
-      .setDepth(-9)
+      .setDepth(-8)
       .setDisplaySize(this.worldW, this.worldH)
     const mapLabel = this.add
       .text(this.worldW / 2, 72, map.name, {
@@ -778,6 +790,13 @@ export class BattleScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, gameSize.width, gameSize.height)
     this.bg.setSize(gameSize.width, gameSize.height)
     this.vignette.setDisplaySize(gameSize.width, gameSize.height)
+    this.positionDecor()
+  }
+
+  private positionDecor(): void {
+    for (const item of this.decor) {
+      item.img.setPosition(item.nx * this.worldW, item.ny * this.worldH)
+    }
   }
 
   private onRestart = (): void => {

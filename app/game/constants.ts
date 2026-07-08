@@ -10,14 +10,19 @@ export const ARENA = {
   height: 1280,
 } as const
 
-/** Tileable arena backgrounds; one is picked at random per run. */
+/**
+ * Arena themes: a SUBTLE tiling ground (fine grain only, so no obvious loop)
+ * plus scattered decoration props (trees/rocks/etc.) placed at random world
+ * positions for a natural, non-repeating look. One theme per run.
+ */
 export const MAP_TILE = 256
+export const DECOR_COUNT = 34
 export const MAPS = [
-  { key: 'map0', name: 'Verdant Meadow' },
-  { key: 'map1', name: 'Sunscar Desert' },
-  { key: 'map2', name: 'Frostwind Tundra' },
-  { key: 'map3', name: 'Emberfall Caldera' },
-  { key: 'map4', name: 'The Void Expanse' },
+  { key: 'map0', name: 'Verdant Meadow', props: ['treePine', 'rockGray', 'bushGreen'] },
+  { key: 'map1', name: 'Sunscar Desert', props: ['cactus', 'rockSand', 'deadBush'] },
+  { key: 'map2', name: 'Frostwind Tundra', props: ['treeSnow', 'rockIce', 'snowMound'] },
+  { key: 'map3', name: 'Emberfall Caldera', props: ['deadTree', 'rockChar', 'lavaCrystal'] },
+  { key: 'map4', name: 'The Void Expanse', props: ['crystalVoid', 'asteroid', 'starCluster'] },
 ] as const
 
 export const PLAYER = {
