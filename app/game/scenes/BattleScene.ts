@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, ENEMY, GATE, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
+import { AURA, ENEMY, GATE, HERO, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
 import { Enemy } from '../entities/Enemy'
 import { Gate } from '../entities/Gate'
 import { Player } from '../entities/Player'
@@ -48,6 +48,7 @@ export class BattleScene extends Phaser.Scene {
   private nextRivalMs: number = RIVAL.minIntervalMs
   private furyUntil = 0
   private swordDamageMul = 1
+  private playerSkin = 0
   private readonly skillReadyAt: Record<string, number> = { fury: 0, nova: 0 }
   private isOver = false
 
@@ -74,6 +75,7 @@ export class BattleScene extends Phaser.Scene {
     this.scheduleNextRival()
     this.furyUntil = 0
     this.swordDamageMul = 1
+    this.playerSkin = 0
     this.skillReadyAt.fury = 0
     this.skillReadyAt.nova = 0
     this.power.reset()
@@ -161,6 +163,18 @@ export class BattleScene extends Phaser.Scene {
     this.updateGates(deltaMs)
     this.updateRivals(deltaMs)
     this.updateSwords(deltaMs)
+    this.checkEvolve()
+  }
+
+  /** Swap the hero to the next champion look every 1000 power. */
+  private checkEvolve(): void {
+    const tier = Math.min(HERO.skins - 1, Math.floor(this.power.power / HERO.powerPerSkin))
+    if (tier === this.playerSkin) return
+    this.playerSkin = tier
+    this.player.setTexture(`hero${tier}`)
+    this.cameras.main.flash(220, 180, 150, 255)
+    this.sparks.explode(16, this.player.x, this.player.y)
+    audioService.skill()
   }
 
   // ---- Spawning -----------------------------------------------------------

@@ -49,13 +49,39 @@ const SWORD_SHAPES = [
   'leaf', 'straight', 'curved', 'broad', 'rapier', 'shard', 'cleaver', 'saber', 'glaive', 'fork',
 ] as const
 
+interface ChampionSkin {
+  robe: number
+  robeHi: number
+  cape: number
+  hood: number
+  trim: number
+  skin: number
+  eye: number
+  features: string[]
+  wing?: number
+}
+
+/** 10 hero looks that escalate in grandeur (unlocked every 1000 power). */
+const CHAMPION_SKINS: ChampionSkin[] = [
+  { robe: 0x6b6f7a, robeHi: 0x8a8f9a, cape: 0x4a4e57, hood: 0x55585f, trim: 0x9aa0aa, skin: 0xf2c9a0, eye: 0x2a2a33, features: [] },
+  { robe: 0x3a6ea5, robeHi: 0x5a94cf, cape: 0x2a527a, hood: 0x274b6a, trim: 0xcfe0f0, skin: 0xf2c9a0, eye: 0x1a2a40, features: [] },
+  { robe: 0x8a8f9a, robeHi: 0xb8bcc6, cape: 0x4a4e57, hood: 0x6f7787, trim: 0xffd700, skin: 0xf2c9a0, eye: 0x1a1a22, features: ['pauldrons'] },
+  { robe: 0x7c4dff, robeHi: 0x9d74ff, cape: 0x4a24b0, hood: 0x4a24b0, trim: 0xffb020, skin: 0xf2c9a0, eye: 0xd0b8ff, features: [] },
+  { robe: 0x241033, robeHi: 0x3a1a52, cape: 0x3a0b5e, hood: 0x120620, trim: 0xd400ff, skin: 0xe8c9a0, eye: 0xd400ff, features: ['horns'] },
+  { robe: 0xe8e2d0, robeHi: 0xffffff, cape: 0xb0a888, hood: 0xcfc7b0, trim: 0xffd700, skin: 0xf2c9a0, eye: 0x6ab0ff, features: ['crown'] },
+  { robe: 0x2a1450, robeHi: 0x4a2480, cape: 0x1a0b3a, hood: 0x1a0b3a, trim: 0xff5aa0, skin: 0xe8c9a0, eye: 0xff5aa0, features: ['halo'] },
+  { robe: 0x2a2233, robeHi: 0x3a2f47, cape: 0x5a4410, hood: 0x14101c, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xffd700, features: ['crown', 'pauldrons'] },
+  { robe: 0xeef2ff, robeHi: 0xffffff, cape: 0xcfe0f0, hood: 0xdfe8f5, trim: 0xffd700, skin: 0xf2c9a0, eye: 0x8fd0ff, features: ['wings', 'halo'], wing: 0xeef2ff },
+  { robe: 0x3a2a08, robeHi: 0x6a4e10, cape: 0x7a5a10, hood: 0x241a06, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xffe14d, features: ['wings', 'crown', 'halo'], wing: 0xffd700 },
+]
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('BootScene')
   }
 
   create(): void {
-    this.bake('player', 56, 64, (g) => this.drawHero(g))
+    CHAMPION_SKINS.forEach((skin, i) => this.bake(`hero${i}`, 64, 64, (g) => this.drawChampion(g, skin)))
     RIVAL_SKINS.forEach((skin, i) => this.bake(`rivalHero${i}`, 56, 64, (g) => this.drawWarlord(g, skin)))
     this.bake('enemyEasy', 48, 48, (g) => this.drawSlime(g))
     this.bake('enemyMed', 56, 56, (g) => this.drawBeast(g))
@@ -316,34 +342,53 @@ export class BootScene extends Phaser.Scene {
     }
   }
 
-  // ---- Hero ---------------------------------------------------------------
+  // ---- Hero (10 evolving champion looks, box 64x64, centered x=32) ---------
 
-  private drawHero(g: Phaser.GameObjects.Graphics): void {
-    g.fillStyle(0x7c4dff, 0.16) // aura
-    g.fillCircle(28, 34, 30)
-    g.fillStyle(0x4a24b0, 1) // cape
-    g.fillPoints(this.pts([16, 26, 40, 26, 46, 60, 10, 60]), true)
-    g.fillStyle(0x7c4dff, 1) // robe
-    g.fillPoints(this.pts([18, 32, 38, 32, 44, 62, 12, 62]), true)
-    g.fillStyle(0x9d74ff, 0.9) // robe highlight
-    g.fillPoints(this.pts([25, 34, 31, 34, 34, 62, 22, 62]), true)
-    g.fillStyle(0xffb020, 1) // belt
-    g.fillRect(15, 48, 26, 4)
-    g.fillStyle(0xffb020, 1) // shoulder pads
-    g.fillCircle(16, 33, 5)
-    g.fillCircle(40, 33, 5)
-    g.fillStyle(0x4a24b0, 1) // hood back
-    g.fillEllipse(28, 20, 32, 28)
-    g.fillStyle(0xf2c9a0, 1) // face
-    g.fillEllipse(28, 23, 20, 20)
-    g.fillStyle(0x7c4dff, 1) // hood sides
-    g.fillEllipse(15, 19, 9, 22)
-    g.fillEllipse(41, 19, 9, 22)
-    g.fillStyle(0x1a1030, 1) // eyes
-    g.fillCircle(23, 24, 2)
-    g.fillCircle(33, 24, 2)
-    g.fillStyle(0xffb020, 1) // chest emblem
-    g.fillCircle(28, 42, 3)
+  private drawChampion(g: Phaser.GameObjects.Graphics, s: ChampionSkin): void {
+    const has = (f: string) => s.features.includes(f)
+
+    if (has('wings')) {
+      g.fillStyle(s.wing ?? 0xeef2ff, 1)
+      g.fillPoints(this.pts([18, 30, 2, 22, 6, 42, 16, 46]), true)
+      g.fillPoints(this.pts([46, 30, 62, 22, 58, 42, 48, 46]), true)
+    }
+    g.fillStyle(s.cape, 1)
+    g.fillPoints(this.pts([20, 26, 44, 26, 50, 60, 14, 60]), true)
+    g.fillStyle(s.robe, 1)
+    g.fillPoints(this.pts([22, 32, 42, 32, 48, 62, 16, 62]), true)
+    g.fillStyle(s.robeHi, 0.9)
+    g.fillPoints(this.pts([29, 34, 35, 34, 38, 62, 26, 62]), true)
+    g.fillStyle(s.trim, 1) // belt
+    g.fillRect(19, 48, 26, 4)
+    const pad = has('pauldrons') ? 7 : 5 // shoulders
+    g.fillStyle(s.trim, 1)
+    g.fillCircle(20, 33, pad)
+    g.fillCircle(44, 33, pad)
+    g.fillStyle(s.hood, 1) // hood back
+    g.fillEllipse(32, 20, 32, 28)
+    if (has('horns')) {
+      g.fillStyle(s.trim, 1)
+      g.fillTriangle(18, 16, 11, 1, 25, 14)
+      g.fillTriangle(46, 16, 53, 1, 39, 14)
+    }
+    g.fillStyle(s.skin, 1) // face
+    g.fillEllipse(32, 23, 20, 20)
+    g.fillStyle(s.hood, 1) // hood sides
+    g.fillEllipse(19, 19, 9, 22)
+    g.fillEllipse(45, 19, 9, 22)
+    g.fillStyle(s.eye, 1) // eyes
+    g.fillCircle(27, 24, 2)
+    g.fillCircle(37, 24, 2)
+    if (has('crown')) {
+      g.fillStyle(s.trim, 1)
+      for (const x of [24, 28, 32, 36, 40]) g.fillTriangle(x - 2.5, 9, x, 2, x + 2.5, 9)
+    }
+    if (has('halo')) {
+      g.lineStyle(2, s.trim, 1)
+      g.strokeEllipse(32, 7, 24, 8)
+    }
+    g.fillStyle(s.trim, 1) // chest emblem
+    g.fillCircle(32, 42, 3)
   }
 
   private drawSword(g: Phaser.GameObjects.Graphics): void {

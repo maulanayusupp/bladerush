@@ -15,7 +15,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private targetY: number
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'player')
+    super(scene, x, y, 'hero0')
     scene.add.existing(this)
     scene.physics.add.existing(this)
     this.setCollideWorldBounds(true)

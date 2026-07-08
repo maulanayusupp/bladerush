@@ -17,6 +17,12 @@ export const PLAYER = {
   colorHex: 0x7c4dff,
 } as const
 
+/** The hero visually evolves every 1000 power through 10 champion looks. */
+export const HERO = {
+  skins: 10,
+  powerPerSkin: 1000,
+} as const
+
 export const SWORD = {
   orbitRadius: 84, // distance of the ring from the hero
   poolSize: 60, // must equal POWER_CURVE.maxSwordCount
