@@ -4,6 +4,7 @@
     "subtitle": "Grow a ring of spinning blades, crush the horde, out-duel rival heroes.",
     "play": "Play",
     "best": "Best {score}",
+    "controls": "Move to aim — your blades strike automatically",
     "features": {
       "gates": { "label": "Collect swords", "text": "Run gates — +N and ×N grow your ring" },
       "swords": { "label": "Spin & slay", "text": "Orbiting blades shred anything near you" },

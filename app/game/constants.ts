@@ -10,6 +10,16 @@ export const ARENA = {
   height: 1280,
 } as const
 
+/** Tileable arena backgrounds; one is picked at random per run. */
+export const MAP_TILE = 128
+export const MAPS = [
+  { key: 'map0', name: 'Verdant Meadow' },
+  { key: 'map1', name: 'Sunscar Desert' },
+  { key: 'map2', name: 'Frostwind Tundra' },
+  { key: 'map3', name: 'Emberfall Caldera' },
+  { key: 'map4', name: 'The Void Expanse' },
+] as const
+
 export const PLAYER = {
   size: 44, // texture footprint in px
   speed: 360, // px/s, free 2D movement toward the pointer
@@ -17,9 +27,9 @@ export const PLAYER = {
   colorHex: 0x7c4dff,
 } as const
 
-/** The hero visually evolves every 1000 power through 10 champion looks. */
+/** The hero visually evolves every 1000 power through 20 champion looks. */
 export const HERO = {
-  skins: 10,
+  skins: 20,
   powerPerSkin: 1000,
 } as const
 

@@ -5,9 +5,14 @@
 // Swap these for real sprite sheets in the polish phase.
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA } from '../constants'
+import { AURA, MAP_TILE } from '../constants'
 
 type Draw = (g: Phaser.GameObjects.Graphics) => void
+
+/** Quick 0..max random for scattered background decoration. */
+function rnd(max: number): number {
+  return Math.random() * max
+}
 
 interface WarlordSkin {
   armor: number
@@ -73,6 +78,16 @@ const CHAMPION_SKINS: ChampionSkin[] = [
   { robe: 0x2a2233, robeHi: 0x3a2f47, cape: 0x5a4410, hood: 0x14101c, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xffd700, features: ['crown', 'pauldrons'] },
   { robe: 0xeef2ff, robeHi: 0xffffff, cape: 0xcfe0f0, hood: 0xdfe8f5, trim: 0xffd700, skin: 0xf2c9a0, eye: 0x8fd0ff, features: ['wings', 'halo'], wing: 0xeef2ff },
   { robe: 0x3a2a08, robeHi: 0x6a4e10, cape: 0x7a5a10, hood: 0x241a06, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xffe14d, features: ['wings', 'crown', 'halo'], wing: 0xffd700 },
+  { robe: 0x1a3a4a, robeHi: 0x2a6a8a, cape: 0x0e2a3a, hood: 0x0a1a24, trim: 0x00e0ff, skin: 0xf2c9a0, eye: 0x00e0ff, features: ['pauldrons', 'crown'] },
+  { robe: 0x3a1408, robeHi: 0x6a2810, cape: 0x7a2408, hood: 0x1a0a04, trim: 0xff6a00, skin: 0xe8c9a0, eye: 0xff8a00, features: ['horns', 'pauldrons'] },
+  { robe: 0xcfe4ff, robeHi: 0xffffff, cape: 0x8ab0d0, hood: 0xa8c8e8, trim: 0x5ad0ff, skin: 0xf2c9a0, eye: 0x9fe0ff, features: ['crown', 'wings'], wing: 0xdff4ff },
+  { robe: 0x120a1a, robeHi: 0x24142e, cape: 0x0a0610, hood: 0x08040c, trim: 0x9d5cff, skin: 0xd8c0a0, eye: 0xb794ff, features: ['horns', 'halo'] },
+  { robe: 0xfff0c0, robeHi: 0xffffff, cape: 0xffd77a, hood: 0xffe6a0, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xfff2a8, features: ['wings', 'halo'], wing: 0xfff0c0 },
+  { robe: 0x2a0a0a, robeHi: 0x5a1414, cape: 0x7a0b0b, hood: 0x180404, trim: 0xff2d2d, skin: 0xe8b090, eye: 0xff2d2d, features: ['horns', 'crown', 'pauldrons'] },
+  { robe: 0x0e3a24, robeHi: 0x1a6a44, cape: 0x0a4a2a, hood: 0x061a10, trim: 0x2ee67a, skin: 0xf2c9a0, eye: 0x8cff5a, features: ['crown', 'wings'], wing: 0xbfffdf },
+  { robe: 0x1a0f3a, robeHi: 0x2a1a6a, cape: 0x120a2a, hood: 0x0a0620, trim: 0xff5aa0, skin: 0xe0c0a0, eye: 0xff5aa0, features: ['halo', 'wings'], wing: 0xffd0e8 },
+  { robe: 0x2a2a34, robeHi: 0x4a4a5a, cape: 0x1a1a22, hood: 0x14141a, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xffd700, features: ['horns', 'crown', 'pauldrons', 'halo'] },
+  { robe: 0x4a3a08, robeHi: 0x8a6a10, cape: 0xffd700, hood: 0x2a2006, trim: 0xffe14d, skin: 0xf2c9a0, eye: 0xffffff, features: ['wings', 'crown', 'halo', 'pauldrons'], wing: 0xffe14d },
 ]
 
 export class BootScene extends Phaser.Scene {
@@ -90,6 +105,11 @@ export class BootScene extends Phaser.Scene {
     this.bake('enemyLegend', 64, 64, (g) => this.drawLegend(g))
     this.bake('boss', 76, 76, (g) => this.drawBoss(g))
     this.bake('heal', 30, 30, (g) => this.drawHeal(g))
+    this.bake('map0', MAP_TILE, MAP_TILE, (g) => this.drawMeadow(g))
+    this.bake('map1', MAP_TILE, MAP_TILE, (g) => this.drawDesert(g))
+    this.bake('map2', MAP_TILE, MAP_TILE, (g) => this.drawTundra(g))
+    this.bake('map3', MAP_TILE, MAP_TILE, (g) => this.drawCaldera(g))
+    this.bake('map4', MAP_TILE, MAP_TILE, (g) => this.drawVoid(g))
     this.bake('sword', 16, 46, (g) => this.drawSword(g))
     SWORD_SHAPES.forEach((shape, i) => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape)))
     this.bake('swordRing', 140, 140, (g) => this.drawSwordRing(g))
@@ -269,6 +289,61 @@ export class BootScene extends Phaser.Scene {
     g.fillTriangle(4, 13, 26, 13, 15, 27)
     g.fillStyle(0xffffff, 0.5)
     g.fillCircle(8, 9, 2)
+  }
+
+  // ---- Arena backgrounds (tileable 128x128) -------------------------------
+
+  private drawMeadow(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x2f5a26, 1)
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0x376a2c, 1)
+    for (let i = 0; i < 10; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 22 + rnd(24), 14 + rnd(14))
+    g.fillStyle(0x244a1e, 1)
+    for (let i = 0; i < 44; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 2, 4 + rnd(4))
+  }
+
+  private drawDesert(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xc9a86a, 1)
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0xbd9a58, 1)
+    for (let i = 0; i < 16; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 12 + rnd(14), 2)
+    g.fillStyle(0xd8ba7e, 1)
+    for (let i = 0; i < 30; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+    g.fillStyle(0x8a6f3e, 1)
+    for (let i = 0; i < 5; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 2 + rnd(2))
+  }
+
+  private drawTundra(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xcfe0ee, 1)
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0xbcd2e6, 1)
+    for (let i = 0; i < 10; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 20 + rnd(24), 14 + rnd(12))
+    g.fillStyle(0x9fb8d0, 1)
+    for (let i = 0; i < 12; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 8 + rnd(10), 1)
+    g.fillStyle(0xffffff, 1)
+    for (let i = 0; i < 34; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+  }
+
+  private drawCaldera(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x241a18, 1)
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0x171010, 1)
+    for (let i = 0; i < 10; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 20 + rnd(26), 14 + rnd(16))
+    g.fillStyle(0xff5a1a, 0.85)
+    for (let i = 0; i < 14; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 6 + rnd(10), 2)
+    g.fillStyle(0xffb020, 0.9)
+    for (let i = 0; i < 22; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+  }
+
+  private drawVoid(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x160e26, 1)
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0x241542, 0.85)
+    for (let i = 0; i < 8; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 26 + rnd(30), 20 + rnd(20))
+    g.fillStyle(0x9d74ff, 0.8)
+    for (let i = 0; i < 16; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 1)
+    g.fillStyle(0xffffff, 1)
+    for (let i = 0; i < 40; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.2 ? 1.6 : 0.8)
   }
 
   /** EASY — tiny green slime with an antenna. */

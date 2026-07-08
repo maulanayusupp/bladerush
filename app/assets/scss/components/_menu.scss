@@ -4,14 +4,26 @@
 .menu {
   position: relative;
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: $space-8 $space-4;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: $space-6 $space-4 $space-8;
   overflow: hidden;
   background:
-    radial-gradient(130% 90% at 50% -15%, rgba($color-primary, 0.28), transparent 60%),
-    radial-gradient(100% 80% at 50% 120%, rgba(#000, 0.55), transparent 70%),
-    linear-gradient(180deg, $color-bg-alt, $color-bg 72%);
+    radial-gradient(120% 80% at 50% -10%, rgba($color-primary, 0.22), transparent 55%),
+    radial-gradient(90% 60% at 50% 118%, rgba($color-success, 0.1), transparent 60%),
+    linear-gradient(180deg, $color-bg-alt, $color-bg 74%);
+
+  // Scrim so the lower content stays readable over the animated hero.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 40% 0 0;
+    z-index: 0;
+    background: linear-gradient(180deg, transparent, rgba($color-bg, 0.82) 62%);
+    pointer-events: none;
+  }
 }
 
 .menu-bg {
@@ -29,9 +41,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $space-5;
+  gap: $space-4;
   width: 100%;
-  max-width: 660px;
+  max-width: 620px;
   text-align: center;
 }
 
@@ -43,10 +55,10 @@
   border-radius: $radius-pill;
   font-size: $font-size-sm;
   font-weight: $font-weight-bold;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: $color-text;
-  background: rgba($color-surface, 0.55);
+  background: rgba($color-surface, 0.6);
   border: 1px solid rgba($color-primary, 0.45);
   backdrop-filter: blur(6px);
 }
@@ -54,16 +66,18 @@
 .menu__title {
   margin: 0;
   display: flex;
-  flex-direction: column;
-  font-size: clamp(3.2rem, 15vw, 7rem);
-  line-height: 0.9;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.28em;
+  font-size: clamp(3rem, 13vw, 6rem);
+  line-height: 0.92;
   font-weight: 900;
   letter-spacing: 0.02em;
-  background: linear-gradient(180deg, #ffffff, $color-primary 135%);
+  background: linear-gradient(180deg, #ffffff, $color-primary 140%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 8px 34px rgba($color-primary, 0.5));
+  filter: drop-shadow(0 8px 34px rgba($color-primary, 0.55));
 
   &-accent {
     background: linear-gradient(180deg, $color-warning, #ff8a3d);
@@ -88,15 +102,22 @@
 }
 
 .menu__best {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-1 $space-4;
+  border-radius: $radius-pill;
   font-size: $font-size-sm;
   font-weight: $font-weight-bold;
   letter-spacing: 0.04em;
   color: $color-warning;
+  background: rgba($color-surface, 0.6);
+  border: 1px solid rgba($color-warning, 0.35);
 }
 
 .menu__features {
   list-style: none;
-  margin: $space-4 0 0;
+  margin: $space-2 0 0;
   padding: 0;
   display: grid;
   gap: $space-3;
@@ -108,14 +129,21 @@
   }
 }
 
+.menu__controls {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: rgba($color-text-muted, 0.85);
+  letter-spacing: 0.02em;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .menu__content > * {
     animation: menu-rise 0.6s both;
   }
 
-  @for $i from 1 through 6 {
+  @for $i from 1 through 7 {
     .menu__content > *:nth-child(#{$i}) {
-      animation-delay: #{0.08 * $i}s;
+      animation-delay: #{0.07 * $i}s;
     }
   }
 }

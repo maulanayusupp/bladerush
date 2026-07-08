@@ -51,6 +51,8 @@ const features = computed(() => [
           :text="feature.text"
         />
       </ul>
+
+      <p class="menu__controls">{{ $t('menu.controls') }}</p>
     </div>
   </main>
 </template>

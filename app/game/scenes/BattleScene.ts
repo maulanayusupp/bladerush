@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, COMBO, ENEMY, GATE, HEAL, HERO, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
+import { AURA, BOSS, COMBO, ENEMY, GATE, HEAL, HERO, MAPS, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
 import { Boss } from '../entities/Boss'
 import { Enemy } from '../entities/Enemy'
 import { Gate } from '../entities/Gate'
@@ -30,6 +30,7 @@ const TAU = Math.PI * 2
 
 export class BattleScene extends Phaser.Scene {
   private player!: Player
+  private bg!: Phaser.GameObjects.TileSprite
   private auraLayers: Phaser.GameObjects.Image[] = []
   private sparks!: Phaser.GameObjects.Particles.ParticleEmitter
   private enemies!: Phaser.Physics.Arcade.Group
@@ -102,6 +103,28 @@ export class BattleScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, this.worldW, this.worldH)
 
+    // Random themed arena background (tiling + subtle parallax).
+    const map = MAPS[randomInt(0, MAPS.length - 1)] ?? MAPS[0]
+    this.bg = this.add.tileSprite(0, 0, this.worldW, this.worldH, map.key).setOrigin(0, 0).setDepth(-10)
+    const mapLabel = this.add
+      .text(this.worldW / 2, 72, map.name, {
+        fontFamily: 'Segoe UI, sans-serif',
+        fontSize: '22px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5)
+      .setDepth(20)
+    mapLabel.setStroke('#000000', 4)
+    this.tweens.add({
+      targets: mapLabel,
+      alpha: { from: 1, to: 0 },
+      y: 54,
+      delay: 1400,
+      duration: 900,
+      onComplete: () => mapLabel.destroy(),
+    })
+
     // One additive glow per potential aura layer (base tiers + mega rings).
     this.auraLayers = Array.from({ length: POWER_LAYERS.length + MEGA_AURA.max }, () =>
       this.add
@@ -163,6 +186,8 @@ export class BattleScene extends Phaser.Scene {
     const elapsedSec = this.elapsedMs / 1000
 
     this.player.moveToward(deltaMs, { width: this.worldW, height: this.worldH })
+    this.bg.tilePositionX = this.player.x * 0.15
+    this.bg.tilePositionY = this.player.y * 0.15
 
     this.enemyAcc += deltaMs
     if (this.enemyAcc >= this.spawner.enemyInterval(elapsedSec)) {
@@ -592,11 +617,37 @@ export class BattleScene extends Phaser.Scene {
 
     if (enemy.takeDamage(Math.round(this.power.stats.damage * this.swordDamageMul))) {
       const reward = enemy.value
-      this.sparks.explode(8, enemy.x, enemy.y)
+      this.killFx(enemy.x, enemy.y)
       audioService.death()
       enemy.deactivate()
       this.registerKill(reward)
+    } else {
+      // Non-lethal hit: quick spark + white impact flash.
+      this.sparks.explode(3, enemy.x, enemy.y)
+      enemy.setTint(0xffffff)
+      enemy.setTintFill()
+      this.time.delayedCall(60, () => {
+        if (enemy.active) enemy.clearTint()
+      })
     }
+  }
+
+  /** Juicy kill burst: spark shower + a fast expanding pop ring. */
+  private killFx(x: number, y: number): void {
+    this.sparks.explode(14, x, y)
+    const ring = this.add
+      .image(x, y, 'shock')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xfff2a8)
+      .setScale(0.25)
+    this.tweens.add({
+      targets: ring,
+      scale: 1.1,
+      alpha: { from: 0.85, to: 0 },
+      duration: 260,
+      ease: 'Cubic.Out',
+      onComplete: () => ring.destroy(),
+    })
   }
 
   private onSwordHitBoss: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (_swordObj, bossObj) => {
@@ -611,6 +662,11 @@ export class BattleScene extends Phaser.Scene {
     if (boss.takeDamage(dmg)) {
       this.bossDefeat()
     } else {
+      boss.setTint(0xffffff)
+      boss.setTintFill()
+      this.time.delayedCall(50, () => {
+        if (boss.active) boss.clearTint()
+      })
       gameEventBus.emit('boss:hp', { current: boss.hp, max: boss.maxHp })
     }
   }
@@ -651,6 +707,7 @@ export class BattleScene extends Phaser.Scene {
 
   private onResize = (gameSize: Phaser.Structs.Size): void => {
     this.physics.world.setBounds(0, 0, gameSize.width, gameSize.height)
+    this.bg.setSize(gameSize.width, gameSize.height)
   }
 
   private onRestart = (): void => {
@@ -706,7 +763,7 @@ export class BattleScene extends Phaser.Scene {
       const enemy = obj as Enemy
       if (!enemy.active) continue
       if (enemy.takeDamage(SKILLS.nova.damage)) {
-        this.sparks.explode(6, enemy.x, enemy.y)
+        this.killFx(enemy.x, enemy.y)
         enemy.deactivate()
         this.registerKill(enemy.value)
       }
