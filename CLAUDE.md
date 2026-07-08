@@ -1,8 +1,9 @@
-# Titan Web — Panduan Proyek & Coding Style
+# Blade Rush — Panduan Proyek & Coding Style
 
-Game web bergaya *auto-shooter / survivor* (terinspirasi **Titan War**), dibangun
-dengan **Nuxt 4 + TypeScript** untuk shell aplikasi dan **Phaser 4** untuk
-gameplay di `<canvas>`.
+**Blade Rush** — game web *survivor*: ring pedang berputar yang tumbuh,
+menghabisi gerombolan musuh, dan duel melawan hero rival. Dibangun dengan
+**Nuxt 4 + TypeScript** untuk shell aplikasi dan **Phaser 4** untuk gameplay di
+`<canvas>`.
 
 ## Perintah
 

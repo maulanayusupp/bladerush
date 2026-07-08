@@ -96,6 +96,9 @@ export class BattleScene extends Phaser.Scene {
     this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'enemyA', maxSize: ENEMY.poolSize })
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
     this.swordPool = Array.from({ length: SWORD.poolSize }, () => new Sword(this, 0, 0))
+    // Pick one of the 10 blade skins for this run.
+    const swordSkin = Math.floor(Math.random() * 10)
+    this.swordPool.forEach((sword) => sword.setTexture(`sword${swordSkin}`))
     this.rivalPool = Array.from({ length: RIVAL.poolSize }, () => new Rival(this, 0, 0))
 
     // Reusable spark burst for clashes / deaths.
@@ -395,8 +398,9 @@ export class BattleScene extends Phaser.Scene {
         continue
       }
       const mega = i >= baseCount
-      const gap = AURA.layerGap * (mega ? 1.7 : 1)
-      const scale = (AURA.baseRadius + i * gap) / AURA.textureRadius
+      const gap = AURA.layerGap * (mega ? 1.3 : 1)
+      const radius = Math.min(AURA.maxRadius, AURA.baseRadius + i * gap)
+      const scale = radius / AURA.textureRadius
       const amp = mega ? 0.16 : 0.06 + i * 0.02
       const floor = mega ? 0.26 : Math.max(0.08, 0.3 - i * 0.03)
       const speed = mega ? 110 : 180

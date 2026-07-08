@@ -26,8 +26,9 @@ export const SWORD = {
 /** Soft glow disc baked in BootScene; one tinted copy per unlocked layer. */
 export const AURA = {
   textureRadius: 100,
-  baseRadius: 108, // inner aura radius (px) before scaling
-  layerGap: 16, // each stacked layer sits this much further out
+  baseRadius: 92, // inner aura radius (px), just outside the sword ring
+  layerGap: 5, // each stacked layer sits this much further out
+  maxRadius: 150, // hard cap so stacked mega layers never sprawl
 } as const
 
 /**
@@ -120,7 +121,7 @@ export const POWER_CURVE = {
  */
 export const RIVAL = {
   poolSize: 4,
-  skins: 10, // number of distinct warlord textures (rivalHero0..9)
+  skins: 20, // number of distinct warlord textures (rivalHero0..19)
   minIntervalMs: 8500,
   maxIntervalMs: 15000,
   // Rivals appear more often as you get stronger: interval *= factor.

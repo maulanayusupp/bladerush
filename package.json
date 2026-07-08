@@ -1,12 +1,14 @@
 {
-  "name": "titan-web",
+  "name": "blade-rush",
   "type": "module",
   "private": true,
+  "description": "Blade Rush — a web survivor game: spin a growing ring of blades, crush the horde, out-duel rival warlords.",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "gen:assets": "node scripts/generate-assets.mjs",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "sass": "^1.101.0",
+    "sharp": "^0.35.3",
     "typescript": "^6.0.3",
     "vue-tsc": "^3.3.6"
   }

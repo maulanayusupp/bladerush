@@ -5,7 +5,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-const STORAGE_KEY = 'titan-web:high-score'
+const STORAGE_KEY = 'blade-rush:high-score'
 
 export const useGameStore = defineStore('game', () => {
   const highScore = ref(0)

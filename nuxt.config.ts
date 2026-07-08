@@ -5,6 +5,15 @@ export default defineNuxtConfig({
 
   modules: ['@pinia/nuxt', '@nuxtjs/i18n'],
 
+  // Set NUXT_PUBLIC_SITE_URL to your deployed origin so social (WhatsApp/OG)
+  // previews resolve the absolute image URL (Nuxt maps the env var to this key
+  // automatically). Falls back to relative locally.
+  runtimeConfig: {
+    public: {
+      siteUrl: '',
+    },
+  },
+
   // UI strings live in locale files, never hardcoded in components.
   i18n: {
     defaultLocale: 'en',
@@ -15,7 +24,7 @@ export default defineNuxtConfig({
     ],
     detectBrowserLanguage: {
       useCookie: true,
-      cookieKey: 'titan-web-locale',
+      cookieKey: 'blade-rush-locale',
       redirectOn: 'root',
     },
   },
@@ -41,7 +50,8 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Titan Web',
+      // Full SEO/social tags live in app.vue (useHead) so they can read the
+      // runtime site URL for absolute OG image links.
       meta: [
         {
           name: 'viewport',

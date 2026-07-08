@@ -32,7 +32,22 @@ const RIVAL_SKINS: WarlordSkin[] = [
   { armor: 0x2a2233, armorHi: 0x3a2f47, cape: 0x5a4410, helm: 0x14101c, horn: 'crown', hornColor: 0xffd700, eye: 0xffd700, accent: 0xffd700 },
   { armor: 0x14332f, armorHi: 0x1f5a52, cape: 0x0e4a42, helm: 0x0a201c, horn: 'straight', hornColor: 0x0a201c, eye: 0x2ee6c0, accent: 0x2ee6c0 },
   { armor: 0x2a0e0e, armorHi: 0x4a1414, cape: 0x7a0b0b, helm: 0x180606, horn: 'wide', hornColor: 0x180606, eye: 0xff1a1a, accent: 0xff1a1a },
+  { armor: 0x1a2410, armorHi: 0x33471a, cape: 0x2a5a0e, helm: 0x0e1408, horn: 'spikes', hornColor: 0xaaff00, eye: 0xaaff00, accent: 0xaaff00 },
+  { armor: 0x24303a, armorHi: 0x3a566a, cape: 0x2a4a5a, helm: 0x141c22, horn: 'ram', hornColor: 0xdff4ff, eye: 0xbfefff, accent: 0xdff4ff },
+  { armor: 0x2a1408, armorHi: 0x4a2410, cape: 0x6e1e05, helm: 0x160a04, horn: 'single', hornColor: 0xff4500, eye: 0xffb300, accent: 0xff6a00 },
+  { armor: 0x0e2a2a, armorHi: 0x1a4a4a, cape: 0x0a3a3a, helm: 0x061818, horn: 'trident', hornColor: 0x00e0d0, eye: 0x00e0d0, accent: 0x00e0d0 },
+  { armor: 0x241033, armorHi: 0x3a1a52, cape: 0x2a0b4e, helm: 0x120620, horn: 'crown', hornColor: 0xffd700, eye: 0xffe14d, accent: 0xffd700 },
+  { armor: 0x1a0a0a, armorHi: 0x3a1414, cape: 0x2a0606, helm: 0x0e0404, horn: 'back', hornColor: 0x0e0404, eye: 0xff2d2d, accent: 0xff2d2d },
+  { armor: 0x0e2a1a, armorHi: 0x1a4a30, cape: 0x0a3a24, helm: 0x061810, horn: 'straight', hornColor: 0x2ee67a, eye: 0x2ee67a, accent: 0x2ee67a },
+  { armor: 0x14141a, armorHi: 0x2a2a34, cape: 0x3a2e08, helm: 0x08080c, horn: 'single', hornColor: 0xffd700, eye: 0xffd700, accent: 0xffd700 },
+  { armor: 0x14203a, armorHi: 0x24406a, cape: 0x0e2a5a, helm: 0x0a1120, horn: 'spikes', hornColor: 0x6ab0ff, eye: 0x9fd0ff, accent: 0x6ab0ff },
+  { armor: 0x2a1424, armorHi: 0x4a2440, cape: 0x6e0b4a, helm: 0x160616, horn: 'wide', hornColor: 0xff5aa0, eye: 0xff5aa0, accent: 0xff5aa0 },
 ]
+
+/** 10 distinct player sword silhouettes (tinted by tier in-game). */
+const SWORD_SHAPES = [
+  'leaf', 'straight', 'curved', 'broad', 'rapier', 'shard', 'cleaver', 'saber', 'glaive', 'fork',
+] as const
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -48,6 +63,7 @@ export class BootScene extends Phaser.Scene {
     this.bake('enemyElite', 56, 56, (g) => this.drawDemon(g))
     this.bake('enemyLegend', 64, 64, (g) => this.drawLegend(g))
     this.bake('sword', 16, 46, (g) => this.drawSword(g))
+    SWORD_SHAPES.forEach((shape, i) => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape)))
     this.bake('swordRing', 140, 140, (g) => this.drawSwordRing(g))
     this.bake('aura', AURA.textureRadius * 2, AURA.textureRadius * 2, (g) => this.drawAura(g))
     this.bake('spark', 10, 10, (g) => this.drawSpark(g))
@@ -281,6 +297,21 @@ export class BootScene extends Phaser.Scene {
         g.fillTriangle(41, 16, 47, 3, 35, 14)
         g.fillTriangle(44, 9, 50, 1, 40, 9)
         break
+      case 'single':
+        g.fillTriangle(24, 14, 28, 0, 32, 14)
+        break
+      case 'spikes':
+        for (const x of [14, 21, 28, 35, 42]) g.fillTriangle(x - 2, 14, x, 2, x + 2, 14)
+        break
+      case 'trident':
+        g.fillTriangle(24, 14, 28, 2, 32, 14)
+        g.fillTriangle(18, 14, 20, 6, 22, 14)
+        g.fillTriangle(34, 14, 36, 6, 38, 14)
+        break
+      case 'ram':
+        g.fillTriangle(14, 12, 2, 16, 18, 15)
+        g.fillTriangle(42, 12, 54, 16, 38, 15)
+        break
       // 'none' -> hooded, no horns
     }
   }
@@ -335,6 +366,55 @@ export class BootScene extends Phaser.Scene {
     // Pommel.
     g.fillStyle(0xffce5a, 1)
     g.fillCircle(cx, 43, 2.3)
+  }
+
+  /** One of 10 player blade silhouettes. Guard/grip/pommel are shared; the
+   *  blade shape varies. Tier tint recolors the whole blade in-game. */
+  private drawSwordSkin(g: Phaser.GameObjects.Graphics, shape: string): void {
+    const steel = 0xcdd3e0
+    g.fillStyle(steel, 1)
+    switch (shape) {
+      case 'straight':
+        g.fillPoints(this.pts([8, 1, 11, 7, 11, 28, 5, 28, 5, 7]), true)
+        break
+      case 'curved':
+        g.fillPoints(this.pts([8, 1, 13, 10, 12, 22, 9, 28, 7, 28, 6, 14]), true)
+        break
+      case 'broad':
+        g.fillPoints(this.pts([8, 1, 12.5, 10, 12, 28, 4, 28, 3.5, 10]), true)
+        break
+      case 'rapier':
+        g.fillPoints(this.pts([8, 1, 9.4, 10, 9.2, 28, 6.8, 28, 6.6, 10]), true)
+        break
+      case 'shard':
+        g.fillPoints(this.pts([8, 0, 11.5, 15, 8, 29, 4.5, 15]), true)
+        break
+      case 'cleaver':
+        g.fillPoints(this.pts([5, 4, 12, 4, 12.5, 28, 4, 28]), true)
+        break
+      case 'saber':
+        g.fillPoints(this.pts([8, 1, 11.5, 11, 11, 24, 9.5, 28, 6.5, 28, 5, 12]), true)
+        break
+      case 'glaive':
+        g.fillPoints(this.pts([8, 1, 11.5, 8, 10.5, 17, 5.5, 17, 4.5, 8]), true)
+        g.fillStyle(0x99a1b4, 1)
+        g.fillRect(7, 17, 2, 11)
+        break
+      case 'fork':
+        g.fillPoints(this.pts([6.5, 1, 7.6, 11, 5, 11]), true)
+        g.fillPoints(this.pts([9.5, 1, 11, 11, 8.4, 11]), true)
+        g.fillPoints(this.pts([5, 11, 11, 11, 10.4, 28, 5.6, 28]), true)
+        break
+      default: // 'leaf'
+        g.fillPoints(this.pts([8, 1, 11.6, 12, 10.4, 28, 5.6, 28, 4.4, 12]), true)
+    }
+    // Shared guard / grip / pommel.
+    g.fillStyle(0xffce5a, 1)
+    g.fillPoints(this.pts([0, 29, 16, 29, 13.5, 33, 2.5, 33]), true)
+    g.fillStyle(0x5c3b22, 1)
+    g.fillRect(6.3, 33, 3.4, 9)
+    g.fillStyle(0xffce5a, 1)
+    g.fillCircle(8, 43, 2.3)
   }
 
   /** Flatten a [x0,y0,x1,y1,...] list into Vector2 points for fillPoints. */

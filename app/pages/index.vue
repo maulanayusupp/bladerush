@@ -28,7 +28,7 @@ const features = computed(() => [
       <span class="menu__badge">⚔️ {{ $t('menu.badge') }}</span>
 
       <h1 class="menu__title">
-        TITAN<span class="menu__title-accent">WEB</span>
+        BLADE<span class="menu__title-accent">RUSH</span>
       </h1>
 
       <p class="menu__tagline">{{ $t('menu.subtitle') }}</p>
