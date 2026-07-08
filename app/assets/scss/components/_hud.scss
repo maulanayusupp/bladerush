@@ -113,6 +113,66 @@
     color: $color-text;
   }
 
+  &__boss {
+    position: absolute;
+    top: 62px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(82%, 440px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-1;
+  }
+
+  &__boss-label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: $color-danger;
+  }
+
+  &__boss-bar {
+    width: 100%;
+    height: 12px;
+    border-radius: $radius-pill;
+    background-color: rgba(#000, 0.5);
+    border: 1px solid rgba($color-danger, 0.5);
+    overflow: hidden;
+  }
+
+  &__boss-fill {
+    height: 100%;
+    width: calc(var(--boss-ratio, 1) * 100%);
+    background: linear-gradient(90deg, $color-danger, $color-warning);
+    transition: width $transition-fast;
+  }
+
+  &__combo {
+    position: absolute;
+    top: 96px;
+    right: $space-4;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1;
+  }
+
+  &__combo-mult {
+    font-size: $font-size-xl;
+    font-weight: 900;
+    color: $color-warning;
+    text-shadow: 0 2px 10px rgba($color-warning, 0.6);
+  }
+
+  &__combo-label {
+    font-size: $font-size-sm;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $color-text-muted;
+  }
+
   &__health {
     height: 10px;
     border-radius: $radius-pill;

@@ -53,4 +53,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hp = Math.max(0, this.hp - amount)
     return this.hp <= 0
   }
+
+  heal(amount: number): void {
+    this.hp = Math.min(this.maxHp, this.hp + amount)
+  }
 }

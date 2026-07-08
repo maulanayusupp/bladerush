@@ -88,6 +88,8 @@ export class BootScene extends Phaser.Scene {
     this.bake('enemyHard', 56, 56, (g) => this.drawBrute(g))
     this.bake('enemyElite', 56, 56, (g) => this.drawDemon(g))
     this.bake('enemyLegend', 64, 64, (g) => this.drawLegend(g))
+    this.bake('boss', 76, 76, (g) => this.drawBoss(g))
+    this.bake('heal', 30, 30, (g) => this.drawHeal(g))
     this.bake('sword', 16, 46, (g) => this.drawSword(g))
     SWORD_SHAPES.forEach((shape, i) => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape)))
     this.bake('swordRing', 140, 140, (g) => this.drawSwordRing(g))
@@ -227,6 +229,46 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xf4f6f4, 1) // tusks (pointing up)
     g.fillTriangle(22, 44, 26, 44, 20, 34)
     g.fillTriangle(34, 44, 30, 44, 36, 34)
+  }
+
+  /** BOSS — a huge horned demon-dragon head (box 76, centered 38). */
+  private drawBoss(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x1a0d0d, 1) // horns
+    g.fillTriangle(18, 24, 2, 0, 28, 20)
+    g.fillTriangle(58, 24, 74, 0, 48, 20)
+    g.fillStyle(0x2a0f0f, 1) // crown spikes
+    for (const x of [24, 32, 38, 44, 52]) g.fillTriangle(x - 4, 18, x, 4, x + 4, 18)
+    g.fillStyle(0x3a1414, 1) // head
+    g.fillEllipse(38, 40, 56, 52)
+    g.fillStyle(0x2a0e0e, 1) // snout
+    g.fillEllipse(38, 54, 34, 24)
+    g.fillStyle(0x140707, 1) // brows
+    g.fillTriangle(16, 32, 36, 42, 36, 28)
+    g.fillTriangle(60, 32, 40, 42, 40, 28)
+    g.fillStyle(0xff3b1a, 1) // glowing eyes
+    g.fillEllipse(27, 36, 12, 9)
+    g.fillEllipse(49, 36, 12, 9)
+    g.fillStyle(0x1a0500, 1)
+    g.fillCircle(27, 37, 3)
+    g.fillCircle(49, 37, 3)
+    g.fillStyle(0xffd08a, 0.9)
+    g.fillCircle(26, 35, 1.4)
+    g.fillCircle(48, 35, 1.4)
+    g.fillStyle(0x140707, 1) // nostrils
+    g.fillCircle(33, 50, 2)
+    g.fillCircle(43, 50, 2)
+    g.fillStyle(0xffffff, 1) // fangs
+    for (let i = 0; i < 6; i++) g.fillTriangle(26 + i * 5, 62, 28 + i * 5, 62, 27 + i * 5, 70)
+  }
+
+  /** HEAL — a soft pink heart. */
+  private drawHeal(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xff5a7a, 1)
+    g.fillCircle(10, 11, 6)
+    g.fillCircle(20, 11, 6)
+    g.fillTriangle(4, 13, 26, 13, 15, 27)
+    g.fillStyle(0xffffff, 0.5)
+    g.fillCircle(8, 9, 2)
   }
 
   /** EASY — tiny green slime with an antenna. */

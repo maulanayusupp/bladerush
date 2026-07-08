@@ -15,6 +15,8 @@
     "score": "Score",
     "mute": "Mute sound",
     "unmute": "Unmute sound",
+    "boss": "Boss",
+    "combo": "Combo",
     "skills": {
       "fury": "Blade Fury",
       "nova": "Shockwave"

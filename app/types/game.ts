@@ -51,4 +51,8 @@ export interface GameEventMap {
   'skill:use': { id: string }
   'skill:started': { id: string; cooldownMs: number; durationMs: number }
   'skill:reset': undefined
+  'boss:spawn': { maxHp: number }
+  'boss:hp': { current: number; max: number }
+  'boss:end': undefined
+  'combo:changed': { count: number; mult: number }
 }

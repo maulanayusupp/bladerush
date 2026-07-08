@@ -143,6 +143,41 @@ export const RIVAL = {
   scoreMultiplier: 3,
 } as const
 
+/**
+ * Boss: a big, high-HP milestone enemy. First arrives after ~55s, then every
+ * ~70s (only one at a time). HP/reward scale with elapsed time. Sword damage
+ * vs the boss is dealt in ticks scaled by the whole ring, so a bigger ring
+ * melts it faster — keeping the fight length roughly balanced across power.
+ */
+export const BOSS = {
+  firstMs: 55000,
+  intervalMs: 70000,
+  baseHp: 800,
+  hpPerMin: 600,
+  speed: 40,
+  contactDamage: 26,
+  contactCooldownMs: 700,
+  hitTickMs: 100,
+  summonMs: 5000,
+  summonCount: 4,
+  scoreMul: 6,
+} as const
+
+/** Rapid kills build a combo that multiplies SCORE (not power). */
+export const COMBO = {
+  windowMs: 2600, // time to keep the chain alive
+  per: 5, // +1× every 5 kills
+  maxBonus: 4, // up to ×5
+} as const
+
+/** Occasional heart pickup that restores HP. */
+export const HEAL = {
+  intervalMs: 17000,
+  speed: 120,
+  amount: 30,
+  size: 30,
+} as const
+
 export const SPAWN = {
   enemyStartIntervalMs: 900,
   enemyMinIntervalMs: 240,

@@ -10,9 +10,11 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, ENEMY, GATE, HERO, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
+import { AURA, BOSS, COMBO, ENEMY, GATE, HEAL, HERO, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
+import { Boss } from '../entities/Boss'
 import { Enemy } from '../entities/Enemy'
 import { Gate } from '../entities/Gate'
+import { Heal } from '../entities/Heal'
 import { Player } from '../entities/Player'
 import { Rival } from '../entities/Rival'
 import { Sword } from '../entities/Sword'
@@ -34,6 +36,8 @@ export class BattleScene extends Phaser.Scene {
   private gatePool: Gate[] = []
   private swordPool: Sword[] = []
   private rivalPool: Rival[] = []
+  private healPool: Heal[] = []
+  private boss!: Boss
 
   private readonly power = new PowerService()
   private readonly spawner = new SpawnService()
@@ -49,6 +53,13 @@ export class BattleScene extends Phaser.Scene {
   private furyUntil = 0
   private swordDamageMul = 1
   private playerSkin = 0
+  private healAcc = 0
+  private bossAcc = 0
+  private nextBossMs: number = BOSS.firstMs
+  private bossActive = false
+  private bossSummonAcc = 0
+  private comboCount = 0
+  private comboUntil = 0
   private readonly skillReadyAt: Record<string, number> = { fury: 0, nova: 0 }
   private isOver = false
 
@@ -76,6 +87,13 @@ export class BattleScene extends Phaser.Scene {
     this.furyUntil = 0
     this.swordDamageMul = 1
     this.playerSkin = 0
+    this.healAcc = 0
+    this.bossAcc = 0
+    this.nextBossMs = BOSS.firstMs
+    this.bossActive = false
+    this.bossSummonAcc = 0
+    this.comboCount = 0
+    this.comboUntil = 0
     this.skillReadyAt.fury = 0
     this.skillReadyAt.nova = 0
     this.power.reset()
@@ -102,6 +120,8 @@ export class BattleScene extends Phaser.Scene {
     const swordSkin = Math.floor(Math.random() * 10)
     this.swordPool.forEach((sword) => sword.setTexture(`sword${swordSkin}`))
     this.rivalPool = Array.from({ length: RIVAL.poolSize }, () => new Rival(this, 0, 0))
+    this.healPool = Array.from({ length: 6 }, () => new Heal(this, 0, 0))
+    this.boss = new Boss(this, 0, 0)
 
     // Reusable spark burst for clashes / deaths.
     this.sparks = this.add
@@ -117,6 +137,8 @@ export class BattleScene extends Phaser.Scene {
 
     this.physics.add.overlap(this.swordPool, this.enemies, this.onSwordHitEnemy)
     this.physics.add.overlap(this.player, this.enemies, this.onEnemyHitPlayer)
+    this.physics.add.overlap(this.swordPool, this.boss, this.onSwordHitBoss)
+    this.physics.add.overlap(this.player, this.boss, this.onBossHitPlayer)
 
     this.input.on('pointermove', this.onPointer)
     this.input.on('pointerdown', this.onPointer)
@@ -131,6 +153,8 @@ export class BattleScene extends Phaser.Scene {
     this.emitScore()
     gameEventBus.emit('game:ready', undefined)
     gameEventBus.emit('skill:reset', undefined)
+    gameEventBus.emit('boss:end', undefined)
+    this.emitCombo()
   }
 
   override update(_time: number, deltaMs: number): void {
@@ -159,9 +183,29 @@ export class BattleScene extends Phaser.Scene {
       this.spawnRival(elapsedSec)
     }
 
+    this.healAcc += deltaMs
+    if (this.healAcc >= HEAL.intervalMs) {
+      this.healAcc = 0
+      this.spawnHeal()
+    }
+
+    if (this.bossActive) {
+      this.updateBoss(deltaMs, elapsedSec)
+    } else {
+      this.bossAcc += deltaMs
+      if (this.bossAcc >= this.nextBossMs) {
+        this.bossAcc = 0
+        this.nextBossMs = BOSS.intervalMs
+        this.spawnBoss(elapsedSec)
+      }
+    }
+
+    if (this.comboCount > 0 && this.elapsedMs > this.comboUntil) this.resetCombo()
+
     this.updateEnemies()
     this.updateGates(deltaMs)
     this.updateRivals(deltaMs)
+    this.updateHeals(deltaMs)
     this.updateSwords(deltaMs)
     this.checkEvolve()
   }
@@ -219,6 +263,107 @@ export class BattleScene extends Phaser.Scene {
   private scheduleNextRival(): void {
     const factor = clamp(1 - this.power.power * RIVAL.intervalPowerFactor, RIVAL.minIntervalFactor, 1)
     this.nextRivalMs = randomRange(RIVAL.minIntervalMs, RIVAL.maxIntervalMs) * factor
+  }
+
+  private spawnHeal(): void {
+    const heal = this.healPool.find((h) => !h.active)
+    if (!heal) return
+    heal.spawn(randomRange(HEAL.size, this.worldW - HEAL.size), -HEAL.size)
+  }
+
+  // ---- Boss ---------------------------------------------------------------
+
+  private spawnBoss(elapsedSec: number): void {
+    const hp = Math.round(BOSS.baseHp + (elapsedSec / 60) * BOSS.hpPerMin)
+    const { x, y } = this.randomEdgePoint()
+    this.boss.spawn(x, y, hp, BOSS.speed, 1.5)
+    this.bossActive = true
+    this.bossSummonAcc = 0
+    this.cameras.main.shake(240, 0.008)
+    audioService.nova()
+    gameEventBus.emit('boss:spawn', { maxHp: hp })
+  }
+
+  private updateBoss(deltaMs: number, elapsedSec: number): void {
+    const angle = angleBetween(this.boss.x, this.boss.y, this.player.x, this.player.y)
+    this.boss.setVelocity(Math.cos(angle) * this.boss.speed, Math.sin(angle) * this.boss.speed)
+    // Periodically summon a few adds to keep the pressure on.
+    this.bossSummonAcc += deltaMs
+    if (this.bossSummonAcc >= BOSS.summonMs) {
+      this.bossSummonAcc = 0
+      for (let i = 0; i < BOSS.summonCount; i++) {
+        const enemy = this.enemies.get(0, 0) as Enemy | null
+        if (enemy) enemy.spawn(this.boss.x, this.boss.y, this.spawner.createEnemy(elapsedSec))
+      }
+    }
+  }
+
+  private bossDefeat(): void {
+    const reward = Math.round(this.boss.maxHp * 0.06)
+    const x = this.boss.x
+    const y = this.boss.y
+    this.boss.setVelocity(0, 0)
+    this.boss.deactivate()
+    this.bossActive = false
+    this.registerKill(reward)
+    this.scorer.add(reward * BOSS.scoreMul)
+    this.emitScore()
+    this.playClashFx(x, y, 0xffd700)
+    this.sparks.explode(30, x, y)
+    this.cameras.main.flash(260, 255, 220, 120)
+    this.cameras.main.shake(300, 0.012)
+    audioService.win()
+    gameEventBus.emit('boss:end', undefined)
+  }
+
+  // ---- Combo --------------------------------------------------------------
+
+  /** Register a kill: power reward is raw; score is combo-multiplied. */
+  private registerKill(reward: number): void {
+    this.comboCount++
+    this.comboUntil = this.elapsedMs + COMBO.windowMs
+    this.power.addEnemyValue(reward)
+    this.scorer.add(Math.round(reward * this.comboMult()))
+    this.emitPower()
+    this.emitScore()
+    this.emitCombo()
+  }
+
+  private comboMult(): number {
+    return 1 + Math.min(COMBO.maxBonus, Math.floor(this.comboCount / COMBO.per))
+  }
+
+  private resetCombo(): void {
+    this.comboCount = 0
+    this.emitCombo()
+  }
+
+  private emitCombo(): void {
+    gameEventBus.emit('combo:changed', { count: this.comboCount, mult: this.comboMult() })
+  }
+
+  // ---- Per-frame updates --------------------------------------------------
+
+  private updateHeals(deltaMs: number): void {
+    const dy = HEAL.speed * (deltaMs / 1000)
+    for (const heal of this.healPool) {
+      if (!heal.active) continue
+      heal.y += dy
+      heal.idle(deltaMs)
+      if (
+        !heal.consumed &&
+        Math.abs(heal.x - this.player.x) < HEAL.size + this.player.width / 2 &&
+        Math.abs(heal.y - this.player.y) < HEAL.size + this.player.height / 2
+      ) {
+        heal.consumed = true
+        this.player.heal(HEAL.amount)
+        this.emitHp()
+        audioService.pickup()
+        heal.deactivate()
+        continue
+      }
+      if (heal.y - HEAL.size > this.worldH) heal.deactivate()
+    }
   }
 
   // ---- Per-frame updates --------------------------------------------------
@@ -450,11 +595,35 @@ export class BattleScene extends Phaser.Scene {
       this.sparks.explode(8, enemy.x, enemy.y)
       audioService.death()
       enemy.deactivate()
-      this.power.addEnemyValue(reward)
-      this.scorer.add(reward)
-      this.emitPower()
-      this.emitScore()
+      this.registerKill(reward)
     }
+  }
+
+  private onSwordHitBoss: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (_swordObj, bossObj) => {
+    const boss = bossObj as Boss
+    if (!boss.active) return
+    // Damage in ticks scaled by the whole ring so bigger rings kill faster.
+    if (this.elapsedMs - boss.lastHitAt < BOSS.hitTickMs) return
+    boss.lastHitAt = this.elapsedMs
+    const stats = this.power.stats
+    const dmg = Math.round(stats.damage * stats.swordCount * this.swordDamageMul)
+    this.sparks.explode(6, boss.x, boss.y)
+    if (boss.takeDamage(dmg)) {
+      this.bossDefeat()
+    } else {
+      gameEventBus.emit('boss:hp', { current: boss.hp, max: boss.maxHp })
+    }
+  }
+
+  private onBossHitPlayer: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (playerObj, _bossObj) => {
+    if (!this.boss.active) return
+    if (this.elapsedMs - this.boss.contactAt < BOSS.contactCooldownMs) return
+    this.boss.contactAt = this.elapsedMs
+    void playerObj
+    const dead = this.player.takeDamage(BOSS.contactDamage)
+    this.emitHp()
+    audioService.hurt()
+    if (dead) this.gameOver()
   }
 
   /** Throttle chatty sword-hit ticks so they don't overlap into noise. */
@@ -538,13 +707,10 @@ export class BattleScene extends Phaser.Scene {
       if (!enemy.active) continue
       if (enemy.takeDamage(SKILLS.nova.damage)) {
         this.sparks.explode(6, enemy.x, enemy.y)
-        this.power.addEnemyValue(enemy.value)
-        this.scorer.add(enemy.value)
         enemy.deactivate()
+        this.registerKill(enemy.value)
       }
     }
-    this.emitPower()
-    this.emitScore()
   }
 
   private gameOver(): void {

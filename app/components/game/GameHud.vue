@@ -16,6 +16,13 @@ const isOver = ref(false)
 const finalScore = ref(0)
 const muted = ref(audioService.muted)
 
+const bossActive = ref(false)
+const bossHp = ref(0)
+const bossMax = ref(1)
+const bossRatio = computed(() => (bossMax.value > 0 ? bossHp.value / bossMax.value : 0))
+const comboCount = ref(0)
+const comboMult = ref(1)
+
 function toggleMute(): void {
   audioService.unlock()
   muted.value = audioService.toggleMuted()
@@ -66,7 +73,22 @@ onMounted(() => {
     gameEventBus.on('game:over', ({ score: value }) => {
       isOver.value = true
       finalScore.value = value
+      bossActive.value = false
       store.recordScore(value)
+    }),
+    gameEventBus.on('boss:spawn', ({ maxHp }) => {
+      bossActive.value = true
+      bossMax.value = maxHp
+      bossHp.value = maxHp
+    }),
+    gameEventBus.on('boss:hp', ({ current, max }) => {
+      bossHp.value = current
+      bossMax.value = max
+    }),
+    gameEventBus.on('boss:end', () => (bossActive.value = false)),
+    gameEventBus.on('combo:changed', ({ count, mult }) => {
+      comboCount.value = count
+      comboMult.value = mult
     }),
     gameEventBus.on('skill:started', ({ id, cooldownMs }) => {
       cooldowns[id] = { end: Date.now() + cooldownMs, total: cooldownMs }
@@ -111,6 +133,18 @@ function restart(): void {
       >
         {{ muted ? '🔇' : '🔊' }}
       </button>
+    </div>
+
+    <div v-if="bossActive" class="hud__boss">
+      <span class="hud__boss-label">{{ $t('hud.boss') }}</span>
+      <div class="hud__boss-bar">
+        <div class="hud__boss-fill" :style="{ '--boss-ratio': bossRatio }" />
+      </div>
+    </div>
+
+    <div v-if="comboCount >= 2" class="hud__combo">
+      <span class="hud__combo-mult">×{{ comboMult }}</span>
+      <span class="hud__combo-label">{{ comboCount }} {{ $t('hud.combo') }}</span>
     </div>
 
     <div class="hud__health">
