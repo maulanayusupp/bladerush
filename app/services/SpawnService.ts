@@ -33,12 +33,18 @@ export class SpawnService {
     return ENEMY_TIERS[0] as (typeof ENEMY_TIERS)[number]
   }
 
-  /** Build an enemy of a time-weighted tier with a randomized sword reward. */
-  createEnemy(elapsedSec: number): EnemyConfig {
+  /**
+   * Build an enemy of a time-weighted tier. HP and sword reward scale with the
+   * player's current power so encounters stay meaningful (and rewarding) as the
+   * hero levels up.
+   */
+  createEnemy(elapsedSec: number, playerPower: number): EnemyConfig {
     const tier = this.pickTier(elapsedSec)
+    const hpScale = 1 + playerPower * SPAWN.enemyHpPerPower
+    const rewardScale = 1 + playerPower * SPAWN.enemyRewardPerPower
     return {
-      value: randomInt(tier.value[0], tier.value[1]),
-      hp: tier.hp,
+      value: Math.max(1, Math.round(randomInt(tier.value[0], tier.value[1]) * rewardScale)),
+      hp: Math.round(tier.hp * hpScale),
       speed: randomRange(tier.speed[0], tier.speed[1]),
       textureKey: tier.texture,
       scale: tier.scale,

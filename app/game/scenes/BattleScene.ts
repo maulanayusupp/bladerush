@@ -286,7 +286,7 @@ export class BattleScene extends Phaser.Scene {
     if (!enemy) return
 
     const { x, y } = this.randomEdgePoint()
-    enemy.spawn(x, y, this.spawner.createEnemy(elapsedSec))
+    enemy.spawn(x, y, this.spawner.createEnemy(elapsedSec, this.power.power))
   }
 
   private randomEdgePoint(): { x: number; y: number } {
@@ -386,7 +386,7 @@ export class BattleScene extends Phaser.Scene {
       this.bossSummonAcc = 0
       for (let i = 0; i < BOSS.summonCount; i++) {
         const enemy = this.enemies.get(0, 0) as Enemy | null
-        if (enemy) enemy.spawn(this.boss.x, this.boss.y, this.spawner.createEnemy(elapsedSec))
+        if (enemy) enemy.spawn(this.boss.x, this.boss.y, this.spawner.createEnemy(elapsedSec, this.power.power))
       }
     }
 

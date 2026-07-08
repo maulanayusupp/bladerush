@@ -206,5 +206,8 @@ export const SPAWN = {
   enemyMinIntervalMs: 240,
   enemyRampPerSec: 7,
   gateIntervalMs: 4000,
-  enemyValuePerSec: 0.12,
+  // Scale enemies with the player's power so they stay a threat and their
+  // sword reward keeps growing at high levels (balance).
+  enemyHpPerPower: 0.03,
+  enemyRewardPerPower: 0.02,
 } as const
