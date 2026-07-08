@@ -1,18 +1,35 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '~/components/ui/LanguageSwitcher.vue'
 import MenuBackground from '~/components/menu/MenuBackground.vue'
 import MenuEmblem from '~/components/menu/MenuEmblem.vue'
 import MenuFeature from '~/components/menu/MenuFeature.vue'
+import MenuShop from '~/components/menu/MenuShop.vue'
 import { useGameStore } from '~/stores/useGameStore'
 import { formatCompact } from '~/helpers/format.helper'
 import { audioService } from '~/services/AudioService'
+import { metaService } from '~/services/MetaService'
 
 const store = useGameStore()
 const { t } = useI18n()
 
-onMounted(() => store.loadHighScore())
+const shopOpen = ref(false)
+const coins = ref(0)
+
+onMounted(() => {
+  store.loadHighScore()
+  metaService.load()
+  coins.value = metaService.coins
+})
+
+function openShop(): void {
+  shopOpen.value = true
+}
+function closeShop(): void {
+  shopOpen.value = false
+  coins.value = metaService.coins
+}
 
 // Unlock audio on this user gesture; the singleton persists into /play.
 function startGame(): void {
@@ -46,6 +63,9 @@ const features = computed(() => [
         <NuxtLink to="/play" class="btn btn--primary btn--xl btn--glow" @click="startGame">
           <span class="btn__icon" aria-hidden="true">▶</span>{{ $t('menu.play') }}
         </NuxtLink>
+        <button type="button" class="btn btn--block" @click="openShop">
+          🛒 {{ $t('shop.open') }} · 💰 {{ formatCompact(coins) }}
+        </button>
         <span v-if="store.highScore" class="menu__best">
           🏆 {{ $t('menu.best', { score: formatCompact(store.highScore) }) }}
         </span>
@@ -63,5 +83,7 @@ const features = computed(() => [
 
       <p class="menu__controls">{{ $t('menu.controls') }}</p>
     </div>
+
+    <MenuShop v-if="shopOpen" @close="closeShop" />
   </main>
 </template>

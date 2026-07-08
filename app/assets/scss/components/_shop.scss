@@ -1,0 +1,100 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.shop {
+  @include flex-center;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  padding: $space-4;
+  background-color: rgba(#000, 0.72);
+  backdrop-filter: blur(6px);
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    width: 100%;
+    max-width: 460px;
+    padding: $space-5;
+    border-radius: $radius-lg;
+    background-color: $color-surface;
+    box-shadow: $shadow-lg;
+  }
+
+  &__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-size-xl;
+    font-weight: 800;
+  }
+
+  &__coins {
+    font-weight: $font-weight-bold;
+    color: $color-warning;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-3;
+    border-radius: $radius-md;
+    background-color: $color-surface-2;
+    border: 1px solid rgba(#ffffff, 0.06);
+  }
+
+  &__icon {
+    font-size: 1.8rem;
+    line-height: 1;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+
+  &__name {
+    font-weight: $font-weight-bold;
+  }
+
+  &__lv {
+    color: $color-text-muted;
+    font-size: $font-size-sm;
+  }
+
+  &__desc {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+  }
+
+  &__buy {
+    @include button-reset;
+    padding: $space-2 $space-4;
+    border-radius: $radius-pill;
+    font-weight: $font-weight-bold;
+    white-space: nowrap;
+    background-color: $color-primary;
+    color: $color-text;
+
+    &:disabled {
+      background-color: rgba(#ffffff, 0.12);
+      color: $color-text-muted;
+      cursor: default;
+    }
+  }
+}

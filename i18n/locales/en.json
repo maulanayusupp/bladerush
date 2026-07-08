@@ -36,6 +36,18 @@
     "vigor": { "name": "Vigor", "text": "+20 max HP (and heal)" },
     "lifesteal": { "name": "Lifesteal", "text": "Heal 1 HP per kill" }
   },
+  "shop": {
+    "title": "Upgrade Shop",
+    "open": "Shop",
+    "close": "Close",
+    "coins": "coins"
+  },
+  "meta": {
+    "startPower": { "name": "Warmup", "text": "Start each run with more swords" },
+    "maxHp": { "name": "Toughness", "text": "+20 starting max HP" },
+    "damage": { "name": "Might", "text": "+10% base sword damage" },
+    "coin": { "name": "Fortune", "text": "+15% coins earned" }
+  },
   "gameOver": {
     "title": "Defeated",
     "score": "Score",

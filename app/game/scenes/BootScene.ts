@@ -54,6 +54,26 @@ const SWORD_SHAPES = [
   'leaf', 'straight', 'curved', 'broad', 'rapier', 'shard', 'cleaver', 'saber', 'glaive', 'fork',
 ] as const
 
+interface TrooperSkin {
+  skin: number
+  armor: number
+  armor2: number
+  helm: number // 0 = none
+  horns: boolean
+  tuskBig: boolean
+  eye: number
+  weapon: string
+}
+
+/** Humanoid enemy troops (orcs/soldiers) by tier — drawn front-facing. */
+const TROOPS = {
+  easy: { skin: 0x8ccf5a, armor: 0x6a5a3a, armor2: 0x8a7a4a, helm: 0, horns: false, tuskBig: false, eye: 0x1c2a12, weapon: 'dagger' },
+  med: { skin: 0x5faa4a, armor: 0x565b66, armor2: 0x7a808c, helm: 0, horns: false, tuskBig: false, eye: 0x14200f, weapon: 'sword' },
+  hard: { skin: 0x4a8f3f, armor: 0x8a6a3a, armor2: 0xb08a4a, helm: 0x3a2f22, horns: false, tuskBig: true, eye: 0x14200f, weapon: 'axe' },
+  elite: { skin: 0x3f7f3a, armor: 0x2a2f3a, armor2: 0x4a5060, helm: 0x1a1f28, horns: false, tuskBig: true, eye: 0xff4d4d, weapon: 'mace' },
+  legend: { skin: 0x4a7f3a, armor: 0x241f28, armor2: 0x4a3f48, helm: 0x14101a, horns: true, tuskBig: true, eye: 0xffd700, weapon: 'spear' },
+} satisfies Record<string, TrooperSkin>
+
 interface ChampionSkin {
   robe: number
   robeHi: number
@@ -98,11 +118,11 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     CHAMPION_SKINS.forEach((skin, i) => this.bake(`hero${i}`, 64, 64, (g) => this.drawChampion(g, skin)))
     RIVAL_SKINS.forEach((skin, i) => this.bake(`rivalHero${i}`, 56, 64, (g) => this.drawWarlord(g, skin)))
-    this.bake('enemyEasy', 48, 48, (g) => this.drawSlime(g))
-    this.bake('enemyMed', 56, 56, (g) => this.drawBeast(g))
-    this.bake('enemyHard', 56, 56, (g) => this.drawBrute(g))
-    this.bake('enemyElite', 56, 56, (g) => this.drawDemon(g))
-    this.bake('enemyLegend', 64, 64, (g) => this.drawLegend(g))
+    this.bake('enemyEasy', 48, 48, (g) => this.drawTrooper(g, 48, TROOPS.easy))
+    this.bake('enemyMed', 56, 56, (g) => this.drawTrooper(g, 56, TROOPS.med))
+    this.bake('enemyHard', 56, 56, (g) => this.drawTrooper(g, 56, TROOPS.hard))
+    this.bake('enemyElite', 60, 60, (g) => this.drawTrooper(g, 60, TROOPS.elite))
+    this.bake('enemyLegend', 66, 66, (g) => this.drawTrooper(g, 66, TROOPS.legend))
     this.bake('boss', 76, 76, (g) => this.drawBoss(g))
     this.bake('heal', 30, 30, (g) => this.drawHeal(g))
     this.bake('wMace', 28, 56, (g) => this.drawMace(g))
@@ -257,6 +277,87 @@ export class BootScene extends Phaser.Scene {
   }
 
   /** BOSS — a huge horned demon-dragon head (box 76, centered 38). */
+  /** A front-facing humanoid troop (orc/soldier) scaled to box size S. */
+  private drawTrooper(g: Phaser.GameObjects.Graphics, S: number, p: TrooperSkin): void {
+    g.scaleCanvas(S / 56, S / 56)
+    // legs + boots
+    g.fillStyle(p.armor2, 1)
+    g.fillRect(20, 45, 6, 10)
+    g.fillRect(30, 45, 6, 10)
+    g.fillStyle(0x2a2620, 1)
+    g.fillRect(20, 52, 6, 3)
+    g.fillRect(30, 52, 6, 3)
+    // weapon (behind the arm)
+    this.drawTrooperWeapon(g, p.weapon)
+    // torso
+    g.fillStyle(p.armor, 1)
+    g.fillRoundedRect(15, 27, 26, 21, 5)
+    g.fillStyle(p.armor2, 1)
+    g.fillRect(25, 27, 6, 21)
+    g.fillCircle(16, 29, 5)
+    g.fillCircle(40, 29, 5)
+    // arms (fists)
+    g.fillStyle(p.skin, 1)
+    g.fillCircle(13, 34, 3.5)
+    g.fillCircle(43, 34, 3.5)
+    // head + pointy ears
+    g.fillStyle(p.skin, 1)
+    g.fillEllipse(28, 16, 22, 20)
+    g.fillTriangle(9, 16, 18, 11, 18, 21)
+    g.fillTriangle(47, 16, 38, 11, 38, 21)
+    // angry brow
+    g.fillStyle(0x203818, 1)
+    g.fillTriangle(19, 12, 27, 17, 27, 12)
+    g.fillTriangle(37, 12, 29, 17, 29, 12)
+    // eyes
+    g.fillStyle(p.eye, 1)
+    g.fillEllipse(23, 16, 5, 4)
+    g.fillEllipse(33, 16, 5, 4)
+    // tusks
+    g.fillStyle(0xf4f0e0, 1)
+    const th = p.tuskBig ? 6 : 4
+    g.fillTriangle(24, 22, 27, 22, 25.5, 22 - th)
+    g.fillTriangle(29, 22, 32, 22, 30.5, 22 - th)
+    // helmet + horns
+    if (p.helm) {
+      g.fillStyle(p.helm, 1)
+      g.fillEllipse(28, 9, 26, 12)
+      g.fillRect(15, 8, 26, 3)
+    }
+    if (p.horns) {
+      g.fillStyle(0xe8e2d0, 1)
+      g.fillTriangle(14, 8, 5, 0, 20, 7)
+      g.fillTriangle(42, 8, 51, 0, 36, 7)
+    }
+  }
+
+  private drawTrooperWeapon(g: Phaser.GameObjects.Graphics, type: string): void {
+    switch (type) {
+      case 'dagger':
+        g.fillStyle(0xcdd3e0, 1); g.fillRect(43, 24, 3, 10); g.fillTriangle(44.5, 20, 42, 24, 47, 24)
+        g.fillStyle(0xffce5a, 1); g.fillRect(41, 34, 7, 2)
+        break
+      case 'sword':
+        g.fillStyle(0xcdd3e0, 1); g.fillRect(43, 12, 3, 22); g.fillTriangle(44.5, 8, 41, 12, 48, 12)
+        g.fillStyle(0xffce5a, 1); g.fillRect(40, 34, 8, 2)
+        break
+      case 'axe':
+        g.fillStyle(0x5c3b22, 1); g.fillRect(43, 12, 3, 30)
+        g.fillStyle(0x9198a6, 1); g.fillPoints(this.pts([46, 14, 54, 18, 54, 27, 46, 24]), true)
+        break
+      case 'mace':
+        g.fillStyle(0x5c3b22, 1); g.fillRect(43, 20, 3, 22)
+        g.fillStyle(0x9198a6, 1); g.fillCircle(44.5, 16, 6)
+        g.fillStyle(0x6f7787, 1)
+        for (const a of [0, 1.05, 2.1, 3.14, 4.19, 5.24]) g.fillCircle(44.5 + Math.cos(a) * 6, 16 + Math.sin(a) * 6, 1.6)
+        break
+      case 'spear':
+        g.fillStyle(0x5c3b22, 1); g.fillRect(43, 10, 3, 34)
+        g.fillStyle(0xcdd3e0, 1); g.fillTriangle(44.5, 2, 41, 12, 48, 12)
+        break
+    }
+  }
+
   private drawBoss(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0x1a0d0d, 1) // horns
     g.fillTriangle(18, 24, 2, 0, 28, 20)

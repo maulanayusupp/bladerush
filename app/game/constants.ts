@@ -29,6 +29,7 @@ export const PLAYER = {
   size: 44, // texture footprint in px
   speed: 360, // px/s, free 2D movement toward the pointer
   maxHp: 100,
+  invulnMs: 750, // brief immunity after taking contact damage
   colorHex: 0x7c4dff,
 } as const
 
@@ -41,7 +42,7 @@ export const HERO = {
 export const SWORD = {
   orbitRadius: 84, // distance of the ring from the hero
   poolSize: 60, // must equal POWER_CURVE.maxSwordCount
-  hitCooldownMs: 250, // per-enemy cooldown so a sweep doesn't drain HP each frame
+  hitCooldownMs: 150, // per-enemy cooldown so a sweep doesn't drain HP each frame
 } as const
 
 /** Soft glow disc baked in BootScene; one tinted copy per unlocked layer. */
@@ -216,6 +217,20 @@ export const UPGRADE_TUNE = {
   lifestealPer: 1,
 } as const
 
+/**
+ * Meta-progression: coins earned per run buy permanent upgrades in the menu
+ * shop (persisted). Costs grow geometrically. name/text via i18n `meta.<id>`.
+ */
+export const META = {
+  startPower: { baseCost: 50, per: 10, max: 20, icon: '⚔️' },
+  maxHp: { baseCost: 40, per: 20, max: 20, icon: '❤️' },
+  damage: { baseCost: 60, per: 0.1, max: 20, icon: '🗡️' },
+  coin: { baseCost: 80, per: 0.15, max: 15, icon: '💰' },
+} as const
+export const META_IDS = ['startPower', 'maxHp', 'damage', 'coin'] as const
+export const META_COST_GROWTH = 1.6
+export const COINS_PER_SCORE = 0.01
+
 /** Rapid kills build a combo that multiplies SCORE (not power). */
 export const COMBO = {
   windowMs: 2600, // time to keep the chain alive
@@ -237,7 +252,8 @@ export const SPAWN = {
   enemyRampPerSec: 7,
   gateIntervalMs: 4000,
   // Scale enemies with the player's power so they stay a threat and their
-  // sword reward keeps growing at high levels (balance).
-  enemyHpPerPower: 0.03,
+  // sword reward keeps growing at high levels (balance). HP scales gently so
+  // the ring still shreds them before they reach the hero.
+  enemyHpPerPower: 0.01,
   enemyRewardPerPower: 0.02,
 } as const

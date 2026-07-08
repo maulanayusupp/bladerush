@@ -36,6 +36,18 @@
     "vigor": { "name": "Bugar", "text": "+20 HP maks (dan pulih)" },
     "lifesteal": { "name": "Serap Nyawa", "text": "Pulih 1 HP tiap bunuh" }
   },
+  "shop": {
+    "title": "Toko Upgrade",
+    "open": "Toko",
+    "close": "Tutup",
+    "coins": "koin"
+  },
+  "meta": {
+    "startPower": { "name": "Pemanasan", "text": "Mulai run dengan pedang lebih banyak" },
+    "maxHp": { "name": "Ketangguhan", "text": "+20 HP maks awal" },
+    "damage": { "name": "Kekuatan", "text": "+10% damage pedang dasar" },
+    "coin": { "name": "Keberuntungan", "text": "+15% koin didapat" }
+  },
   "gameOver": {
     "title": "Kalah",
     "score": "Skor",

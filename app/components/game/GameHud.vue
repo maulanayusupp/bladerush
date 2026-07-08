@@ -15,6 +15,7 @@ const hp = ref(0)
 const maxHp = ref(1)
 const isOver = ref(false)
 const finalScore = ref(0)
+const coinsEarned = ref(0)
 const muted = ref(audioService.muted)
 
 const bossActive = ref(false)
@@ -75,9 +76,10 @@ onMounted(() => {
       hp.value = current
       maxHp.value = max
     }),
-    gameEventBus.on('game:over', ({ score: value }) => {
+    gameEventBus.on('game:over', ({ score: value, coins }) => {
       isOver.value = true
       finalScore.value = value
+      coinsEarned.value = coins
       bossActive.value = false
       store.recordScore(value)
     }),
@@ -210,6 +212,7 @@ function restart(): void {
             <p class="overlay__stat-value">{{ formatCompact(store.highScore) }}</p>
           </div>
         </div>
+        <p class="overlay__coins">💰 +{{ formatCompact(coinsEarned) }} {{ $t('shop.coins') }}</p>
         <BaseButton variant="primary" block @click="restart">{{ $t('gameOver.playAgain') }}</BaseButton>
         <NuxtLink to="/" class="btn btn--block">{{ $t('gameOver.menu') }}</NuxtLink>
       </div>

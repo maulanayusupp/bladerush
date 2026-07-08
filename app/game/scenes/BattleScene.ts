@@ -10,8 +10,10 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE } from '../constants'
+import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
+import { metaService } from '~/services/MetaService'
+import { COINS_PER_SCORE } from '../constants'
 import { Boss } from '../entities/Boss'
 import { Enemy } from '../entities/Enemy'
 import { Gate } from '../entities/Gate'
@@ -54,6 +56,8 @@ export class BattleScene extends Phaser.Scene {
   private xp = 0
   private level = 1
   private leveling = false
+  private playerInvulnUntil = 0
+  private metaDamageMul = 1
   private popupPool: Phaser.GameObjects.Text[] = []
 
   private elapsedMs = 0
@@ -117,6 +121,11 @@ export class BattleScene extends Phaser.Scene {
     this.xp = 0
     this.level = 1
     this.leveling = false
+    this.playerInvulnUntil = 0
+    // Apply persistent meta-upgrades bought in the shop.
+    metaService.load()
+    this.metaDamageMul = metaService.damageMul
+    if (metaService.startPower > 0) this.power.addEnemyValue(metaService.startPower)
     this.physics.resume()
 
     this.physics.world.setBounds(0, 0, this.worldW, this.worldH)
@@ -169,6 +178,7 @@ export class BattleScene extends Phaser.Scene {
     )
 
     this.player = new Player(this, this.worldW / 2, this.worldH / 2)
+    if (metaService.bonusMaxHp > 0) this.player.addMaxHp(metaService.bonusMaxHp)
 
     this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'enemyA', maxSize: ENEMY.poolSize })
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
@@ -621,7 +631,7 @@ export class BattleScene extends Phaser.Scene {
 
     // Fury skill + upgrades: faster spin, harder hits, bigger blades.
     const fury = this.elapsedMs < this.furyUntil
-    this.swordDamageMul = (fury ? SKILLS.fury.damageMul : 1) * this.upgrades.damageMul
+    this.swordDamageMul = (fury ? SKILLS.fury.damageMul : 1) * this.upgrades.damageMul * this.metaDamageMul
     const orbitSpeed = stats.orbitSpeed * (fury ? SKILLS.fury.orbitMul : 1) * this.upgrades.orbitMul
     const radius = SWORD.orbitRadius * (fury ? SKILLS.fury.radiusMul : 1)
     const baseScale = fury ? 1.3 : 1
@@ -883,6 +893,8 @@ export class BattleScene extends Phaser.Scene {
     const enemy = enemyObj as Enemy
     if (!enemy.active) return
     enemy.deactivate()
+    if (this.elapsedMs < this.playerInvulnUntil) return
+    this.playerInvulnUntil = this.elapsedMs + PLAYER.invulnMs
     const dead = this.player.takeDamage(ENEMY.contactDamage)
     this.emitHp()
     audioService.hurt()
@@ -975,7 +987,9 @@ export class BattleScene extends Phaser.Scene {
   private gameOver(): void {
     this.isOver = true
     this.physics.pause()
-    gameEventBus.emit('game:over', { score: this.scorer.score, power: this.power.power })
+    const coins = Math.floor(this.scorer.score * COINS_PER_SCORE * metaService.coinMul)
+    metaService.addCoins(coins)
+    gameEventBus.emit('game:over', { score: this.scorer.score, power: this.power.power, coins })
   }
 
   // ---- Event emitters ------------------------------------------------------

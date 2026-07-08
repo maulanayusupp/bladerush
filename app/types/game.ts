@@ -46,7 +46,7 @@ export interface GameEventMap {
   'power:changed': { power: number }
   'player:hp': PlayerHealth
   'score:changed': { score: number }
-  'game:over': { score: number; power: number }
+  'game:over': { score: number; power: number; coins: number }
   'game:restart': undefined
   'skill:use': { id: string }
   'skill:started': { id: string; cooldownMs: number; durationMs: number }
