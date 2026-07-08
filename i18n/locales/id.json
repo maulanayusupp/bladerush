@@ -12,6 +12,7 @@
     }
   },
   "hud": {
+    "level": "Lvl",
     "power": "Power",
     "score": "Skor",
     "mute": "Bisukan suara",
@@ -22,6 +23,18 @@
       "fury": "Badai Bilah",
       "nova": "Gelombang Kejut"
     }
+  },
+  "levelup": {
+    "title": "Naik Level! Pilih upgrade"
+  },
+  "upgrades": {
+    "damage": { "name": "Bilah Tajam", "text": "+20% damage pedang" },
+    "swords": { "name": "Pedang Ekstra", "text": "+2 pedang di ring" },
+    "speed": { "name": "Angin Puyuh", "text": "+15% kecepatan putar" },
+    "haste": { "name": "Gesit", "text": "Pedang memukul lebih sering" },
+    "greed": { "name": "Serakah", "text": "+15% reward pedang" },
+    "vigor": { "name": "Bugar", "text": "+20 HP maks (dan pulih)" },
+    "lifesteal": { "name": "Serap Nyawa", "text": "Pulih 1 HP tiap bunuh" }
   },
   "gameOver": {
     "title": "Kalah",

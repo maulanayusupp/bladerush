@@ -55,4 +55,7 @@ export interface GameEventMap {
   'boss:hp': { current: number; max: number }
   'boss:end': undefined
   'combo:changed': { count: number; mult: number }
+  'xp:changed': { level: number; xp: number; next: number }
+  'levelup:offer': { ids: string[] }
+  'levelup:pick': { id: string }
 }

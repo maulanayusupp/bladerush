@@ -12,6 +12,7 @@
     }
   },
   "hud": {
+    "level": "Lvl",
     "power": "Power",
     "score": "Score",
     "mute": "Mute sound",
@@ -22,6 +23,18 @@
       "fury": "Blade Fury",
       "nova": "Shockwave"
     }
+  },
+  "levelup": {
+    "title": "Level Up! Choose an upgrade"
+  },
+  "upgrades": {
+    "damage": { "name": "Sharper Blades", "text": "+20% sword damage" },
+    "swords": { "name": "Extra Blade", "text": "+2 swords to your ring" },
+    "speed": { "name": "Whirlwind", "text": "+15% ring spin speed" },
+    "haste": { "name": "Haste", "text": "Blades strike more often" },
+    "greed": { "name": "Greed", "text": "+15% sword reward" },
+    "vigor": { "name": "Vigor", "text": "+20 max HP (and heal)" },
+    "lifesteal": { "name": "Lifesteal", "text": "Heal 1 HP per kill" }
   },
   "gameOver": {
     "title": "Defeated",

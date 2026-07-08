@@ -53,6 +53,58 @@
     pointer-events: auto; // re-enable clicks (parent .hud disables them)
   }
 
+  &__chips {
+    display: flex;
+    gap: $space-2;
+    flex-wrap: wrap;
+  }
+
+  &__chip {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: $space-1 $space-3;
+    border-radius: $radius-md;
+    background-color: rgba($color-surface, 0.72);
+    backdrop-filter: blur(4px);
+    min-width: 62px;
+
+    &--level {
+      background-color: rgba($color-primary, 0.3);
+    }
+  }
+
+  &__chip-label {
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-text-muted;
+  }
+
+  &__chip-value {
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+
+    &--power { color: $color-primary; }
+    &--score { color: $color-warning; }
+  }
+
+  &__xp {
+    margin-top: $space-2;
+    height: 6px;
+    border-radius: $radius-pill;
+    background-color: rgba(#000, 0.4);
+    overflow: hidden;
+  }
+
+  &__xp-fill {
+    height: 100%;
+    width: calc(var(--xp-ratio, 0) * 100%);
+    background: linear-gradient(90deg, $color-primary, $color-warning);
+    transition: width $transition-base;
+  }
+
   &__skills {
     position: absolute;
     left: 50%;

@@ -186,6 +186,36 @@ export const BOSS = {
   gateValues: [3, 3, 5, 5, 10] as const,
 } as const
 
+/** XP + leveling: kills grant XP; each level offers a choice of 3 upgrades. */
+export const LEVEL = {
+  firstXp: 5,
+  perLevel: 4,
+  xpPerKill: 1,
+  xpPerBoss: 8,
+} as const
+
+/** Pickable upgrades (icon here; name/description via i18n `upgrades.<id>`). */
+export const UPGRADES = [
+  { id: 'damage', icon: '🗡️' },
+  { id: 'swords', icon: '➕' },
+  { id: 'speed', icon: '🌀' },
+  { id: 'haste', icon: '⚡' },
+  { id: 'greed', icon: '💰' },
+  { id: 'vigor', icon: '❤️' },
+  { id: 'lifesteal', icon: '🩸' },
+] as const
+
+export const UPGRADE_TUNE = {
+  damageMulPer: 0.2,
+  extraSwordsPer: 2,
+  orbitMulPer: 0.15,
+  cooldownPer: 0.1,
+  cooldownFloor: 0.4,
+  rewardMulPer: 0.15,
+  maxHpPer: 20,
+  lifestealPer: 1,
+} as const
+
 /** Rapid kills build a combo that multiplies SCORE (not power). */
 export const COMBO = {
   windowMs: 2600, // time to keep the chain alive

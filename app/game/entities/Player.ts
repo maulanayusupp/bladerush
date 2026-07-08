@@ -9,7 +9,7 @@ export interface Bounds {
 
 /** The hero. Freely follows a 2D target set by pointer input. */
 export class Player extends Phaser.Physics.Arcade.Sprite {
-  readonly maxHp: number = PLAYER.maxHp
+  maxHp: number = PLAYER.maxHp
   hp: number = PLAYER.maxHp
   private targetX: number
   private targetY: number
@@ -56,5 +56,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   heal(amount: number): void {
     this.hp = Math.min(this.maxHp, this.hp + amount)
+  }
+
+  /** Vigor upgrade: raise max HP and heal by the same amount. */
+  addMaxHp(amount: number): void {
+    this.maxHp += amount
+    this.hp += amount
   }
 }

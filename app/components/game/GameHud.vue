@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import BaseButton from '~/components/ui/BaseButton.vue'
+import LevelUpOverlay from '~/components/game/LevelUpOverlay.vue'
 import { gameEventBus } from '~/services/EventBus'
 import { audioService } from '~/services/AudioService'
 import { formatCompact } from '~/helpers/format.helper'
@@ -22,6 +23,10 @@ const bossMax = ref(1)
 const bossRatio = computed(() => (bossMax.value > 0 ? bossHp.value / bossMax.value : 0))
 const comboCount = ref(0)
 const comboMult = ref(1)
+const level = ref(1)
+const xp = ref(0)
+const xpNext = ref(1)
+const xpRatio = computed(() => (xpNext.value > 0 ? xp.value / xpNext.value : 0))
 
 function toggleMute(): void {
   audioService.unlock()
@@ -90,6 +95,11 @@ onMounted(() => {
       comboCount.value = count
       comboMult.value = mult
     }),
+    gameEventBus.on('xp:changed', ({ level: lv, xp: cur, next }) => {
+      level.value = lv
+      xp.value = cur
+      xpNext.value = next
+    }),
     gameEventBus.on('skill:started', ({ id, cooldownMs }) => {
       cooldowns[id] = { end: Date.now() + cooldownMs, total: cooldownMs }
     }),
@@ -116,13 +126,19 @@ function restart(): void {
 <template>
   <div class="hud">
     <div class="hud__top">
-      <div class="hud__stat">
-        <span class="hud__stat-label">{{ $t('hud.power') }}</span>
-        <span class="hud__stat-value hud__stat-value--power">{{ formatCompact(power) }}</span>
-      </div>
-      <div class="hud__stat">
-        <span class="hud__stat-label">{{ $t('hud.score') }}</span>
-        <span class="hud__stat-value hud__stat-value--score">{{ formatCompact(score) }}</span>
+      <div class="hud__chips">
+        <div class="hud__chip hud__chip--level">
+          <span class="hud__chip-label">{{ $t('hud.level') }}</span>
+          <b class="hud__chip-value">{{ level }}</b>
+        </div>
+        <div class="hud__chip">
+          <span class="hud__chip-label">{{ $t('hud.power') }}</span>
+          <b class="hud__chip-value hud__chip-value--power">{{ formatCompact(power) }}</b>
+        </div>
+        <div class="hud__chip">
+          <span class="hud__chip-label">{{ $t('hud.score') }}</span>
+          <b class="hud__chip-value hud__chip-value--score">{{ formatCompact(score) }}</b>
+        </div>
       </div>
 
       <button
@@ -133,6 +149,10 @@ function restart(): void {
       >
         {{ muted ? '🔇' : '🔊' }}
       </button>
+    </div>
+
+    <div class="hud__xp">
+      <div class="hud__xp-fill" :style="{ '--xp-ratio': xpRatio }" />
     </div>
 
     <div v-if="bossActive" class="hud__boss">
@@ -174,6 +194,8 @@ function restart(): void {
         <span v-if="!skillReady(skill.id)" class="hud__skill-cd">{{ skillSeconds(skill.id) }}</span>
       </button>
     </div>
+
+    <LevelUpOverlay />
 
     <div v-if="isOver" class="overlay">
       <div class="overlay__panel">

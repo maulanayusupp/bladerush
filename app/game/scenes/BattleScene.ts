@@ -10,7 +10,8 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, MAPS, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
+import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE } from '../constants'
+import { UpgradeService } from '~/services/UpgradeService'
 import { Boss } from '../entities/Boss'
 import { Enemy } from '../entities/Enemy'
 import { Gate } from '../entities/Gate'
@@ -49,6 +50,11 @@ export class BattleScene extends Phaser.Scene {
   private readonly power = new PowerService()
   private readonly spawner = new SpawnService()
   private readonly scorer = new ScoreService()
+  private readonly upgrades = new UpgradeService()
+  private xp = 0
+  private level = 1
+  private leveling = false
+  private popupPool: Phaser.GameObjects.Text[] = []
 
   private elapsedMs = 0
   private orbitAngle = 0
@@ -107,6 +113,10 @@ export class BattleScene extends Phaser.Scene {
     this.skillReadyAt.nova = 0
     this.power.reset()
     this.scorer.reset()
+    this.upgrades.reset()
+    this.xp = 0
+    this.level = 1
+    this.leveling = false
     this.physics.resume()
 
     this.physics.world.setBounds(0, 0, this.worldW, this.worldH)
@@ -179,6 +189,17 @@ export class BattleScene extends Phaser.Scene {
       .setVisible(false)
     this.bossLabel.setStroke('#3a0808', 5)
 
+    // Pooled floating reward popups shown on kills.
+    this.popupPool = Array.from({ length: 24 }, () =>
+      this.add
+        .text(0, 0, '', { fontFamily: 'Segoe UI, sans-serif', fontSize: '18px', fontStyle: 'bold', color: '#ffe14d' })
+        .setOrigin(0.5)
+        .setDepth(15)
+        .setStroke('#2a1e00', 4)
+        .setActive(false)
+        .setVisible(false),
+    )
+
     // Reusable spark burst for clashes / deaths.
     this.sparks = this.add
       .particles(0, 0, 'spark', {
@@ -202,6 +223,7 @@ export class BattleScene extends Phaser.Scene {
     this.scale.on('resize', this.onResize)
     gameEventBus.on('game:restart', this.onRestart)
     gameEventBus.on('skill:use', this.onSkill)
+    gameEventBus.on('levelup:pick', this.onLevelPick)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown)
 
     this.emitPower()
@@ -211,6 +233,7 @@ export class BattleScene extends Phaser.Scene {
     gameEventBus.emit('skill:reset', undefined)
     gameEventBus.emit('boss:end', undefined)
     this.emitCombo()
+    this.emitXp()
   }
 
   override update(_time: number, deltaMs: number): void {
@@ -413,7 +436,8 @@ export class BattleScene extends Phaser.Scene {
     this.boss.deactivate()
     this.bossActive = false
     this.hideBossExtras()
-    this.registerKill(reward)
+    this.xp += LEVEL.xpPerBoss
+    this.registerKill(reward, x, y)
     this.scorer.add(reward * BOSS.scoreMul)
     this.emitScore()
     this.playClashFx(x, y, 0xffd700)
@@ -426,15 +450,95 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- Combo --------------------------------------------------------------
 
-  /** Register a kill: power reward is raw; score is combo-multiplied. */
-  private registerKill(reward: number): void {
+  /** Register a kill: greed-boosted power reward, combo-multiplied score, XP,
+   *  lifesteal, and a floating popup. */
+  private registerKill(reward: number, x = -1, y = -1): void {
+    const gained = Math.max(1, Math.round(reward * this.upgrades.rewardMul))
     this.comboCount++
     this.comboUntil = this.elapsedMs + COMBO.windowMs
-    this.power.addEnemyValue(reward)
-    this.scorer.add(Math.round(reward * this.comboMult()))
+    this.power.addEnemyValue(gained)
+    this.scorer.add(Math.round(gained * this.comboMult()))
     this.emitPower()
     this.emitScore()
     this.emitCombo()
+
+    if (this.upgrades.lifesteal > 0) {
+      this.player.heal(this.upgrades.lifesteal)
+      this.emitHp()
+    }
+    if (x >= 0) this.spawnPopup(x, y, `+${formatCompact(gained)}`)
+
+    this.xp += LEVEL.xpPerKill
+    this.checkLevelUp()
+  }
+
+  private checkLevelUp(): void {
+    if (this.leveling) return
+    const next = LEVEL.firstXp + this.level * LEVEL.perLevel
+    if (this.xp < next) return
+    this.xp -= next
+    this.level++
+    this.leveling = true
+    this.emitXp()
+    gameEventBus.emit('levelup:offer', { ids: this.upgrades.roll(3) })
+    this.scene.pause()
+  }
+
+  private onLevelPick = ({ id }: { id: string }): void => {
+    if (!this.leveling) return
+    this.upgrades.apply(id)
+    if (id === 'vigor') {
+      this.player.addMaxHp(UPGRADE_TUNE.maxHpPer)
+      this.emitHp()
+    }
+    this.leveling = false
+    this.scene.resume()
+    this.showLevelUpPop()
+    this.emitXp()
+  }
+
+  private emitXp(): void {
+    gameEventBus.emit('xp:changed', {
+      level: this.level,
+      xp: this.xp,
+      next: LEVEL.firstXp + this.level * LEVEL.perLevel,
+    })
+  }
+
+  private showLevelUpPop(): void {
+    const text = this.add
+      .text(this.player.x, this.player.y - 44, 'LEVEL UP!', {
+        fontFamily: 'Segoe UI, sans-serif',
+        fontSize: '30px',
+        fontStyle: 'bold',
+        color: '#ffe14d',
+      })
+      .setOrigin(0.5)
+      .setDepth(21)
+      .setStroke('#2a1e00', 5)
+    this.tweens.add({
+      targets: text,
+      y: text.y - 40,
+      alpha: { from: 1, to: 0 },
+      scale: { from: 1.3, to: 1 },
+      duration: 900,
+      ease: 'Cubic.Out',
+      onComplete: () => text.destroy(),
+    })
+  }
+
+  private spawnPopup(x: number, y: number, label: string): void {
+    const text = this.popupPool.find((t) => !t.active)
+    if (!text) return
+    text.setText(label).setPosition(x, y - 10).setActive(true).setVisible(true).setAlpha(1)
+    this.tweens.add({
+      targets: text,
+      y: y - 46,
+      alpha: { from: 1, to: 0 },
+      duration: 620,
+      ease: 'Cubic.Out',
+      onComplete: () => text.setActive(false).setVisible(false),
+    })
   }
 
   private comboMult(): number {
@@ -509,13 +613,16 @@ export class BattleScene extends Phaser.Scene {
   /** Position the orbiting sword ring; count/spin/colors come from power. */
   private updateSwords(deltaMs: number): void {
     const stats = this.power.stats
-    const count = this.power.hasWeapon ? stats.swordCount : 0
     const colors = stats.layerColors
+    // Upgrades add flat swords (capped to the pool) on top of power's count.
+    const count = this.power.hasWeapon
+      ? Math.min(this.swordPool.length, stats.swordCount + this.upgrades.extraSwords)
+      : 0
 
-    // Fury skill: faster spin, wider ring, harder hits, bigger blades.
+    // Fury skill + upgrades: faster spin, harder hits, bigger blades.
     const fury = this.elapsedMs < this.furyUntil
-    this.swordDamageMul = fury ? SKILLS.fury.damageMul : 1
-    const orbitSpeed = stats.orbitSpeed * (fury ? SKILLS.fury.orbitMul : 1)
+    this.swordDamageMul = (fury ? SKILLS.fury.damageMul : 1) * this.upgrades.damageMul
+    const orbitSpeed = stats.orbitSpeed * (fury ? SKILLS.fury.orbitMul : 1) * this.upgrades.orbitMul
     const radius = SWORD.orbitRadius * (fury ? SKILLS.fury.radiusMul : 1)
     const baseScale = fury ? 1.3 : 1
     this.orbitAngle = (this.orbitAngle + orbitSpeed * (deltaMs / 1000)) % TAU
@@ -694,16 +801,18 @@ export class BattleScene extends Phaser.Scene {
     const enemy = enemyObj as Enemy
     if (!enemy.active) return
     // Per-enemy cooldown so a sweeping blade doesn't drain HP every frame.
-    if (this.elapsedMs - enemy.lastHitAt < SWORD.hitCooldownMs) return
+    if (this.elapsedMs - enemy.lastHitAt < SWORD.hitCooldownMs * this.upgrades.cooldownMul) return
     enemy.lastHitAt = this.elapsedMs
     this.playHitSound()
 
     if (enemy.takeDamage(Math.round(this.power.stats.damage * this.swordDamageMul))) {
       const reward = enemy.value
-      this.killFx(enemy.x, enemy.y)
+      const ex = enemy.x
+      const ey = enemy.y
+      this.killFx(ex, ey)
       audioService.death()
       enemy.deactivate()
-      this.registerKill(reward)
+      this.registerKill(reward, ex, ey)
     } else {
       // Non-lethal hit: quick spark + white impact flash.
       this.sparks.explode(3, enemy.x, enemy.y)
@@ -809,6 +918,7 @@ export class BattleScene extends Phaser.Scene {
     this.scale.off('resize', this.onResize)
     gameEventBus.off('game:restart', this.onRestart)
     gameEventBus.off('skill:use', this.onSkill)
+    gameEventBus.off('levelup:pick', this.onLevelPick)
   }
 
   // ---- Skills -------------------------------------------------------------
@@ -852,9 +962,12 @@ export class BattleScene extends Phaser.Scene {
       const enemy = obj as Enemy
       if (!enemy.active) continue
       if (enemy.takeDamage(SKILLS.nova.damage)) {
-        this.killFx(enemy.x, enemy.y)
+        const ex = enemy.x
+        const ey = enemy.y
+        const val = enemy.value
+        this.killFx(ex, ey)
         enemy.deactivate()
-        this.registerKill(enemy.value)
+        this.registerKill(val, ex, ey)
       }
     }
   }
