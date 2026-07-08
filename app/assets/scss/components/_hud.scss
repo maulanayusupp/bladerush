@@ -1,0 +1,133 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.hud {
+  position: absolute;
+  inset: 0;
+  z-index: $z-hud;
+  padding: $space-4;
+  pointer-events: none; // clicks pass through to the canvas by default
+
+  &__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: $space-3;
+  }
+
+  &__stat {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    padding: $space-2 $space-4;
+    border-radius: $radius-md;
+    background-color: rgba($color-surface, 0.72);
+    backdrop-filter: blur(4px);
+    min-width: 88px;
+  }
+
+  &__stat-label {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__stat-value {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+
+    &--power { color: $color-primary; }
+    &--score { color: $color-warning; }
+  }
+
+  &__mute {
+    @include button-reset;
+    @include flex-center;
+    width: 44px;
+    height: 44px;
+    font-size: $font-size-lg;
+    border-radius: $radius-md;
+    background-color: rgba($color-surface, 0.72);
+    backdrop-filter: blur(4px);
+    pointer-events: auto; // re-enable clicks (parent .hud disables them)
+  }
+
+  &__skills {
+    position: absolute;
+    left: 50%;
+    bottom: $space-6;
+    transform: translateX(-50%);
+    display: flex;
+    gap: $space-4;
+    pointer-events: auto;
+  }
+
+  &__skill {
+    @include button-reset;
+    @include flex-center;
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 1.7rem;
+    color: $color-text;
+    background: rgba($color-surface, 0.8);
+    border: 2px solid rgba($color-primary, 0.6);
+    box-shadow: 0 6px 18px rgba(#000, 0.4);
+    overflow: hidden;
+    transition: transform $transition-fast, border-color $transition-base;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+
+    &--cooling {
+      border-color: rgba(#ffffff, 0.15);
+    }
+
+    // Radial "pie" that empties as the cooldown elapses.
+    &--cooling::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      border-radius: 50%;
+      background: conic-gradient(rgba(#000, 0.64) calc(var(--cd, 0) * 360deg), transparent 0);
+    }
+  }
+
+  &__skill-cd {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+  }
+
+  &__health {
+    height: 10px;
+    border-radius: $radius-pill;
+    background-color: rgba(#000, 0.4);
+    overflow: hidden;
+  }
+
+  &__health-fill {
+    height: 100%;
+    // `--hp-ratio` (0..1) is supplied as a data value by the component; all
+    // presentation stays here in SCSS.
+    width: calc(var(--hp-ratio, 1) * 100%);
+    background-color: $color-success;
+    transition: width $transition-base, background-color $transition-base;
+
+    &--low { background-color: $color-danger; }
+  }
+}

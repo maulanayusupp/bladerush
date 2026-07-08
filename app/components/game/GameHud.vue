@@ -1,0 +1,159 @@
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import BaseButton from '~/components/ui/BaseButton.vue'
+import { gameEventBus } from '~/services/EventBus'
+import { audioService } from '~/services/AudioService'
+import { formatCompact } from '~/helpers/format.helper'
+import { useGameStore } from '~/stores/useGameStore'
+
+const store = useGameStore()
+
+const power = ref(0)
+const score = ref(0)
+const hp = ref(0)
+const maxHp = ref(1)
+const isOver = ref(false)
+const finalScore = ref(0)
+const muted = ref(audioService.muted)
+
+function toggleMute(): void {
+  audioService.unlock()
+  muted.value = audioService.toggleMuted()
+}
+
+const hpRatio = computed(() => (maxHp.value > 0 ? hp.value / maxHp.value : 0))
+const isLowHp = computed(() => hpRatio.value < 0.3)
+
+// Active skills + their live cooldowns.
+const skills = [
+  { id: 'fury', icon: '🌀' },
+  { id: 'nova', icon: '💥' },
+]
+const now = ref(0)
+const cooldowns = reactive<Record<string, { end: number; total: number }>>({})
+let cooldownTimer: ReturnType<typeof setInterval> | undefined
+
+function skillRemaining(id: string): number {
+  const c = cooldowns[id]
+  return c ? Math.max(0, c.end - now.value) : 0
+}
+function skillReady(id: string): boolean {
+  return skillRemaining(id) <= 0
+}
+function skillFraction(id: string): number {
+  const c = cooldowns[id]
+  return c ? Math.max(0, Math.min(1, (c.end - now.value) / c.total)) : 0
+}
+function skillSeconds(id: string): number {
+  return Math.ceil(skillRemaining(id) / 1000)
+}
+function useSkill(id: string): void {
+  if (!skillReady(id)) return
+  audioService.unlock()
+  gameEventBus.emit('skill:use', { id })
+}
+
+const unsubscribers: Array<() => void> = []
+
+onMounted(() => {
+  unsubscribers.push(
+    gameEventBus.on('power:changed', ({ power: value }) => (power.value = value)),
+    gameEventBus.on('score:changed', ({ score: value }) => (score.value = value)),
+    gameEventBus.on('player:hp', ({ current, max }) => {
+      hp.value = current
+      maxHp.value = max
+    }),
+    gameEventBus.on('game:over', ({ score: value }) => {
+      isOver.value = true
+      finalScore.value = value
+      store.recordScore(value)
+    }),
+    gameEventBus.on('skill:started', ({ id, cooldownMs }) => {
+      cooldowns[id] = { end: Date.now() + cooldownMs, total: cooldownMs }
+    }),
+    gameEventBus.on('skill:reset', () => {
+      for (const key of Object.keys(cooldowns)) delete cooldowns[key]
+    }),
+  )
+  cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
+})
+
+onUnmounted(() => {
+  unsubscribers.forEach((off) => off())
+  if (cooldownTimer) clearInterval(cooldownTimer)
+})
+
+function restart(): void {
+  isOver.value = false
+  power.value = 0
+  score.value = 0
+  gameEventBus.emit('game:restart', undefined)
+}
+</script>
+
+<template>
+  <div class="hud">
+    <div class="hud__top">
+      <div class="hud__stat">
+        <span class="hud__stat-label">{{ $t('hud.power') }}</span>
+        <span class="hud__stat-value hud__stat-value--power">{{ formatCompact(power) }}</span>
+      </div>
+      <div class="hud__stat">
+        <span class="hud__stat-label">{{ $t('hud.score') }}</span>
+        <span class="hud__stat-value hud__stat-value--score">{{ formatCompact(score) }}</span>
+      </div>
+
+      <button
+        class="hud__mute"
+        type="button"
+        :aria-label="muted ? $t('hud.unmute') : $t('hud.mute')"
+        @click="toggleMute"
+      >
+        {{ muted ? '🔇' : '🔊' }}
+      </button>
+    </div>
+
+    <div class="hud__health">
+      <div
+        class="hud__health-fill"
+        :class="{ 'hud__health-fill--low': isLowHp }"
+        :style="{ '--hp-ratio': hpRatio }"
+      />
+    </div>
+
+    <div class="hud__skills">
+      <button
+        v-for="skill in skills"
+        :key="skill.id"
+        class="hud__skill"
+        :class="{ 'hud__skill--cooling': !skillReady(skill.id) }"
+        type="button"
+        :style="{ '--cd': skillFraction(skill.id) }"
+        :disabled="!skillReady(skill.id)"
+        :aria-label="$t('hud.skills.' + skill.id)"
+        @click="useSkill(skill.id)"
+      >
+        <span class="hud__skill-icon">{{ skill.icon }}</span>
+        <span v-if="!skillReady(skill.id)" class="hud__skill-cd">{{ skillSeconds(skill.id) }}</span>
+      </button>
+    </div>
+
+    <div v-if="isOver" class="overlay">
+      <div class="overlay__panel">
+        <h2 class="u-title">{{ $t('gameOver.title') }}</h2>
+        <div class="overlay__stats">
+          <div>
+            <p class="u-text-muted">{{ $t('gameOver.score') }}</p>
+            <p class="overlay__stat-value">{{ formatCompact(finalScore) }}</p>
+          </div>
+          <div>
+            <p class="u-text-muted">{{ $t('gameOver.best') }}</p>
+            <p class="overlay__stat-value">{{ formatCompact(store.highScore) }}</p>
+          </div>
+        </div>
+        <BaseButton variant="primary" block @click="restart">{{ $t('gameOver.playAgain') }}</BaseButton>
+        <NuxtLink to="/" class="btn btn--block">{{ $t('gameOver.menu') }}</NuxtLink>
+      </div>
+    </div>
+  </div>
+</template>

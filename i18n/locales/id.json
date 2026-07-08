@@ -1,0 +1,33 @@
+{
+  "menu": {
+    "badge": "Survivor ring pedang",
+    "subtitle": "Perbanyak pedang berputar, hancurkan gerombolan, kalahkan hero rival.",
+    "play": "Main",
+    "best": "Terbaik {score}",
+    "features": {
+      "gates": { "label": "Kumpulkan pedang", "text": "Lewati gerbang — +N dan ×N menambah pedang" },
+      "swords": { "label": "Putar & sabet", "text": "Bilah mengorbit merajang musuh di dekatmu" },
+      "rivals": { "label": "Duel rival", "text": "Ungguli jumlah hero rival, atau habis" }
+    }
+  },
+  "hud": {
+    "power": "Power",
+    "score": "Skor",
+    "mute": "Bisukan suara",
+    "unmute": "Nyalakan suara",
+    "skills": {
+      "fury": "Badai Bilah",
+      "nova": "Gelombang Kejut"
+    }
+  },
+  "gameOver": {
+    "title": "Kalah",
+    "score": "Skor",
+    "best": "Terbaik",
+    "playAgain": "Main Lagi",
+    "menu": "Menu"
+  },
+  "language": {
+    "label": "Bahasa"
+  }
+}

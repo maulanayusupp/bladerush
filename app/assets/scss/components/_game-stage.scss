@@ -1,0 +1,17 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// Full-viewport container that hosts the Phaser canvas + DOM overlays.
+.game-stage {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: $color-bg;
+  touch-action: none; // let Phaser own pointer gestures
+
+  &__canvas {
+    @include absolute-fill;
+    z-index: $z-canvas;
+  }
+}

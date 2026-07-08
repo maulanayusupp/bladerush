@@ -1,0 +1,63 @@
+// =============================================================================
+// Design tokens — the single source of truth for colors, spacing, type, etc.
+// Pure Sass: this file emits NO CSS and is safe to inject everywhere.
+// =============================================================================
+
+// ---- Color palette -------------------------------------------------------
+$color-bg:            #1b2a1f;
+$color-bg-alt:        #24361f;
+$color-surface:       #10231a;
+$color-surface-2:     #183024;
+
+$color-primary:       #7c4dff; // player / power accent (matches the purple hero)
+$color-primary-dark:  #5a2ecf;
+$color-danger:        #e5484d; // enemy boss red
+$color-warning:       #ffb020; // durian gold
+$color-success:       #37b24d;
+
+$color-text:          #f4f6f4;
+$color-text-muted:    rgba(#f4f6f4, 0.68);
+$color-text-inverse:  #10231a;
+
+// ---- Spacing scale (4px base) --------------------------------------------
+$space-1: 0.25rem;
+$space-2: 0.5rem;
+$space-3: 0.75rem;
+$space-4: 1rem;
+$space-5: 1.5rem;
+$space-6: 2rem;
+$space-8: 3rem;
+
+// ---- Radii ----------------------------------------------------------------
+$radius-sm: 6px;
+$radius-md: 12px;
+$radius-lg: 20px;
+$radius-pill: 999px;
+
+// ---- Typography -----------------------------------------------------------
+$font-family-base: 'Segoe UI', system-ui, -apple-system, sans-serif;
+$font-size-sm:   0.875rem;
+$font-size-base: 1rem;
+$font-size-lg:   1.25rem;
+$font-size-xl:   2rem;
+$font-size-xxl:  3rem;
+$font-weight-regular: 400;
+$font-weight-bold:    700;
+
+// ---- Elevation ------------------------------------------------------------
+$shadow-md: 0 6px 18px rgba(#000, 0.35);
+$shadow-lg: 0 12px 40px rgba(#000, 0.5);
+
+// ---- Layering -------------------------------------------------------------
+$z-canvas:  1;
+$z-hud:     10;
+$z-overlay: 20;
+
+// ---- Breakpoints ----------------------------------------------------------
+$bp-mobile:  480px;
+$bp-tablet:  768px;
+$bp-desktop: 1024px;
+
+// ---- Motion ---------------------------------------------------------------
+$transition-fast: 120ms ease;
+$transition-base: 200ms ease;

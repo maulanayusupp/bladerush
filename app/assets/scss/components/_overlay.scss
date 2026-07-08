@@ -1,0 +1,40 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// Full-screen modal shown on pause / game-over.
+.overlay {
+  @include flex-center;
+  @include absolute-fill;
+  z-index: $z-overlay;
+  flex-direction: column;
+  gap: $space-5;
+  padding: $space-6;
+  text-align: center;
+  background-color: rgba(#000, 0.66);
+  backdrop-filter: blur(6px);
+  pointer-events: auto; // re-enable clicks (parent .hud disables them)
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    align-items: center;
+    padding: $space-6;
+    border-radius: $radius-lg;
+    background-color: $color-surface;
+    box-shadow: $shadow-lg;
+    max-width: 360px;
+    width: 100%;
+  }
+
+  &__stats {
+    display: flex;
+    gap: $space-6;
+  }
+
+  &__stat-value {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $color-warning;
+  }
+}

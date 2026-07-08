@@ -1,0 +1,19 @@
+// =============================================================================
+// Central stylesheet entry (7-1 architecture).
+// Import order matters: base first, then components.
+// `abstracts/*` are injected globally via nuxt.config, so they are not
+// re-imported here to avoid ambiguity.
+// =============================================================================
+
+// Base
+@use 'base/reset';
+@use 'base/typography';
+
+// Components
+@use 'components/button';
+@use 'components/language';
+@use 'components/menu';
+@use 'components/feature';
+@use 'components/game-stage';
+@use 'components/hud';
+@use 'components/overlay';

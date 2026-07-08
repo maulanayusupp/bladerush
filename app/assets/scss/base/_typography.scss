@@ -1,0 +1,18 @@
+@use '../abstracts/variables' as *;
+
+.u-title {
+  margin: 0;
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.02em;
+}
+
+.u-subtitle {
+  margin: 0;
+  font-size: $font-size-lg;
+  color: $color-text-muted;
+}
+
+.u-text-muted {
+  color: $color-text-muted;
+}

@@ -1,0 +1,39 @@
+// =============================================================================
+// Reusable mixins. Pure Sass — emits no CSS on its own.
+// =============================================================================
+@use 'variables' as *;
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin absolute-fill {
+  position: absolute;
+  inset: 0;
+}
+
+@mixin button-reset {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+// Min-width media query using the named breakpoints above.
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == mobile {
+    @media (min-width: $bp-mobile) { @content; }
+  } @else if $breakpoint == tablet {
+    @media (min-width: $bp-tablet) { @content; }
+  } @else if $breakpoint == desktop {
+    @media (min-width: $bp-desktop) { @content; }
+  } @else {
+    @error 'Unknown breakpoint: #{$breakpoint}';
+  }
+}

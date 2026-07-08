@@ -1,0 +1,33 @@
+{
+  "menu": {
+    "badge": "Sword-ring survivor",
+    "subtitle": "Grow a ring of spinning blades, crush the horde, out-duel rival heroes.",
+    "play": "Play",
+    "best": "Best {score}",
+    "features": {
+      "gates": { "label": "Collect swords", "text": "Run gates — +N and ×N grow your ring" },
+      "swords": { "label": "Spin & slay", "text": "Orbiting blades shred anything near you" },
+      "rivals": { "label": "Duel rivals", "text": "Out-number rival heroes, or get wiped" }
+    }
+  },
+  "hud": {
+    "power": "Power",
+    "score": "Score",
+    "mute": "Mute sound",
+    "unmute": "Unmute sound",
+    "skills": {
+      "fury": "Blade Fury",
+      "nova": "Shockwave"
+    }
+  },
+  "gameOver": {
+    "title": "Defeated",
+    "score": "Score",
+    "best": "Best",
+    "playAgain": "Play Again",
+    "menu": "Menu"
+  },
+  "language": {
+    "label": "Language"
+  }
+}

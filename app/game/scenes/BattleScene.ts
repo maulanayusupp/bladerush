@@ -1,0 +1,551 @@
+// =============================================================================
+// BattleScene — the gameplay loop. It delegates ALL rules to services
+// (PowerService / SpawnService / ScoreService) and only handles rendering,
+// input, pooling and collision wiring. State crosses to the Vue HUD via the
+// shared EventBus.
+//
+// The arena fills the viewport: world size is read live from the Scale Manager
+// and kept in sync on 'resize'. The hero roams freely in 2D; enemies enter
+// from any edge and home in. The weapon is a RING OF SWORDS that orbits the
+// hero (it does not fire) — the sword count grows with power (+1 every 50).
+// =============================================================================
+import Phaser from 'phaser'
+import { AURA, ENEMY, GATE, MEGA_AURA, POWER_LAYERS, RIVAL, SKILLS, SWORD } from '../constants'
+import { Enemy } from '../entities/Enemy'
+import { Gate } from '../entities/Gate'
+import { Player } from '../entities/Player'
+import { Rival } from '../entities/Rival'
+import { Sword } from '../entities/Sword'
+import { PowerService } from '~/services/PowerService'
+import { ScoreService } from '~/services/ScoreService'
+import { SpawnService } from '~/services/SpawnService'
+import { gameEventBus } from '~/services/EventBus'
+import { audioService } from '~/services/AudioService'
+import { angleBetween, clamp, distance, randomInt, randomRange } from '~/helpers/math.helper'
+
+const OFFSCREEN_MARGIN = 60
+const TAU = Math.PI * 2
+
+export class BattleScene extends Phaser.Scene {
+  private player!: Player
+  private auraLayers: Phaser.GameObjects.Image[] = []
+  private sparks!: Phaser.GameObjects.Particles.ParticleEmitter
+  private enemies!: Phaser.Physics.Arcade.Group
+  private gatePool: Gate[] = []
+  private swordPool: Sword[] = []
+  private rivalPool: Rival[] = []
+
+  private readonly power = new PowerService()
+  private readonly spawner = new SpawnService()
+  private readonly scorer = new ScoreService()
+
+  private elapsedMs = 0
+  private orbitAngle = 0
+  private lastHitSoundAt = 0
+  private enemyAcc = 0
+  private gateAcc = 0
+  private rivalAcc = 0
+  private nextRivalMs: number = RIVAL.minIntervalMs
+  private furyUntil = 0
+  private swordDamageMul = 1
+  private readonly skillReadyAt: Record<string, number> = { fury: 0, nova: 0 }
+  private isOver = false
+
+  constructor() {
+    super('BattleScene')
+  }
+
+  private get worldW(): number {
+    return this.scale.width
+  }
+
+  private get worldH(): number {
+    return this.scale.height
+  }
+
+  create(): void {
+    this.isOver = false
+    this.elapsedMs = 0
+    this.orbitAngle = 0
+    this.lastHitSoundAt = 0
+    this.enemyAcc = 0
+    this.gateAcc = 0
+    this.rivalAcc = 0
+    this.scheduleNextRival()
+    this.furyUntil = 0
+    this.swordDamageMul = 1
+    this.skillReadyAt.fury = 0
+    this.skillReadyAt.nova = 0
+    this.power.reset()
+    this.scorer.reset()
+    this.physics.resume()
+
+    this.physics.world.setBounds(0, 0, this.worldW, this.worldH)
+
+    // One additive glow per potential aura layer (base tiers + mega rings).
+    this.auraLayers = Array.from({ length: POWER_LAYERS.length + MEGA_AURA.max }, () =>
+      this.add
+        .image(this.worldW / 2, this.worldH / 2, 'aura')
+        .setDepth(-1)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setVisible(false),
+    )
+
+    this.player = new Player(this, this.worldW / 2, this.worldH / 2)
+
+    this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'enemyA', maxSize: ENEMY.poolSize })
+    this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
+    this.swordPool = Array.from({ length: SWORD.poolSize }, () => new Sword(this, 0, 0))
+    this.rivalPool = Array.from({ length: RIVAL.poolSize }, () => new Rival(this, 0, 0))
+
+    // Reusable spark burst for clashes / deaths.
+    this.sparks = this.add
+      .particles(0, 0, 'spark', {
+        speed: { min: 80, max: 260 },
+        lifespan: { min: 240, max: 520 },
+        scale: { start: 1.2, end: 0 },
+        alpha: { start: 1, end: 0 },
+        blendMode: Phaser.BlendModes.ADD,
+        emitting: false,
+      })
+      .setDepth(5)
+
+    this.physics.add.overlap(this.swordPool, this.enemies, this.onSwordHitEnemy)
+    this.physics.add.overlap(this.player, this.enemies, this.onEnemyHitPlayer)
+
+    this.input.on('pointermove', this.onPointer)
+    this.input.on('pointerdown', this.onPointer)
+    this.input.once('pointerdown', () => audioService.unlock())
+    this.scale.on('resize', this.onResize)
+    gameEventBus.on('game:restart', this.onRestart)
+    gameEventBus.on('skill:use', this.onSkill)
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown)
+
+    this.emitPower()
+    this.emitHp()
+    this.emitScore()
+    gameEventBus.emit('game:ready', undefined)
+    gameEventBus.emit('skill:reset', undefined)
+  }
+
+  override update(_time: number, deltaMs: number): void {
+    if (this.isOver) return
+    this.elapsedMs += deltaMs
+    const elapsedSec = this.elapsedMs / 1000
+
+    this.player.moveToward(deltaMs, { width: this.worldW, height: this.worldH })
+
+    this.enemyAcc += deltaMs
+    if (this.enemyAcc >= this.spawner.enemyInterval(elapsedSec)) {
+      this.enemyAcc = 0
+      this.spawnEnemy(elapsedSec)
+    }
+
+    this.gateAcc += deltaMs
+    if (this.gateAcc >= this.spawner.gateInterval()) {
+      this.gateAcc = 0
+      this.spawnGate()
+    }
+
+    this.rivalAcc += deltaMs
+    if (this.rivalAcc >= this.nextRivalMs) {
+      this.rivalAcc = 0
+      this.scheduleNextRival()
+      this.spawnRival(elapsedSec)
+    }
+
+    this.updateEnemies()
+    this.updateGates(deltaMs)
+    this.updateRivals(deltaMs)
+    this.updateSwords(deltaMs)
+  }
+
+  // ---- Spawning -----------------------------------------------------------
+
+  private spawnEnemy(elapsedSec: number): void {
+    const enemy = this.enemies.get(0, 0) as Enemy | null
+    if (!enemy) return
+
+    const { x, y } = this.randomEdgePoint()
+    enemy.spawn(x, y, this.spawner.createEnemy(elapsedSec))
+  }
+
+  private randomEdgePoint(): { x: number; y: number } {
+    const m = ENEMY.size
+    switch (randomInt(0, 3)) {
+      case 0:
+        return { x: randomRange(0, this.worldW), y: -m }
+      case 1:
+        return { x: randomRange(0, this.worldW), y: this.worldH + m }
+      case 2:
+        return { x: -m, y: randomRange(0, this.worldH) }
+      default:
+        return { x: this.worldW + m, y: randomRange(0, this.worldH) }
+    }
+  }
+
+  private spawnGate(): void {
+    const gate = this.gatePool.find((g) => !g.active)
+    if (!gate) return
+    const x = randomRange(GATE.width / 2, this.worldW - GATE.width / 2)
+    gate.spawn(x, -GATE.height, this.spawner.createGate())
+  }
+
+  private spawnRival(elapsedSec: number): void {
+    const rival = this.rivalPool.find((r) => !r.active)
+    if (!rival) return
+    const { x, y } = this.randomEdgePoint()
+    rival.spawn(x, y, this.spawner.createRivalCount(elapsedSec, this.power.power))
+  }
+
+  /** Rivals arrive more often the stronger the player is. */
+  private scheduleNextRival(): void {
+    const factor = clamp(1 - this.power.power * RIVAL.intervalPowerFactor, RIVAL.minIntervalFactor, 1)
+    this.nextRivalMs = randomRange(RIVAL.minIntervalMs, RIVAL.maxIntervalMs) * factor
+  }
+
+  // ---- Per-frame updates --------------------------------------------------
+
+  private updateEnemies(): void {
+    const limit = Math.max(this.worldW, this.worldH) + OFFSCREEN_MARGIN * 3
+    for (const obj of this.enemies.getChildren()) {
+      const enemy = obj as Enemy
+      if (!enemy.active) continue
+      const angle = angleBetween(enemy.x, enemy.y, this.player.x, this.player.y)
+      enemy.setVelocity(Math.cos(angle) * enemy.speed, Math.sin(angle) * enemy.speed)
+      // Safety net: recycle anything that somehow strays far off-field.
+      if (distance(enemy.x, enemy.y, this.player.x, this.player.y) > limit) enemy.deactivate()
+    }
+  }
+
+  private updateGates(deltaMs: number): void {
+    const dy = GATE.speed * (deltaMs / 1000)
+    for (const gate of this.gatePool) {
+      if (!gate.active) continue
+      gate.y += dy
+      gate.idle(deltaMs)
+      if (!gate.consumed && this.gateOverlapsPlayer(gate)) {
+        gate.consumed = true
+        this.power.applyGate(gate.config)
+        this.emitPower()
+        audioService.pickup()
+        gate.deactivate()
+        continue
+      }
+      if (gate.y - GATE.height > this.worldH) gate.deactivate()
+    }
+  }
+
+  /** Position the orbiting sword ring; count/spin/colors come from power. */
+  private updateSwords(deltaMs: number): void {
+    const stats = this.power.stats
+    const count = this.power.hasWeapon ? stats.swordCount : 0
+    const colors = stats.layerColors
+
+    // Fury skill: faster spin, wider ring, harder hits, bigger blades.
+    const fury = this.elapsedMs < this.furyUntil
+    this.swordDamageMul = fury ? SKILLS.fury.damageMul : 1
+    const orbitSpeed = stats.orbitSpeed * (fury ? SKILLS.fury.orbitMul : 1)
+    const radius = SWORD.orbitRadius * (fury ? SKILLS.fury.radiusMul : 1)
+    const baseScale = fury ? 1.3 : 1
+    this.orbitAngle = (this.orbitAngle + orbitSpeed * (deltaMs / 1000)) % TAU
+
+    this.updateAura(colors)
+
+    for (let i = 0; i < this.swordPool.length; i++) {
+      const sword = this.swordPool[i] as Sword
+      if (i >= count) {
+        sword.deactivate()
+        continue
+      }
+      const angle = this.orbitAngle + (i / count) * TAU
+      sword.place(
+        this.player.x + Math.cos(angle) * radius,
+        this.player.y + Math.sin(angle) * radius,
+        // Lean the blade off-radial so the ring reads as slashing, not rigid.
+        angle + Math.PI / 2 + 0.5,
+      )
+      // Subtle breathing so the ring feels alive rather than stiff.
+      sword.setScale(baseScale + 0.08 * Math.sin(this.elapsedMs / 130 + i * 0.6))
+      // During fury blades glow white-hot; otherwise cycle the unlocked colors.
+      sword.setTint(fury ? 0xffffff : colors.length > 0 ? (colors[i % colors.length] as number) : 0xffffff)
+    }
+  }
+
+  /** Move rivals toward the hero; when the rings meet, grind the duel out. */
+  private updateRivals(deltaMs: number): void {
+    const step = RIVAL.speed * (deltaMs / 1000)
+    for (const rival of this.rivalPool) {
+      if (!rival.active) continue
+      rival.spin(deltaMs)
+      const near = distance(rival.x, rival.y, this.player.x, this.player.y) < RIVAL.clashDist
+
+      if (near) {
+        // Lock in and trade blows over time (natural attrition, not instant).
+        if (!rival.engaged) {
+          rival.engaged = true
+          rival.clashAcc = 0
+          rival.clashStep = Math.max(
+            1,
+            Math.round(Math.min(this.power.power, rival.swordCount) / RIVAL.clashTicksTarget),
+          )
+        }
+        rival.clashAcc += deltaMs
+        while (rival.active && rival.engaged && rival.clashAcc >= RIVAL.clashTickMs) {
+          rival.clashAcc -= RIVAL.clashTickMs
+          this.clashTick(rival)
+        }
+      } else {
+        rival.engaged = false
+        const angle = angleBetween(rival.x, rival.y, this.player.x, this.player.y)
+        rival.x += Math.cos(angle) * step
+        rival.y += Math.sin(angle) * step
+      }
+    }
+  }
+
+  /** One exchange of the duel: both rings shed swords; a side hitting 0 loses. */
+  private clashTick(rival: Rival): void {
+    const cx = (this.player.x + rival.x) / 2
+    const cy = (this.player.y + rival.y) / 2
+
+    if (this.power.power <= 0) {
+      this.loseDuel(rival, cx, cy)
+      return
+    }
+
+    const step = Math.min(rival.clashStep, this.power.power, rival.swordCount)
+    this.power.spend(step)
+    this.emitPower()
+    rival.setCount(rival.swordCount - step)
+
+    this.sparks.explode(6, cx, cy)
+    audioService.clash()
+    this.cameras.main.shake(50, 0.003)
+
+    if (rival.swordCount <= 0) this.winDuel(rival, cx, cy)
+    else if (this.power.power <= 0) this.loseDuel(rival, cx, cy)
+  }
+
+  /** Rival ground down: it drops its swords back (net-zero) + score + flourish. */
+  private winDuel(rival: Rival, x: number, y: number): void {
+    const loot = rival.initialCount
+    rival.engaged = false
+    rival.deactivate()
+    this.power.addEnemyValue(loot)
+    this.emitPower()
+    this.scorer.add(loot * RIVAL.scoreMultiplier)
+    this.emitScore()
+    this.playClashFx(x, y, 0x8ce99a)
+    this.cameras.main.flash(220, 120, 255, 150)
+    audioService.win()
+  }
+
+  /** Player ground down: swords wiped + heavy damage; the rival leaves. */
+  private loseDuel(rival: Rival, x: number, y: number): void {
+    rival.engaged = false
+    rival.deactivate()
+    this.power.reset()
+    this.emitPower()
+    this.playClashFx(x, y, 0xff6b6b)
+    this.cameras.main.shake(260, 0.012)
+    this.cameras.main.flash(240, 255, 60, 60)
+    audioService.lose()
+    const dead = this.player.takeDamage(RIVAL.loseDamage)
+    this.emitHp()
+    if (dead) this.gameOver()
+  }
+
+  /** Spark burst + expanding shock ring + "TING!" pop + metallic clang. */
+  private playClashFx(x: number, y: number, color: number): void {
+    this.sparks.explode(18, x, y)
+    const ring = this.add.image(x, y, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(color).setScale(0.3)
+    this.tweens.add({
+      targets: ring,
+      scale: 1.7,
+      alpha: { from: 0.9, to: 0 },
+      duration: 320,
+      ease: 'Cubic.Out',
+      onComplete: () => ring.destroy(),
+    })
+    const text = this.add
+      .text(x, y - 12, 'TING!', { fontFamily: 'Segoe UI, sans-serif', fontSize: '26px', fontStyle: 'bold', color: '#ffffff' })
+      .setOrigin(0.5)
+      .setStroke('#333333', 4)
+      .setDepth(6)
+    this.tweens.add({
+      targets: text,
+      y: y - 54,
+      alpha: { from: 1, to: 0 },
+      duration: 620,
+      ease: 'Cubic.Out',
+      onComplete: () => text.destroy(),
+    })
+    audioService.clash()
+  }
+
+  /** Stacked glow rings under the hero. Base tiers stay subtle; every mega ring
+   *  (each 1000 power) is bigger, brighter and pulses harder — more menacing. */
+  private updateAura(colors: number[]): void {
+    const baseCount = POWER_LAYERS.length
+    for (let i = 0; i < this.auraLayers.length; i++) {
+      const layer = this.auraLayers[i] as Phaser.GameObjects.Image
+      if (i >= colors.length) {
+        layer.setVisible(false)
+        continue
+      }
+      const mega = i >= baseCount
+      const gap = AURA.layerGap * (mega ? 1.7 : 1)
+      const scale = (AURA.baseRadius + i * gap) / AURA.textureRadius
+      const amp = mega ? 0.16 : 0.06 + i * 0.02
+      const floor = mega ? 0.26 : Math.max(0.08, 0.3 - i * 0.03)
+      const speed = mega ? 110 : 180
+      const alpha = floor + amp * Math.sin(this.elapsedMs / speed + i * 0.7)
+      layer
+        .setVisible(true)
+        .setPosition(this.player.x, this.player.y)
+        .setTint(colors[i] as number)
+        .setScale(scale)
+        .setAlpha(alpha)
+    }
+  }
+
+  private gateOverlapsPlayer(gate: Gate): boolean {
+    return (
+      Math.abs(gate.x - this.player.x) < GATE.width / 2 + this.player.width / 2 &&
+      Math.abs(gate.y - this.player.y) < GATE.height / 2 + this.player.height / 2
+    )
+  }
+
+  // ---- Collision callbacks (bound arrows so `this` stays the scene) -------
+
+  private onSwordHitEnemy: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (_swordObj, enemyObj) => {
+    const enemy = enemyObj as Enemy
+    if (!enemy.active) return
+    // Per-enemy cooldown so a sweeping blade doesn't drain HP every frame.
+    if (this.elapsedMs - enemy.lastHitAt < SWORD.hitCooldownMs) return
+    enemy.lastHitAt = this.elapsedMs
+    this.playHitSound()
+
+    if (enemy.takeDamage(Math.round(this.power.stats.damage * this.swordDamageMul))) {
+      const reward = enemy.value
+      this.sparks.explode(8, enemy.x, enemy.y)
+      audioService.death()
+      enemy.deactivate()
+      this.power.addEnemyValue(reward)
+      this.scorer.add(reward)
+      this.emitPower()
+      this.emitScore()
+    }
+  }
+
+  /** Throttle chatty sword-hit ticks so they don't overlap into noise. */
+  private playHitSound(): void {
+    if (this.elapsedMs - this.lastHitSoundAt < 55) return
+    this.lastHitSoundAt = this.elapsedMs
+    audioService.hit()
+  }
+
+  private onEnemyHitPlayer: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (_playerObj, enemyObj) => {
+    const enemy = enemyObj as Enemy
+    if (!enemy.active) return
+    enemy.deactivate()
+    const dead = this.player.takeDamage(ENEMY.contactDamage)
+    this.emitHp()
+    audioService.hurt()
+    if (dead) this.gameOver()
+  }
+
+  // ---- Lifecycle / input handlers -----------------------------------------
+
+  private onPointer = (pointer: Phaser.Input.Pointer): void => {
+    this.player.setTarget(pointer.worldX, pointer.worldY)
+  }
+
+  private onResize = (gameSize: Phaser.Structs.Size): void => {
+    this.physics.world.setBounds(0, 0, gameSize.width, gameSize.height)
+  }
+
+  private onRestart = (): void => {
+    this.scene.restart()
+  }
+
+  private onShutdown = (): void => {
+    this.input.off('pointermove', this.onPointer)
+    this.input.off('pointerdown', this.onPointer)
+    this.scale.off('resize', this.onResize)
+    gameEventBus.off('game:restart', this.onRestart)
+    gameEventBus.off('skill:use', this.onSkill)
+  }
+
+  // ---- Skills -------------------------------------------------------------
+
+  private onSkill = ({ id }: { id: string }): void => {
+    if (this.isOver) return
+    if (id !== 'fury' && id !== 'nova') return
+    if (this.elapsedMs < (this.skillReadyAt[id] ?? 0)) return
+    const skill = SKILLS[id]
+    this.skillReadyAt[id] = this.elapsedMs + skill.cooldownMs
+    gameEventBus.emit('skill:started', { id, cooldownMs: skill.cooldownMs, durationMs: skill.durationMs })
+
+    if (id === 'fury') {
+      this.furyUntil = this.elapsedMs + SKILLS.fury.durationMs
+      this.cameras.main.flash(220, 150, 120, 255)
+      audioService.skill()
+    } else {
+      this.castNova()
+    }
+  }
+
+  /** Nova: a shockwave that damages every enemy on screen. */
+  private castNova(): void {
+    const ring = this.add
+      .image(this.player.x, this.player.y, 'shock')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0x9d74ff)
+      .setScale(0.4)
+    this.tweens.add({
+      targets: ring,
+      scale: 6,
+      alpha: { from: 0.9, to: 0 },
+      duration: 440,
+      ease: 'Cubic.Out',
+      onComplete: () => ring.destroy(),
+    })
+    this.cameras.main.shake(220, 0.01)
+    audioService.nova()
+
+    for (const obj of this.enemies.getChildren()) {
+      const enemy = obj as Enemy
+      if (!enemy.active) continue
+      if (enemy.takeDamage(SKILLS.nova.damage)) {
+        this.sparks.explode(6, enemy.x, enemy.y)
+        this.power.addEnemyValue(enemy.value)
+        this.scorer.add(enemy.value)
+        enemy.deactivate()
+      }
+    }
+    this.emitPower()
+    this.emitScore()
+  }
+
+  private gameOver(): void {
+    this.isOver = true
+    this.physics.pause()
+    gameEventBus.emit('game:over', { score: this.scorer.score, power: this.power.power })
+  }
+
+  // ---- Event emitters ------------------------------------------------------
+
+  private emitPower(): void {
+    gameEventBus.emit('power:changed', { power: this.power.power })
+  }
+
+  private emitScore(): void {
+    gameEventBus.emit('score:changed', { score: this.scorer.score })
+  }
+
+  private emitHp(): void {
+    gameEventBus.emit('player:hp', { current: this.player.hp, max: this.player.maxHp })
+  }
+}

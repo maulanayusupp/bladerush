@@ -1,0 +1,67 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.btn {
+  @include button-reset;
+  @include flex-center;
+  gap: $space-2;
+  padding: $space-3 $space-6;
+  border-radius: $radius-pill;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-lg;
+  background-color: $color-surface-2;
+  color: $color-text;
+  transition: transform $transition-fast, background-color $transition-base;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &--primary {
+    background-color: $color-primary;
+    box-shadow: $shadow-md;
+
+    &:hover {
+      background-color: $color-primary-dark;
+    }
+  }
+
+  &--block {
+    width: 100%;
+  }
+
+  &--xl {
+    padding: $space-4 $space-8;
+    font-size: $font-size-xl;
+    letter-spacing: 0.02em;
+  }
+
+  &--glow {
+    box-shadow: 0 10px 30px rgba($color-primary, 0.45);
+    animation: btn-glow 2.4s ease-in-out infinite;
+  }
+
+  &__icon {
+    font-size: 0.7em;
+  }
+}
+
+@keyframes btn-glow {
+  0%,
+  100% {
+    box-shadow: 0 10px 30px rgba($color-primary, 0.4);
+  }
+  50% {
+    box-shadow: 0 16px 48px rgba($color-primary, 0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn--glow {
+    animation: none;
+  }
+}

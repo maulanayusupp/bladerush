@@ -1,0 +1,29 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.lang {
+  position: absolute;
+  top: $space-4;
+  right: $space-4;
+  z-index: 2;
+  display: flex;
+  gap: $space-1;
+  padding: $space-1;
+  border-radius: $radius-pill;
+  background-color: rgba($color-surface, 0.7);
+
+  &__option {
+    @include button-reset;
+    padding: $space-1 $space-3;
+    border-radius: $radius-pill;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: $color-text-muted;
+    transition: background-color $transition-fast, color $transition-fast;
+
+    &--active {
+      background-color: $color-primary;
+      color: $color-text;
+    }
+  }
+}

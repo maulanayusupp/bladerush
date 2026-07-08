@@ -1,0 +1,348 @@
+// =============================================================================
+// BootScene — bakes all textures at runtime (no external image assets). Hero
+// and enemies are drawn as multi-color, shaded vector creatures (horns, eyes
+// with highlights, fangs, robe/hood) for a more detailed, articulated look.
+// Swap these for real sprite sheets in the polish phase.
+// =============================================================================
+import Phaser from 'phaser'
+import { AURA } from '../constants'
+
+type Draw = (g: Phaser.GameObjects.Graphics) => void
+
+interface WarlordSkin {
+  armor: number
+  armorHi: number
+  cape: number
+  helm: number
+  horn: string
+  hornColor: number
+  eye: number
+  accent: number
+}
+
+/** 10 distinct rival warlord looks (palette + horn style). */
+const RIVAL_SKINS: WarlordSkin[] = [
+  { armor: 0x2a2233, armorHi: 0x3a2f47, cape: 0x6e1616, helm: 0x14101c, horn: 'straight', hornColor: 0x14101c, eye: 0xff3b3b, accent: 0xff3b3b },
+  { armor: 0x1e2a1c, armorHi: 0x2f4a2b, cape: 0x14401a, helm: 0x0e160c, horn: 'back', hornColor: 0x0e160c, eye: 0x8cff5a, accent: 0x8cff5a },
+  { armor: 0x1c2740, armorHi: 0x2f4a6a, cape: 0x123a5a, helm: 0x0c1220, horn: 'crown', hornColor: 0x9fd8ff, eye: 0x5ad0ff, accent: 0x5ad0ff },
+  { armor: 0x241a14, armorHi: 0x3a2a1c, cape: 0x5a2408, helm: 0x140d08, horn: 'wide', hornColor: 0x140d08, eye: 0xff8a00, accent: 0xff8a00 },
+  { armor: 0x241033, armorHi: 0x3a1a52, cape: 0x3a0b5e, helm: 0x120620, horn: 'back', hornColor: 0x120620, eye: 0xd400ff, accent: 0xd400ff },
+  { armor: 0xcfc7b0, armorHi: 0xe8e2d0, cape: 0x7a6f55, helm: 0xa89f86, horn: 'antler', hornColor: 0xe8e2d0, eye: 0x8fd0ff, accent: 0xffd700 },
+  { armor: 0x14141a, armorHi: 0x24242e, cape: 0x0a0a0e, helm: 0x08080c, horn: 'none', hornColor: 0x08080c, eye: 0xffffff, accent: 0x9aa0aa },
+  { armor: 0x2a2233, armorHi: 0x3a2f47, cape: 0x5a4410, helm: 0x14101c, horn: 'crown', hornColor: 0xffd700, eye: 0xffd700, accent: 0xffd700 },
+  { armor: 0x14332f, armorHi: 0x1f5a52, cape: 0x0e4a42, helm: 0x0a201c, horn: 'straight', hornColor: 0x0a201c, eye: 0x2ee6c0, accent: 0x2ee6c0 },
+  { armor: 0x2a0e0e, armorHi: 0x4a1414, cape: 0x7a0b0b, helm: 0x180606, horn: 'wide', hornColor: 0x180606, eye: 0xff1a1a, accent: 0xff1a1a },
+]
+
+export class BootScene extends Phaser.Scene {
+  constructor() {
+    super('BootScene')
+  }
+
+  create(): void {
+    this.bake('player', 56, 64, (g) => this.drawHero(g))
+    RIVAL_SKINS.forEach((skin, i) => this.bake(`rivalHero${i}`, 56, 64, (g) => this.drawWarlord(g, skin)))
+    this.bake('enemyEasy', 48, 48, (g) => this.drawSlime(g))
+    this.bake('enemyMed', 56, 56, (g) => this.drawBeast(g))
+    this.bake('enemyHard', 56, 56, (g) => this.drawBrute(g))
+    this.bake('enemyElite', 56, 56, (g) => this.drawDemon(g))
+    this.bake('enemyLegend', 64, 64, (g) => this.drawLegend(g))
+    this.bake('sword', 16, 46, (g) => this.drawSword(g))
+    this.bake('swordRing', 140, 140, (g) => this.drawSwordRing(g))
+    this.bake('aura', AURA.textureRadius * 2, AURA.textureRadius * 2, (g) => this.drawAura(g))
+    this.bake('spark', 10, 10, (g) => this.drawSpark(g))
+    this.bake('shock', 64, 64, (g) => this.drawShock(g))
+    this.scene.start('BattleScene')
+  }
+
+  /** A small white sparkle for clash/death particle bursts. */
+  private drawSpark(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xffffff, 1)
+    g.fillCircle(5, 5, 2)
+    g.fillRect(4.5, 0, 1, 10)
+    g.fillRect(0, 4.5, 10, 1)
+  }
+
+  /** A thin ring that expands + fades as a shockwave. */
+  private drawShock(g: Phaser.GameObjects.Graphics): void {
+    g.lineStyle(4, 0xffffff, 1)
+    g.strokeCircle(32, 32, 26)
+  }
+
+  /** A baked ring of swords (rotated as one Image for rival heroes). */
+  private drawSwordRing(g: Phaser.GameObjects.Graphics): void {
+    const c = 70
+    const ringRadius = 48
+    const blades = 12
+    for (let k = 0; k < blades; k++) {
+      const a = (k / blades) * Math.PI * 2
+      g.save()
+      g.translateCanvas(c + Math.cos(a) * ringRadius, c + Math.sin(a) * ringRadius)
+      g.rotateCanvas(a + Math.PI / 2 + 0.5)
+      g.translateCanvas(-8, -23)
+      this.drawSword(g)
+      g.restore()
+    }
+  }
+
+  /** Soft white glow (tinted per tier at runtime): stacked fading circles. */
+  private drawAura(g: Phaser.GameObjects.Graphics): void {
+    const r = AURA.textureRadius
+    for (let i = 0; i <= 28; i++) {
+      g.fillStyle(0xffffff, 0.045)
+      g.fillCircle(r, r, r * (1 - i / 28))
+    }
+  }
+
+  /** Render a draw callback into a named texture of the given size. */
+  private bake(key: string, w: number, h: number, draw: Draw): void {
+    const g = this.make.graphics({ x: 0, y: 0 })
+    draw(g)
+    g.generateTexture(key, w, h)
+    g.destroy()
+  }
+
+  /** Two symmetric eyes with dark pupils and a white highlight. */
+  private drawEyes(
+    g: Phaser.GameObjects.Graphics,
+    lx: number,
+    rx: number,
+    y: number,
+    ew: number,
+    eh: number,
+    pupil: number,
+  ): void {
+    g.fillStyle(0xffffff, 1)
+    g.fillEllipse(lx, y, ew, eh)
+    g.fillEllipse(rx, y, ew, eh)
+    g.fillStyle(pupil, 1)
+    g.fillCircle(lx + 1, y + 1, ew * 0.28)
+    g.fillCircle(rx + 1, y + 1, ew * 0.28)
+    g.fillStyle(0xffffff, 0.9)
+    g.fillCircle(lx, y - 1, ew * 0.12)
+    g.fillCircle(rx, y - 1, ew * 0.12)
+  }
+
+  // ---- Enemies ------------------------------------------------------------
+
+  private drawDemon(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x3a1414, 1) // horns
+    g.fillTriangle(16, 18, 9, 2, 21, 16)
+    g.fillTriangle(40, 18, 47, 2, 35, 16)
+    g.fillStyle(0x9e2626, 1) // arms
+    g.fillEllipse(9, 34, 13, 18)
+    g.fillEllipse(47, 34, 13, 18)
+    g.fillStyle(0xd23b3b, 1) // body
+    g.fillEllipse(28, 32, 44, 42)
+    g.fillStyle(0xf07a7a, 0.9) // belly highlight
+    g.fillEllipse(28, 36, 26, 24)
+    this.drawEyes(g, 20, 36, 28, 11, 13, 0x1a0a0a)
+    g.fillStyle(0x5a1010, 1) // mouth
+    g.fillRoundedRect(18, 41, 20, 8, 3)
+    g.fillStyle(0xffffff, 1) // fangs
+    g.fillTriangle(20, 41, 24, 41, 22, 47)
+    g.fillTriangle(32, 41, 36, 41, 34, 47)
+  }
+
+  private drawBeast(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x2f6b2f, 1) // back spikes
+    g.fillTriangle(14, 22, 20, 6, 26, 22)
+    g.fillTriangle(24, 20, 30, 4, 36, 20)
+    g.fillTriangle(34, 22, 40, 6, 44, 22)
+    g.fillStyle(0x3e8f3e, 1) // limbs
+    g.fillEllipse(9, 38, 12, 16)
+    g.fillEllipse(47, 38, 12, 16)
+    g.fillStyle(0x5bbf5b, 1) // body
+    g.fillEllipse(28, 34, 46, 38)
+    g.fillStyle(0x9ee89e, 0.9) // belly
+    g.fillEllipse(28, 38, 26, 22)
+    this.drawEyes(g, 20, 36, 30, 12, 13, 0x14200f)
+    g.fillStyle(0x2f6b2f, 1) // angry brows
+    g.fillTriangle(14, 24, 27, 31, 27, 24)
+    g.fillTriangle(42, 24, 29, 31, 29, 24)
+    g.fillStyle(0x14200f, 1) // mouth
+    g.fillRoundedRect(19, 44, 18, 7, 2)
+    g.fillStyle(0xffffff, 1) // teeth
+    g.fillRect(21, 44, 3, 4)
+    g.fillRect(27, 44, 3, 4)
+    g.fillRect(33, 44, 3, 4)
+  }
+
+  private drawBrute(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xc7ccd8, 1) // shoulder armor plates
+    g.fillEllipse(10, 30, 16, 14)
+    g.fillEllipse(46, 30, 16, 14)
+    g.fillStyle(0x9198a6, 1) // body
+    g.fillEllipse(28, 34, 44, 40)
+    g.fillStyle(0x6f7787, 0.9) // belly shade
+    g.fillEllipse(28, 38, 24, 22)
+    g.fillStyle(0x5a606e, 1) // brows
+    g.fillTriangle(15, 24, 27, 30, 27, 23)
+    g.fillTriangle(41, 24, 29, 30, 29, 23)
+    this.drawEyes(g, 21, 35, 28, 9, 10, 0x101319)
+    g.fillStyle(0x2b2f38, 1) // mouth
+    g.fillRoundedRect(22, 42, 12, 6, 2)
+    g.fillStyle(0xf4f6f4, 1) // tusks (pointing up)
+    g.fillTriangle(22, 44, 26, 44, 20, 34)
+    g.fillTriangle(34, 44, 30, 44, 36, 34)
+  }
+
+  /** EASY — tiny green slime with an antenna. */
+  private drawSlime(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x5bbf5b, 1)
+    g.fillRect(22, 6, 2, 8) // antenna stalk
+    g.fillCircle(23, 6, 3) // antenna bulb
+    g.fillStyle(0x8ce99a, 1)
+    g.fillEllipse(24, 30, 40, 30) // body
+    g.fillStyle(0x5bbf5b, 0.9)
+    g.fillEllipse(24, 34, 26, 18) // belly
+    this.drawEyes(g, 18, 30, 28, 10, 12, 0x14200f)
+    g.fillStyle(0x14200f, 1)
+    g.fillRoundedRect(20, 38, 8, 3, 1) // mouth
+  }
+
+  /** LEGEND — a gold-eyed skull boss with big horns and fangs. */
+  private drawLegend(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x241d1a, 1) // horns
+    g.fillTriangle(16, 20, 3, 0, 23, 16)
+    g.fillTriangle(48, 20, 61, 0, 41, 16)
+    g.fillStyle(0xe8e2d0, 1) // skull
+    g.fillEllipse(32, 30, 46, 48)
+    g.fillStyle(0xcfc7b0, 1) // jaw shade
+    g.fillEllipse(32, 46, 28, 20)
+    g.fillStyle(0x120d06, 1) // eye sockets
+    g.fillEllipse(23, 30, 14, 16)
+    g.fillEllipse(41, 30, 14, 16)
+    g.fillStyle(0xffd700, 1) // glowing eyes
+    g.fillCircle(23, 31, 4.2)
+    g.fillCircle(41, 31, 4.2)
+    g.fillStyle(0xfff2a8, 1)
+    g.fillCircle(22, 30, 1.6)
+    g.fillCircle(40, 30, 1.6)
+    g.fillStyle(0x120d06, 1) // nose
+    g.fillTriangle(32, 36, 29, 45, 35, 45)
+    g.fillStyle(0xffffff, 1) // fangs
+    for (let i = 0; i < 5; i++) g.fillRect(21 + i * 5, 47, 3, 5)
+    g.fillStyle(0xffd700, 1) // crown notch
+    g.fillTriangle(28, 8, 32, 2, 36, 8)
+  }
+
+  /** The RIVAL hero — a horned, red-eyed dark warlord (not the player recolored). */
+  /** Parametric dark warlord — 10 skins differ by palette + horn style. */
+  private drawWarlord(g: Phaser.GameObjects.Graphics, s: WarlordSkin): void {
+    g.fillStyle(s.cape, 1)
+    g.fillPoints(this.pts([14, 26, 42, 26, 48, 60, 8, 60]), true)
+    g.fillStyle(s.armor, 1)
+    g.fillPoints(this.pts([18, 32, 38, 32, 44, 62, 12, 62]), true)
+    g.fillStyle(s.armorHi, 0.9)
+    g.fillPoints(this.pts([24, 34, 32, 34, 35, 62, 21, 62]), true)
+    g.fillStyle(s.accent, 1) // shoulder spikes
+    g.fillTriangle(10, 34, 18, 26, 20, 37)
+    g.fillTriangle(46, 34, 38, 26, 36, 37)
+    g.fillStyle(s.helm, 1) // helm
+    g.fillEllipse(28, 20, 32, 26)
+    this.drawHorns(g, s.horn, s.hornColor)
+    g.fillStyle(0x0c0a12, 1) // face shadow
+    g.fillEllipse(28, 23, 19, 18)
+    g.fillStyle(s.eye, 1) // glowing eyes
+    g.fillEllipse(23, 23, 5, 3.6)
+    g.fillEllipse(33, 23, 5, 3.6)
+    g.fillStyle(0xffffff, 0.85)
+    g.fillCircle(23, 23, 1)
+    g.fillCircle(33, 23, 1)
+    g.fillStyle(s.accent, 1) // chest emblem
+    g.fillCircle(28, 42, 3)
+  }
+
+  private drawHorns(g: Phaser.GameObjects.Graphics, style: string, color: number): void {
+    g.fillStyle(color, 1)
+    switch (style) {
+      case 'straight':
+        g.fillTriangle(14, 16, 7, 1, 21, 14)
+        g.fillTriangle(42, 16, 49, 1, 35, 14)
+        break
+      case 'wide':
+        g.fillTriangle(14, 18, 0, 8, 22, 16)
+        g.fillTriangle(42, 18, 56, 8, 34, 16)
+        break
+      case 'back':
+        g.fillTriangle(16, 14, 3, 5, 20, 16)
+        g.fillTriangle(40, 14, 53, 5, 36, 16)
+        break
+      case 'crown':
+        for (let i = 0; i < 5; i++) {
+          const x = 13 + i * 8
+          g.fillTriangle(x, 14, x + 3, 3, x + 6, 14)
+        }
+        break
+      case 'antler':
+        g.fillTriangle(15, 16, 9, 3, 21, 14)
+        g.fillTriangle(12, 9, 6, 1, 16, 9)
+        g.fillTriangle(41, 16, 47, 3, 35, 14)
+        g.fillTriangle(44, 9, 50, 1, 40, 9)
+        break
+      // 'none' -> hooded, no horns
+    }
+  }
+
+  // ---- Hero ---------------------------------------------------------------
+
+  private drawHero(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x7c4dff, 0.16) // aura
+    g.fillCircle(28, 34, 30)
+    g.fillStyle(0x4a24b0, 1) // cape
+    g.fillPoints(this.pts([16, 26, 40, 26, 46, 60, 10, 60]), true)
+    g.fillStyle(0x7c4dff, 1) // robe
+    g.fillPoints(this.pts([18, 32, 38, 32, 44, 62, 12, 62]), true)
+    g.fillStyle(0x9d74ff, 0.9) // robe highlight
+    g.fillPoints(this.pts([25, 34, 31, 34, 34, 62, 22, 62]), true)
+    g.fillStyle(0xffb020, 1) // belt
+    g.fillRect(15, 48, 26, 4)
+    g.fillStyle(0xffb020, 1) // shoulder pads
+    g.fillCircle(16, 33, 5)
+    g.fillCircle(40, 33, 5)
+    g.fillStyle(0x4a24b0, 1) // hood back
+    g.fillEllipse(28, 20, 32, 28)
+    g.fillStyle(0xf2c9a0, 1) // face
+    g.fillEllipse(28, 23, 20, 20)
+    g.fillStyle(0x7c4dff, 1) // hood sides
+    g.fillEllipse(15, 19, 9, 22)
+    g.fillEllipse(41, 19, 9, 22)
+    g.fillStyle(0x1a1030, 1) // eyes
+    g.fillCircle(23, 24, 2)
+    g.fillCircle(33, 24, 2)
+    g.fillStyle(0xffb020, 1) // chest emblem
+    g.fillCircle(28, 42, 3)
+  }
+
+  private drawSword(g: Phaser.GameObjects.Graphics): void {
+    const cx = 8
+    // Tapered leaf blade.
+    g.fillStyle(0xcdd3e0, 1)
+    g.fillPoints(this.pts([cx, 1, cx + 3.6, 12, cx + 2.4, 28, cx - 2.4, 28, cx - 3.6, 12]), true)
+    // Bright bevel down the left edge.
+    g.fillStyle(0xf2f5ff, 1)
+    g.fillPoints(this.pts([cx, 1, cx - 3.6, 12, cx - 1.2, 27, cx - 0.4, 12]), true)
+    // Center fuller groove.
+    g.fillStyle(0x99a1b4, 1)
+    g.fillRect(cx - 0.6, 6, 1.2, 20)
+    // Swept cross-guard (gold).
+    g.fillStyle(0xffce5a, 1)
+    g.fillPoints(this.pts([cx - 8, 29, cx + 8, 29, cx + 5.5, 33, cx - 5.5, 33]), true)
+    // Wrapped grip.
+    g.fillStyle(0x5c3b22, 1)
+    g.fillRect(cx - 1.7, 33, 3.4, 9)
+    // Pommel.
+    g.fillStyle(0xffce5a, 1)
+    g.fillCircle(cx, 43, 2.3)
+  }
+
+  /** Flatten a [x0,y0,x1,y1,...] list into Vector2 points for fillPoints. */
+  private pts(flat: number[]): Phaser.Math.Vector2[] {
+    const out: Phaser.Math.Vector2[] = []
+    for (let i = 0; i < flat.length; i += 2) {
+      out.push(new Phaser.Math.Vector2(flat[i] as number, flat[i + 1] as number))
+    }
+    return out
+  }
+}
