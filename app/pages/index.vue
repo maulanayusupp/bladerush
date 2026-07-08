@@ -7,11 +7,17 @@ import MenuEmblem from '~/components/menu/MenuEmblem.vue'
 import MenuFeature from '~/components/menu/MenuFeature.vue'
 import { useGameStore } from '~/stores/useGameStore'
 import { formatCompact } from '~/helpers/format.helper'
+import { audioService } from '~/services/AudioService'
 
 const store = useGameStore()
 const { t } = useI18n()
 
 onMounted(() => store.loadHighScore())
+
+// Unlock audio on this user gesture; the singleton persists into /play.
+function startGame(): void {
+  audioService.unlock()
+}
 
 const features = computed(() => [
   { icon: '🌀', label: t('menu.features.gates.label'), text: t('menu.features.gates.text') },
@@ -37,7 +43,7 @@ const features = computed(() => [
       <p class="menu__tagline">{{ $t('menu.subtitle') }}</p>
 
       <div class="menu__actions">
-        <NuxtLink to="/play" class="btn btn--primary btn--xl btn--glow">
+        <NuxtLink to="/play" class="btn btn--primary btn--xl btn--glow" @click="startGame">
           <span class="btn__icon" aria-hidden="true">▶</span>{{ $t('menu.play') }}
         </NuxtLink>
         <span v-if="store.highScore" class="menu__best">

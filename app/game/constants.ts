@@ -162,12 +162,17 @@ export const RIVAL = {
 export const BOSS = {
   firstMs: 55000,
   intervalMs: 70000,
-  baseHp: 800,
-  hpPerMin: 600,
   speed: 40,
-  contactDamage: 26,
+  contactDamage: 22,
   contactCooldownMs: 700,
   hitTickMs: 100,
+  // HP is derived from the player's current damage output so the fight always
+  // lasts about this long — and grows tankier over the run.
+  targetSeconds: 8,
+  secondsPerMin: 2,
+  minHp: 1500,
+  // Sword ticks help sub-linearly (a bigger ring melts it faster, but not 60×).
+  swordCountFactor: 0.12,
   summonMs: 5000,
   summonCount: 4,
   scoreMul: 6,

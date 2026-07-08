@@ -105,6 +105,9 @@ export class BootScene extends Phaser.Scene {
     this.bake('enemyLegend', 64, 64, (g) => this.drawLegend(g))
     this.bake('boss', 76, 76, (g) => this.drawBoss(g))
     this.bake('heal', 30, 30, (g) => this.drawHeal(g))
+    this.bake('wMace', 28, 56, (g) => this.drawMace(g))
+    this.bake('wAxe', 28, 56, (g) => this.drawAxe(g))
+    this.bake('wSpear', 28, 56, (g) => this.drawSpear(g))
     this.bake('map0', MAP_TILE, MAP_TILE, (g) => this.drawMeadow(g))
     this.bake('map1', MAP_TILE, MAP_TILE, (g) => this.drawDesert(g))
     this.bake('map2', MAP_TILE, MAP_TILE, (g) => this.drawTundra(g))
@@ -289,6 +292,48 @@ export class BootScene extends Phaser.Scene {
     g.fillTriangle(4, 13, 26, 13, 15, 27)
     g.fillStyle(0xffffff, 0.5)
     g.fillCircle(8, 9, 2)
+  }
+
+  // ---- Boss weapons (28x56, centered x=14) --------------------------------
+
+  private drawMace(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x5c3b22, 1)
+    g.fillRect(12.5, 18, 3, 36) // handle
+    g.fillStyle(0x6f7787, 1) // spikes
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2
+      g.fillTriangle(14 + Math.cos(a) * 6, 14 + Math.sin(a) * 6, 14 + Math.cos(a) * 13, 14 + Math.sin(a) * 13, 14 + Math.cos(a + 0.5) * 6, 14 + Math.sin(a + 0.5) * 6)
+    }
+    g.fillStyle(0x9198a6, 1)
+    g.fillCircle(14, 14, 8) // head
+    g.fillStyle(0xc7ccd8, 1)
+    g.fillCircle(11, 11, 2.4) // highlight
+    g.lineStyle(1.4, 0x14171f, 1)
+    g.strokeCircle(14, 14, 8)
+  }
+
+  private drawAxe(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x5c3b22, 1)
+    g.fillRect(12.5, 6, 3, 48) // handle
+    g.fillStyle(0x9198a6, 1) // blade
+    g.fillPoints(this.pts([15, 8, 27, 12, 27, 24, 15, 22]), true)
+    g.fillPoints(this.pts([13, 8, 1, 12, 1, 24, 13, 22]), true)
+    g.fillStyle(0xc7ccd8, 1)
+    g.fillPoints(this.pts([15, 9, 24, 12, 24, 15, 15, 13]), true)
+    g.lineStyle(1.4, 0x14171f, 1)
+    g.strokePoints(this.pts([15, 8, 27, 12, 27, 24, 15, 22]), true)
+    g.strokePoints(this.pts([13, 8, 1, 12, 1, 24, 13, 22]), true)
+  }
+
+  private drawSpear(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x5c3b22, 1)
+    g.fillRect(12.5, 12, 3, 42) // shaft
+    g.fillStyle(0xffce5a, 1)
+    g.fillRect(9, 14, 10, 3) // collar
+    g.fillStyle(0xcdd3e0, 1) // tip
+    g.fillPoints(this.pts([14, 0, 18, 14, 14, 12, 10, 14]), true)
+    g.lineStyle(1.4, 0x14171f, 1)
+    g.strokePoints(this.pts([14, 0, 18, 14, 14, 12, 10, 14]), true)
   }
 
   // ---- Arena backgrounds (tileable 128x128) -------------------------------
@@ -528,48 +573,42 @@ export class BootScene extends Phaser.Scene {
     // Pommel.
     g.fillStyle(0xffce5a, 1)
     g.fillCircle(cx, 43, 2.3)
+    // Dark outline so the blade stays visible on light maps.
+    g.lineStyle(1.6, 0x14171f, 1)
+    g.strokePoints(this.pts([cx, 1, cx + 3.6, 12, cx + 2.4, 28, cx - 2.4, 28, cx - 3.6, 12]), true)
   }
 
   /** One of 10 player blade silhouettes. Guard/grip/pommel are shared; the
    *  blade shape varies. Tier tint recolors the whole blade in-game. */
   private drawSwordSkin(g: Phaser.GameObjects.Graphics, shape: string): void {
-    const steel = 0xcdd3e0
-    g.fillStyle(steel, 1)
-    switch (shape) {
-      case 'straight':
-        g.fillPoints(this.pts([8, 1, 11, 7, 11, 28, 5, 28, 5, 7]), true)
-        break
-      case 'curved':
-        g.fillPoints(this.pts([8, 1, 13, 10, 12, 22, 9, 28, 7, 28, 6, 14]), true)
-        break
-      case 'broad':
-        g.fillPoints(this.pts([8, 1, 12.5, 10, 12, 28, 4, 28, 3.5, 10]), true)
-        break
-      case 'rapier':
-        g.fillPoints(this.pts([8, 1, 9.4, 10, 9.2, 28, 6.8, 28, 6.6, 10]), true)
-        break
-      case 'shard':
-        g.fillPoints(this.pts([8, 0, 11.5, 15, 8, 29, 4.5, 15]), true)
-        break
-      case 'cleaver':
-        g.fillPoints(this.pts([5, 4, 12, 4, 12.5, 28, 4, 28]), true)
-        break
-      case 'saber':
-        g.fillPoints(this.pts([8, 1, 11.5, 11, 11, 24, 9.5, 28, 6.5, 28, 5, 12]), true)
-        break
-      case 'glaive':
-        g.fillPoints(this.pts([8, 1, 11.5, 8, 10.5, 17, 5.5, 17, 4.5, 8]), true)
-        g.fillStyle(0x99a1b4, 1)
-        g.fillRect(7, 17, 2, 11)
-        break
-      case 'fork':
-        g.fillPoints(this.pts([6.5, 1, 7.6, 11, 5, 11]), true)
-        g.fillPoints(this.pts([9.5, 1, 11, 11, 8.4, 11]), true)
-        g.fillPoints(this.pts([5, 11, 11, 11, 10.4, 28, 5.6, 28]), true)
-        break
-      default: // 'leaf'
-        g.fillPoints(this.pts([8, 1, 11.6, 12, 10.4, 28, 5.6, 28, 4.4, 12]), true)
+    const shapes: Record<string, number[]> = {
+      straight: [8, 1, 11, 7, 11, 28, 5, 28, 5, 7],
+      curved: [8, 1, 13, 10, 12, 22, 9, 28, 7, 28, 6, 14],
+      broad: [8, 1, 12.5, 10, 12, 28, 4, 28, 3.5, 10],
+      rapier: [8, 1, 9.4, 10, 9.2, 28, 6.8, 28, 6.6, 10],
+      shard: [8, 0, 11.5, 15, 8, 29, 4.5, 15],
+      cleaver: [5, 4, 12, 4, 12.5, 28, 4, 28],
+      saber: [8, 1, 11.5, 11, 11, 24, 9.5, 28, 6.5, 28, 5, 12],
+      glaive: [8, 1, 11.5, 8, 10.5, 17, 5.5, 17, 4.5, 8],
+      fork: [5, 11, 11, 11, 10.4, 28, 5.6, 28],
+      leaf: [8, 1, 11.6, 12, 10.4, 28, 5.6, 28, 4.4, 12],
     }
+    const blade: number[] = shapes[shape] ?? shapes.leaf ?? []
+
+    g.fillStyle(0xcdd3e0, 1)
+    g.fillPoints(this.pts(blade), true)
+    if (shape === 'glaive') {
+      g.fillStyle(0x99a1b4, 1)
+      g.fillRect(7, 17, 2, 11)
+    } else if (shape === 'fork') {
+      g.fillStyle(0xcdd3e0, 1)
+      g.fillPoints(this.pts([6.5, 1, 7.6, 11, 5, 11]), true)
+      g.fillPoints(this.pts([9.5, 1, 11, 11, 8.4, 11]), true)
+    }
+    // Dark outline for contrast on light maps.
+    g.lineStyle(1.6, 0x14171f, 1)
+    g.strokePoints(this.pts(blade), true)
+
     // Shared guard / grip / pommel.
     g.fillStyle(0xffce5a, 1)
     g.fillPoints(this.pts([0, 29, 16, 29, 13.5, 33, 2.5, 33]), true)

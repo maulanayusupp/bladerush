@@ -23,7 +23,8 @@ import { ScoreService } from '~/services/ScoreService'
 import { SpawnService } from '~/services/SpawnService'
 import { gameEventBus } from '~/services/EventBus'
 import { audioService } from '~/services/AudioService'
-import { angleBetween, clamp, distance, randomInt, randomRange } from '~/helpers/math.helper'
+import { angleBetween, clamp, distance, pickOne, randomInt, randomRange } from '~/helpers/math.helper'
+import { formatCompact } from '~/helpers/format.helper'
 
 const OFFSCREEN_MARGIN = 60
 const TAU = Math.PI * 2
@@ -39,6 +40,9 @@ export class BattleScene extends Phaser.Scene {
   private rivalPool: Rival[] = []
   private healPool: Heal[] = []
   private boss!: Boss
+  private bossWeapons: Phaser.GameObjects.Image[] = []
+  private bossLabel!: Phaser.GameObjects.Text
+  private bossAngle = 0
 
   private readonly power = new PowerService()
   private readonly spawner = new SpawnService()
@@ -145,6 +149,15 @@ export class BattleScene extends Phaser.Scene {
     this.rivalPool = Array.from({ length: RIVAL.poolSize }, () => new Rival(this, 0, 0))
     this.healPool = Array.from({ length: 6 }, () => new Heal(this, 0, 0))
     this.boss = new Boss(this, 0, 0)
+    this.bossWeapons = Array.from({ length: 3 }, () =>
+      this.add.image(0, 0, 'wMace').setDepth(1).setVisible(false),
+    )
+    this.bossLabel = this.add
+      .text(0, 0, '', { fontFamily: 'Segoe UI, sans-serif', fontSize: '22px', fontStyle: 'bold', color: '#ffffff' })
+      .setOrigin(0.5)
+      .setDepth(20)
+      .setVisible(false)
+    this.bossLabel.setStroke('#3a0808', 5)
 
     // Reusable spark burst for clashes / deaths.
     this.sparks = this.add
@@ -298,20 +311,54 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- Boss ---------------------------------------------------------------
 
+  /** Per-tick sword damage vs the boss (ring helps sub-linearly). */
+  private bossTickDamage(): number {
+    const stats = this.power.stats
+    return Math.max(
+      1,
+      Math.round(stats.damage * (1 + stats.swordCount * BOSS.swordCountFactor) * this.swordDamageMul),
+    )
+  }
+
   private spawnBoss(elapsedSec: number): void {
-    const hp = Math.round(BOSS.baseHp + (elapsedSec / 60) * BOSS.hpPerMin)
+    // Size HP to the player's current DPS so the fight lasts ~targetSeconds
+    // (and gets tankier over the run). Prevents one-shots at high power.
+    const dps = this.bossTickDamage() * (1000 / BOSS.hitTickMs)
+    const seconds = BOSS.targetSeconds + (elapsedSec / 60) * BOSS.secondsPerMin
+    const hp = Math.max(BOSS.minHp, Math.round(dps * seconds))
     const { x, y } = this.randomEdgePoint()
     this.boss.spawn(x, y, hp, BOSS.speed, 1.5)
     this.bossActive = true
     this.bossSummonAcc = 0
+    this.bossAngle = 0
+    const weaponKey = pickOne(['wMace', 'wAxe', 'wSpear'])
+    this.bossWeapons.forEach((wpn) => wpn.setTexture(weaponKey).setScale(1.7).setVisible(true))
+    this.bossLabel.setVisible(true)
     this.cameras.main.shake(240, 0.008)
     audioService.nova()
     gameEventBus.emit('boss:spawn', { maxHp: hp })
   }
 
+  private hideBossExtras(): void {
+    this.bossWeapons.forEach((wpn) => wpn.setVisible(false))
+    this.bossLabel.setVisible(false)
+  }
+
   private updateBoss(deltaMs: number, elapsedSec: number): void {
     const angle = angleBetween(this.boss.x, this.boss.y, this.player.x, this.player.y)
     this.boss.setVelocity(Math.cos(angle) * this.boss.speed, Math.sin(angle) * this.boss.speed)
+
+    // Orbiting boss weapon(s) + live power (HP) label.
+    this.bossAngle = (this.bossAngle + 2.2 * (deltaMs / 1000)) % TAU
+    const wr = this.boss.displayWidth * 0.5
+    for (let i = 0; i < this.bossWeapons.length; i++) {
+      const wpn = this.bossWeapons[i] as Phaser.GameObjects.Image
+      const a = this.bossAngle + (i / this.bossWeapons.length) * TAU
+      wpn.setPosition(this.boss.x + Math.cos(a) * wr, this.boss.y + Math.sin(a) * wr).setRotation(a + Math.PI / 2)
+    }
+    this.bossLabel
+      .setPosition(this.boss.x, this.boss.y - this.boss.displayHeight * 0.62)
+      .setText(formatCompact(this.boss.hp))
     // Periodically summon a few adds to keep the pressure on.
     this.bossSummonAcc += deltaMs
     if (this.bossSummonAcc >= BOSS.summonMs) {
@@ -330,6 +377,7 @@ export class BattleScene extends Phaser.Scene {
     this.boss.setVelocity(0, 0)
     this.boss.deactivate()
     this.bossActive = false
+    this.hideBossExtras()
     this.registerKill(reward)
     this.scorer.add(reward * BOSS.scoreMul)
     this.emitScore()
@@ -656,10 +704,8 @@ export class BattleScene extends Phaser.Scene {
     // Damage in ticks scaled by the whole ring so bigger rings kill faster.
     if (this.elapsedMs - boss.lastHitAt < BOSS.hitTickMs) return
     boss.lastHitAt = this.elapsedMs
-    const stats = this.power.stats
-    const dmg = Math.round(stats.damage * stats.swordCount * this.swordDamageMul)
     this.sparks.explode(6, boss.x, boss.y)
-    if (boss.takeDamage(dmg)) {
+    if (boss.takeDamage(this.bossTickDamage())) {
       this.bossDefeat()
     } else {
       boss.setTint(0xffffff)

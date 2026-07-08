@@ -125,12 +125,26 @@
     gap: $space-1;
   }
 
+  &__boss-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+  }
+
   &__boss-label {
     font-size: $font-size-sm;
     font-weight: $font-weight-bold;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: $color-danger;
+  }
+
+  &__boss-hp {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+    font-variant-numeric: tabular-nums;
   }
 
   &__boss-bar {

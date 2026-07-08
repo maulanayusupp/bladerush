@@ -10,7 +10,7 @@ export default defineNuxtConfig({
   // automatically). Falls back to relative locally.
   runtimeConfig: {
     public: {
-      siteUrl: '',
+      siteUrl: 'https://bladerush.vercel.app',
     },
   },
 

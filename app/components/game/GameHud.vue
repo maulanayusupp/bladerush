@@ -136,7 +136,10 @@ function restart(): void {
     </div>
 
     <div v-if="bossActive" class="hud__boss">
-      <span class="hud__boss-label">{{ $t('hud.boss') }}</span>
+      <div class="hud__boss-top">
+        <span class="hud__boss-label">{{ $t('hud.boss') }}</span>
+        <span class="hud__boss-hp">{{ formatCompact(bossHp) }} / {{ formatCompact(bossMax) }}</span>
+      </div>
       <div class="hud__boss-bar">
         <div class="hud__boss-fill" :style="{ '--boss-ratio': bossRatio }" />
       </div>
