@@ -482,9 +482,14 @@ export class BattleScene extends Phaser.Scene {
     this.checkLevelUp()
   }
 
+  /** XP needed to reach the next level (grows geometrically). */
+  private xpForNext(): number {
+    return Math.round(LEVEL.baseXp * Math.pow(LEVEL.growth, this.level - 1))
+  }
+
   private checkLevelUp(): void {
     if (this.leveling) return
-    const next = LEVEL.firstXp + this.level * LEVEL.perLevel
+    const next = this.xpForNext()
     if (this.xp < next) return
     this.xp -= next
     this.level++
@@ -511,7 +516,7 @@ export class BattleScene extends Phaser.Scene {
     gameEventBus.emit('xp:changed', {
       level: this.level,
       xp: this.xp,
-      next: LEVEL.firstXp + this.level * LEVEL.perLevel,
+      next: this.xpForNext(),
     })
   }
 

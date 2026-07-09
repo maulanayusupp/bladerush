@@ -187,10 +187,14 @@ export const BOSS = {
   gateValues: [3, 3, 5, 5, 10] as const,
 } as const
 
-/** XP + leveling: kills grant XP; each level offers a choice of 3 upgrades. */
+/**
+ * XP + leveling: kills grant XP; each level offers a choice of 3 upgrades.
+ * Threshold grows geometrically so level-ups get progressively rarer instead
+ * of popping every few kills.
+ */
 export const LEVEL = {
-  firstXp: 5,
-  perLevel: 4,
+  baseXp: 24, // XP for the first level-up
+  growth: 1.5, // each level costs this much more
   xpPerKill: 1,
   xpPerBoss: 8,
 } as const
