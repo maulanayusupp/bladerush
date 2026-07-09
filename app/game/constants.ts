@@ -193,8 +193,8 @@ export const BOSS = {
  * of popping every few kills.
  */
 export const LEVEL = {
-  baseXp: 24, // XP for the first level-up
-  growth: 1.5, // each level costs this much more
+  baseXp: 30, // XP for the first level-up
+  growth: 1.8, // each level costs much more — climbs to 1k / 5k / 10k / 20k kills
   xpPerKill: 1,
   xpPerBoss: 8,
 } as const
