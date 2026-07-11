@@ -198,6 +198,9 @@ export const BOSS = {
   minHp: 1500,
   // Sword ticks help sub-linearly (a bigger ring melts it faster, but not 60×).
   swordCountFactor: 0.12,
+  // Cap a single tick so power spikes (×N gates) can't one-shot the boss.
+  maxHitFraction: 0.045,
+  enrageAt: 0.35, // below this HP fraction the boss enrages
   summonMs: 5000,
   summonCount: 4,
   scoreMul: 6,

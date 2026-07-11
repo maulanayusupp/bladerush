@@ -48,7 +48,9 @@ export class BattleScene extends Phaser.Scene {
   private boss!: Boss
   private bossWeapons: Phaser.GameObjects.Image[] = []
   private bossLabel!: Phaser.GameObjects.Text
+  private bossAura!: Phaser.GameObjects.Image
   private bossAngle = 0
+  private bossClashAcc = 0
 
   private readonly power = new PowerService()
   private readonly spawner = new SpawnService()
@@ -209,6 +211,12 @@ export class BattleScene extends Phaser.Scene {
       .setDepth(20)
       .setVisible(false)
     this.bossLabel.setStroke('#3a0808', 5)
+    this.bossAura = this.add
+      .image(0, 0, 'aura')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xff3020)
+      .setDepth(-1)
+      .setVisible(false)
 
     // Pooled floating reward popups shown on kills.
     this.popupPool = Array.from({ length: 24 }, () =>
@@ -400,9 +408,12 @@ export class BattleScene extends Phaser.Scene {
     this.bossSummonAcc = 0
     this.bossGateAcc = 0
     this.bossAngle = 0
+    this.bossClashAcc = 0
+    this.boss.clearTint()
     const weaponKey = pickOne(['wMace', 'wAxe', 'wSpear'])
     this.bossWeapons.forEach((wpn) => wpn.setTexture(weaponKey).setScale(1.7).setVisible(true))
     this.bossLabel.setVisible(true)
+    this.bossAura.setVisible(true)
     this.cameras.main.shake(240, 0.008)
     audioService.nova()
     gameEventBus.emit('boss:spawn', { maxHp: hp })
@@ -411,14 +422,26 @@ export class BattleScene extends Phaser.Scene {
   private hideBossExtras(): void {
     this.bossWeapons.forEach((wpn) => wpn.setVisible(false))
     this.bossLabel.setVisible(false)
+    this.bossAura.setVisible(false)
+    this.boss.clearTint()
   }
 
   private updateBoss(deltaMs: number, elapsedSec: number): void {
+    const enraged = this.boss.hp < this.boss.maxHp * BOSS.enrageAt
     const angle = angleBetween(this.boss.x, this.boss.y, this.player.x, this.player.y)
-    this.boss.setVelocity(Math.cos(angle) * this.boss.speed, Math.sin(angle) * this.boss.speed)
+    const speed = this.boss.speed * (enraged ? 1.35 : 1)
+    this.boss.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed)
+    this.boss.setTint(enraged ? 0xff7a5a : 0xffffff)
 
-    // Orbiting boss weapon(s) + live power (HP) label.
-    this.bossAngle = (this.bossAngle + 2.2 * (deltaMs / 1000)) % TAU
+    // Menacing aura that pulses (faster when enraged).
+    const auraScale = (this.boss.displayWidth * 1.35) / (AURA.textureRadius * 2)
+    this.bossAura
+      .setPosition(this.boss.x, this.boss.y)
+      .setScale(auraScale)
+      .setAlpha(0.3 + 0.14 * Math.sin(this.elapsedMs / (enraged ? 90 : 170)))
+
+    // Orbiting boss weapon(s) — spin faster when enraged.
+    this.bossAngle = (this.bossAngle + (enraged ? 3.8 : 2.2) * (deltaMs / 1000)) % TAU
     const wr = this.boss.displayWidth * 0.5
     for (let i = 0; i < this.bossWeapons.length; i++) {
       const wpn = this.bossWeapons[i] as Phaser.GameObjects.Image
@@ -428,6 +451,33 @@ export class BattleScene extends Phaser.Scene {
     this.bossLabel
       .setPosition(this.boss.x, this.boss.y - this.boss.displayHeight * 0.62)
       .setText(formatCompact(this.boss.hp))
+
+    // Clash spectacle: when the two rings meet, spark + clang at the contact edge.
+    if (distance(this.boss.x, this.boss.y, this.player.x, this.player.y) < SWORD.orbitRadius + wr + 24) {
+      this.bossClashAcc += deltaMs
+      const interval = enraged ? 110 : 180
+      while (this.bossClashAcc >= interval) {
+        this.bossClashAcc -= interval
+        const cx = this.player.x + Math.cos(angle + Math.PI) * SWORD.orbitRadius
+        const cy = this.player.y + Math.sin(angle + Math.PI) * SWORD.orbitRadius
+        this.sparks.explode(5, cx, cy)
+        const ring = this.add
+          .image(cx, cy, 'shock')
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setTint(0xffe08a)
+          .setScale(0.2)
+          .setDepth(6)
+        this.tweens.add({
+          targets: ring,
+          scale: 0.85,
+          alpha: { from: 0.8, to: 0 },
+          duration: 220,
+          onComplete: () => ring.destroy(),
+        })
+        this.cameras.main.shake(50, enraged ? 0.004 : 0.002)
+        audioService.clash()
+      }
+    }
     // Periodically summon a few adds to keep the pressure on.
     this.bossSummonAcc += deltaMs
     if (this.bossSummonAcc >= BOSS.summonMs) {
@@ -944,14 +994,10 @@ export class BattleScene extends Phaser.Scene {
     if (this.elapsedMs - boss.lastHitAt < BOSS.hitTickMs) return
     boss.lastHitAt = this.elapsedMs
     this.sparks.explode(6, boss.x, boss.y)
-    if (boss.takeDamage(this.bossTickDamage())) {
+    const dmg = Math.min(this.bossTickDamage(), Math.ceil(boss.maxHp * BOSS.maxHitFraction))
+    if (boss.takeDamage(dmg)) {
       this.bossDefeat()
     } else {
-      boss.setTint(0xffffff)
-      boss.setTintFill()
-      this.time.delayedCall(50, () => {
-        if (boss.active) boss.clearTint()
-      })
       gameEventBus.emit('boss:hp', { current: boss.hp, max: boss.maxHp })
     }
   }
