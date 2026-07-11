@@ -172,8 +172,8 @@ export const RIVAL = {
   strongChance: 0.35,
   speed: 55, // homing approach speed (px/s)
   clashDist: 118, // center distance at which the two rings lock and grind
-  clashTickMs: 85, // time between clash exchanges
-  clashTicksTarget: 14, // ~ how many exchanges a duel takes (sets the step size)
+  clashTickMs: 92, // time between clash exchanges
+  clashTicksTarget: 26, // ~ how many exchanges a duel takes (sets the step size)
   loseDamage: 45,
   scoreMultiplier: 3,
 } as const
@@ -193,16 +193,18 @@ export const BOSS = {
   hitTickMs: 100,
   // HP is derived from the player's current damage output so the fight always
   // lasts about this long — and grows tankier over the run.
-  targetSeconds: 8,
-  secondsPerMin: 2,
-  minHp: 1500,
+  targetSeconds: 14,
+  secondsPerMin: 3,
+  minHp: 2500,
   // Sword ticks help sub-linearly (a bigger ring melts it faster, but not 60×).
   swordCountFactor: 0.12,
   // Cap a single tick so power spikes (×N gates) can't one-shot the boss.
-  maxHitFraction: 0.045,
+  // Lower = the fight can never end faster than ~1/frac ticks (≈ that many
+  // hundred ms). 0.02 → min ~50 ticks ≈ 5s even at absurd power.
+  maxHitFraction: 0.02,
   enrageAt: 0.35, // below this HP fraction the boss enrages
-  summonMs: 5000,
-  summonCount: 4,
+  summonMs: 4200,
+  summonCount: 5,
   scoreMul: 6,
   // While a boss is up, big multiplier gates (×N) appear so you can power up.
   gateIntervalMs: 2600,

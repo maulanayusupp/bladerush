@@ -840,9 +840,16 @@ export class BattleScene extends Phaser.Scene {
     this.emitPower()
     rival.setCount(rival.swordCount - step)
 
-    this.sparks.explode(6, cx, cy)
+    this.sparks.explode(8, cx, cy)
     audioService.clash()
-    this.cameras.main.shake(50, 0.003)
+    this.cameras.main.shake(60, 0.004)
+    const ring = this.add
+      .image(cx, cy, 'shock')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xffe08a)
+      .setScale(0.2)
+      .setDepth(6)
+    this.tweens.add({ targets: ring, scale: 0.9, alpha: { from: 0.8, to: 0 }, duration: 200, onComplete: () => ring.destroy() })
 
     if (rival.swordCount <= 0) this.winDuel(rival, cx, cy)
     else if (this.power.power <= 0) this.loseDuel(rival, cx, cy)
