@@ -21,7 +21,8 @@
     "combo": "Combo",
     "skills": {
       "fury": "Blade Fury",
-      "nova": "Shockwave"
+      "nova": "Shockwave",
+      "dash": "Dash"
     }
   },
   "levelup": {

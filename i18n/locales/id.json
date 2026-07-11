@@ -21,7 +21,8 @@
     "combo": "Kombo",
     "skills": {
       "fury": "Badai Bilah",
-      "nova": "Gelombang Kejut"
+      "nova": "Gelombang Kejut",
+      "dash": "Lesat"
     }
   },
   "levelup": {

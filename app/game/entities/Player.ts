@@ -28,8 +28,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.targetY = y
   }
 
-  moveToward(deltaMs: number, bounds: Bounds): void {
-    const step = PLAYER.speed * (deltaMs / 1000)
+  moveToward(deltaMs: number, bounds: Bounds, speedMul = 1): void {
+    const step = PLAYER.speed * speedMul * (deltaMs / 1000)
     const dx = this.targetX - this.x
     const dy = this.targetY - this.y
     const dist = Math.hypot(dx, dy)

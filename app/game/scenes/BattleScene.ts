@@ -13,7 +13,8 @@ import Phaser from 'phaser'
 import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
-import { COINS_PER_SCORE } from '../constants'
+import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
+import { Chest } from '../entities/Chest'
 import { Boss } from '../entities/Boss'
 import { Enemy } from '../entities/Enemy'
 import { Gate } from '../entities/Gate'
@@ -58,6 +59,11 @@ export class BattleScene extends Phaser.Scene {
   private leveling = false
   private playerInvulnUntil = 0
   private metaDamageMul = 1
+  private dashUntil = 0
+  private hitStopUntil = 0
+  private frameTime = 0
+  private ringBlur!: Phaser.GameObjects.Graphics
+  private chestPool: Chest[] = []
   private popupPool: Phaser.GameObjects.Text[] = []
 
   private elapsedMs = 0
@@ -115,6 +121,7 @@ export class BattleScene extends Phaser.Scene {
     this.comboUntil = 0
     this.skillReadyAt.fury = 0
     this.skillReadyAt.nova = 0
+    this.skillReadyAt.dash = 0
     this.power.reset()
     this.scorer.reset()
     this.upgrades.reset()
@@ -122,6 +129,8 @@ export class BattleScene extends Phaser.Scene {
     this.level = 1
     this.leveling = false
     this.playerInvulnUntil = 0
+    this.dashUntil = 0
+    this.hitStopUntil = 0
     // Apply persistent meta-upgrades bought in the shop.
     metaService.load()
     this.metaDamageMul = metaService.damageMul
@@ -188,6 +197,8 @@ export class BattleScene extends Phaser.Scene {
     this.swordPool.forEach((sword) => sword.setTexture(`sword${swordSkin}`))
     this.rivalPool = Array.from({ length: RIVAL.poolSize }, () => new Rival(this, 0, 0))
     this.healPool = Array.from({ length: 6 }, () => new Heal(this, 0, 0))
+    this.chestPool = Array.from({ length: CHEST.poolSize }, () => new Chest(this, 0, 0))
+    this.ringBlur = this.add.graphics().setDepth(0).setBlendMode(Phaser.BlendModes.ADD)
     this.boss = new Boss(this, 0, 0)
     this.bossWeapons = Array.from({ length: 3 }, () =>
       this.add.image(0, 0, 'wMace').setDepth(1).setVisible(false),
@@ -246,12 +257,15 @@ export class BattleScene extends Phaser.Scene {
     this.emitXp()
   }
 
-  override update(_time: number, deltaMs: number): void {
+  override update(time: number, deltaMs: number): void {
     if (this.isOver) return
+    this.frameTime = time
+    if (time < this.hitStopUntil) return // brief freeze for impact
     this.elapsedMs += deltaMs
     const elapsedSec = this.elapsedMs / 1000
 
-    this.player.moveToward(deltaMs, { width: this.worldW, height: this.worldH })
+    const dashing = this.elapsedMs < this.dashUntil
+    this.player.moveToward(deltaMs, { width: this.worldW, height: this.worldH }, dashing ? SKILLS.dash.speedMul : 1)
     this.bg.tilePositionX = this.player.x * 0.08
     this.bg.tilePositionY = this.player.y * 0.08
 
@@ -297,6 +311,7 @@ export class BattleScene extends Phaser.Scene {
     this.updateGates(deltaMs)
     this.updateRivals(deltaMs)
     this.updateHeals(deltaMs)
+    this.updateChests()
     this.updateSwords(deltaMs)
     this.checkEvolve()
   }
@@ -456,6 +471,62 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.shake(300, 0.012)
     audioService.win()
     gameEventBus.emit('boss:end', undefined)
+    this.hitStopUntil = this.frameTime + HITSTOP_MS
+    this.spawnChest(x, y, 2) // bosses always drop an epic chest
+  }
+
+  // ---- Chests -------------------------------------------------------------
+
+  private maybeDropChest(x: number, y: number): void {
+    if (Math.random() < CHEST.dropChance) this.spawnChest(x, y, this.rollRarity())
+  }
+
+  private rollRarity(): number {
+    const total = CHEST.rarities.reduce((s, r) => s + r.weight, 0)
+    let roll = Math.random() * total
+    for (let i = 0; i < CHEST.rarities.length; i++) {
+      const r = CHEST.rarities[i]
+      if (!r) continue
+      roll -= r.weight
+      if (roll <= 0) return i
+    }
+    return 0
+  }
+
+  private spawnChest(x: number, y: number, rarityIndex: number): void {
+    const chest = this.chestPool.find((c) => !c.active)
+    if (!chest) return
+    const r = CHEST.rarities[rarityIndex] ?? CHEST.rarities[0]!
+    chest.spawn(x, y, r.tint, r.mul)
+  }
+
+  private updateChests(): void {
+    for (const chest of this.chestPool) {
+      if (!chest.active || chest.consumed) continue
+      if (
+        Math.abs(chest.x - this.player.x) < CHEST.size + this.player.width / 2 &&
+        Math.abs(chest.y - this.player.y) < CHEST.size + this.player.height / 2
+      ) {
+        this.openChest(chest)
+      }
+    }
+  }
+
+  private openChest(chest: Chest): void {
+    chest.consumed = true
+    const powerReward = Math.max(
+      CHEST.basePower * chest.mul,
+      Math.round(this.power.power * CHEST.powerFromCurrent * chest.mul),
+    )
+    const coins = Math.round(CHEST.baseCoins * chest.mul)
+    this.power.addEnemyValue(powerReward)
+    this.emitPower()
+    metaService.addCoins(coins)
+    this.sparks.explode(16, chest.x, chest.y)
+    this.playClashFx(chest.x, chest.y, 0xffd700)
+    this.spawnPopup(chest.x, chest.y, `+${formatCompact(powerReward)}⚔  +${coins}💰`)
+    audioService.win()
+    chest.deactivate()
   }
 
   // ---- Combo --------------------------------------------------------------
@@ -644,6 +715,14 @@ export class BattleScene extends Phaser.Scene {
 
     this.updateAura(colors)
 
+    // Motion-blur disc: a glowing band that intensifies with spin speed.
+    this.ringBlur.clear()
+    if (count > 0) {
+      const blurA = Math.min(0.4, orbitSpeed * 0.045)
+      this.ringBlur.lineStyle(30, colors.length ? (colors[colors.length - 1] as number) : 0xffffff, blurA)
+      this.ringBlur.strokeCircle(this.player.x, this.player.y, radius)
+    }
+
     for (let i = 0; i < this.swordPool.length; i++) {
       const sword = this.swordPool[i] as Sword
       if (i >= count) {
@@ -828,6 +907,7 @@ export class BattleScene extends Phaser.Scene {
       audioService.death()
       enemy.deactivate()
       this.registerKill(reward, ex, ey)
+      this.maybeDropChest(ex, ey)
     } else {
       // Non-lethal hit: quick spark + white impact flash.
       this.sparks.explode(3, enemy.x, enemy.y)
@@ -942,7 +1022,7 @@ export class BattleScene extends Phaser.Scene {
 
   private onSkill = ({ id }: { id: string }): void => {
     if (this.isOver) return
-    if (id !== 'fury' && id !== 'nova') return
+    if (id !== 'fury' && id !== 'nova' && id !== 'dash') return
     if (this.elapsedMs < (this.skillReadyAt[id] ?? 0)) return
     const skill = SKILLS[id]
     this.skillReadyAt[id] = this.elapsedMs + skill.cooldownMs
@@ -952,8 +1032,14 @@ export class BattleScene extends Phaser.Scene {
       this.furyUntil = this.elapsedMs + SKILLS.fury.durationMs
       this.cameras.main.flash(220, 150, 120, 255)
       audioService.skill()
-    } else {
+    } else if (id === 'nova') {
       this.castNova()
+    } else {
+      // dash: quick burst toward the pointer + brief invulnerability
+      this.dashUntil = this.elapsedMs + SKILLS.dash.durationMs
+      this.playerInvulnUntil = this.elapsedMs + SKILLS.dash.durationMs
+      this.sparks.explode(8, this.player.x, this.player.y)
+      audioService.skill()
     }
   }
 
@@ -985,6 +1071,7 @@ export class BattleScene extends Phaser.Scene {
         this.killFx(ex, ey)
         enemy.deactivate()
         this.registerKill(val, ex, ey)
+        this.maybeDropChest(ex, ey)
       }
     }
   }

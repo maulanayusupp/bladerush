@@ -106,6 +106,25 @@ export const ENEMY_TIERS = [
 export const SKILLS = {
   fury: { id: 'fury', cooldownMs: 12000, durationMs: 4500, orbitMul: 2, radiusMul: 1.35, damageMul: 2.2 },
   nova: { id: 'nova', cooldownMs: 15000, durationMs: 0, damage: 140 },
+  dash: { id: 'dash', cooldownMs: 4500, durationMs: 300, speedMul: 4.5 },
+} as const
+
+/** Brief freeze on big moments (boss kill) for punch. */
+export const HITSTOP_MS = 70
+
+/** Treasure chests dropped by kills; run into them for a reward. */
+export const CHEST = {
+  poolSize: 8,
+  dropChance: 0.02, // per normal kill
+  size: 30,
+  basePower: 8,
+  baseCoins: 5,
+  powerFromCurrent: 0.15, // reward also scales with current power
+  rarities: [
+    { id: 'common', weight: 70, tint: 0x9a6a3a, mul: 1 },
+    { id: 'rare', weight: 25, tint: 0xc7ccd8, mul: 3 },
+    { id: 'epic', weight: 5, tint: 0xffd700, mul: 8 },
+  ],
 } as const
 
 export const GATE = {

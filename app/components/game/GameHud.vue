@@ -39,6 +39,7 @@ const isLowHp = computed(() => hpRatio.value < 0.3)
 
 // Active skills + their live cooldowns.
 const skills = [
+  { id: 'dash', icon: '💨' },
   { id: 'fury', icon: '🌀' },
   { id: 'nova', icon: '💥' },
 ]

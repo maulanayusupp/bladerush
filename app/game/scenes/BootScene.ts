@@ -125,6 +125,7 @@ export class BootScene extends Phaser.Scene {
     this.bake('enemyLegend', 66, 66, (g) => this.drawTrooper(g, 66, TROOPS.legend))
     this.bake('boss', 76, 76, (g) => this.drawBoss(g))
     this.bake('heal', 30, 30, (g) => this.drawHeal(g))
+    this.bake('chest', 32, 30, (g) => this.drawChest(g))
     this.bake('wMace', 28, 56, (g) => this.drawMace(g))
     this.bake('wAxe', 28, 56, (g) => this.drawAxe(g))
     this.bake('wSpear', 28, 56, (g) => this.drawSpear(g))
@@ -385,6 +386,22 @@ export class BootScene extends Phaser.Scene {
     g.fillCircle(43, 50, 2)
     g.fillStyle(0xffffff, 1) // fangs
     for (let i = 0; i < 6; i++) g.fillTriangle(26 + i * 5, 62, 28 + i * 5, 62, 27 + i * 5, 70)
+  }
+
+  /** CHEST — near-white so it can be tinted per rarity. */
+  private drawChest(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xf2f2f2, 1)
+    g.fillRoundedRect(4, 12, 24, 15, 3) // body
+    g.fillStyle(0xffffff, 1)
+    g.fillRoundedRect(4, 6, 24, 9, 4) // lid
+    g.fillStyle(0x8a8a8a, 1)
+    g.fillRect(4, 14, 24, 2) // seam
+    g.fillRect(6, 12, 2, 15) // straps
+    g.fillRect(24, 12, 2, 15)
+    g.fillStyle(0x5a4a2a, 1)
+    g.fillRect(14, 13, 4, 5) // lock
+    g.lineStyle(1.5, 0x3a2f22, 1)
+    g.strokeRoundedRect(4, 6, 24, 21, 4)
   }
 
   /** HEAL — a soft pink heart. */
