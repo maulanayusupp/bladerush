@@ -27,7 +27,9 @@ export const WORLD = {
  * Rendered in Phaser (Graphics, scrollFactor 0) — never per-frame Vue.
  */
 export const MINIMAP = {
-  size: 148, // box side in px
+  maxSize: 148, // box side cap (desktop) in px
+  minSize: 78, // never smaller than this (tiny phones)
+  screenFraction: 0.26, // scale to this fraction of the shorter screen side
   margin: 14,
   colors: {
     panel: 0x0a0a12,

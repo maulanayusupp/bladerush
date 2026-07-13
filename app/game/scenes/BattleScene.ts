@@ -373,7 +373,11 @@ export class BattleScene extends Phaser.Scene {
   private drawMinimap(): void {
     const m = this.minimap
     const c = MINIMAP.colors
-    const s = MINIMAP.size
+    // Responsive: scale to a fraction of the shorter screen side (so it stays
+    // small on phones), clamped between minSize and maxSize.
+    const s = Math.round(
+      clamp(Math.min(this.viewW, this.viewH) * MINIMAP.screenFraction, MINIMAP.minSize, MINIMAP.maxSize),
+    )
     const x0 = this.viewW - s - MINIMAP.margin
     const y0 = MINIMAP.margin + 52 // clear the HUD's top-right mute button
     const sx = s / this.worldW
@@ -388,9 +392,10 @@ export class BattleScene extends Phaser.Scene {
     m.lineStyle(2, c.border, 0.85)
     m.strokeRoundedRect(x0, y0, s, s, 8)
 
+    const k = s / MINIMAP.maxSize // shrink blips on smaller maps
     const blip = (color: number, wx: number, wy: number, r: number): void => {
       m.fillStyle(color, 1)
-      m.fillCircle(px(wx), py(wy), r)
+      m.fillCircle(px(wx), py(wy), Math.max(1, r * k))
     }
 
     // Pickups first (under threats).
@@ -415,7 +420,7 @@ export class BattleScene extends Phaser.Scene {
     // Hero on top.
     blip(c.player, this.player.x, this.player.y, 3)
     m.lineStyle(1.5, 0xffffff, 0.9)
-    m.strokeCircle(px(this.player.x), py(this.player.y), 4.5)
+    m.strokeCircle(px(this.player.x), py(this.player.y), Math.max(3, 4.5 * k))
   }
 
   /** Swap the hero to the next champion look every 1000 power. */
