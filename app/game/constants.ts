@@ -78,6 +78,7 @@ export const PLAYER = {
 export const SWORD_SHAPES = [
   'leaf', 'straight', 'curved', 'broad', 'rapier', 'shard', 'cleaver', 'saber', 'glaive', 'fork',
   'katana', 'scimitar', 'greatsword', 'dagger', 'kris', 'trident', 'scythe', 'twin', 'nodachi', 'khopesh',
+  'flamberge', 'claymore', 'cutlass', 'estoc', 'crystal', 'bone', 'machete', 'falchion',
 ] as const
 
 /** The hero visually evolves every 1000 power through 500 unique champion looks. */

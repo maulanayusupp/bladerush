@@ -139,6 +139,8 @@ function genChampions(): ChampionSkin[] {
       pattern: i % 3,
       visor: i % 2,
       helmType: i % 5, // greathelm / barbute / hood / spiked / crowned-open
+      // Interleave classes so the gallery/evolution cycles silhouettes fast.
+      cls: (i * 3 + Math.floor(i / HERO_CLASS_COUNT)) % HERO_CLASS_COUNT,
     })
   }
   return out
@@ -278,7 +280,10 @@ interface ChampionSkin {
   pattern: number // 0..2 chestplate decoration
   visor: number // 0..1 helmet visor style
   helmType: number // 0..4 helmet archetype
+  cls: number // body silhouette class (knight/barbarian/mage/…)
 }
+
+const HERO_CLASS_COUNT = 8 // knight, barbarian, mage, samurai, rogue, golem, lich, dragoon
 
 /** 500 unique hero looks that escalate in grandeur (evolve every 1000 power). */
 const CHAMPION_SKINS: ChampionSkin[] = genChampions()
@@ -1297,15 +1302,17 @@ export class BootScene extends Phaser.Scene {
    * (dull plate, bare head), high rank is a broad, glowing, winged champion —
    * regalia unlocks via `features`, body bulk & glow scale continuously.
    */
+  /**
+   * A hero. `cls` picks a fully different BODY silhouette (knight, barbarian,
+   * mage, samurai, rogue, golem, lich, dragoon) — so heroes differ in SHAPE,
+   * not just color. `rank` still layers grandeur (glow, wings, crown, halo).
+   */
   private drawChampion(g: Phaser.GameObjects.Graphics, s: ChampionSkin): void {
     const has = (f: string) => s.features.includes(f)
     const dark = 0x0c0a12
-    const bulk = 0.8 + 0.34 * s.rank
-    const w = Math.round(28 * bulk) // torso width
-    const x0 = 32 - w / 2
 
     if (s.glow) this.bakedGlow(g, 32, 34, s.glow, 30)
-    // Wings (behind everything)
+    // Wings (behind the body) for high-rank heroes.
     if (has('wings')) {
       g.fillStyle(s.wing ?? 0xeef2ff, 1)
       g.fillPoints(this.pts([16, 30, 0, 20, 4, 44, 15, 48]), true)
@@ -1314,36 +1321,63 @@ export class BootScene extends Phaser.Scene {
       g.fillPoints(this.pts([16, 34, 4, 28, 6, 44, 15, 47]), true)
       g.fillPoints(this.pts([48, 34, 60, 28, 58, 44, 49, 47]), true)
     }
-    if (has('cape')) {
-      g.fillStyle(s.cape, 1)
-      g.fillPoints(this.pts([16, 26, 48, 26, 54, 62, 10, 62]), true)
+
+    switch (s.cls) {
+      case 1: this.drawHeroBarbarian(g, s, dark); break
+      case 2: this.drawHeroMage(g, s, dark); break
+      case 3: this.drawHeroSamurai(g, s, dark); break
+      case 4: this.drawHeroRogue(g, s, dark); break
+      case 5: this.drawHeroGolem(g, s, dark); break
+      case 6: this.drawHeroLich(g, s, dark); break
+      case 7: this.drawHeroDragoon(g, s, dark); break
+      default: this.drawHeroKnight(g, s, dark)
     }
-    // Legs
-    g.fillStyle(shade(s.robe, 0.75), 1)
+
+    // Shared high-rank regalia (works over any class head near the top).
+    if (has('crown')) {
+      g.fillStyle(s.trim, 1)
+      for (const x of [22, 27, 32, 37, 42]) g.fillTriangle(x - 2.5, 8, x, 1, x + 2.5, 8)
+    }
+    if (has('halo')) {
+      g.lineStyle(2, s.trim, 1)
+      g.strokeEllipse(32, 5, 26, 8)
+    }
+  }
+
+  /** Two booted legs centered on x=32. */
+  private drawHeroLegs(g: Phaser.GameObjects.Graphics, color: number, dark: number): void {
+    g.fillStyle(color, 1)
     g.fillRect(23, 50, 7, 12)
     g.fillRect(34, 50, 7, 12)
     g.fillStyle(dark, 1)
     g.fillRect(23, 58, 7, 4)
     g.fillRect(34, 58, 7, 4)
-    // Chestplate with a dark outline for definition
+  }
+
+  // ---- Hero classes (each a distinct silhouette) --------------------------
+
+  private drawHeroKnight(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    const has = (f: string) => s.features.includes(f)
+    const bulk = 0.8 + 0.34 * s.rank
+    const w = Math.round(28 * bulk)
+    const x0 = 32 - w / 2
+    if (has('cape')) {
+      g.fillStyle(s.cape, 1)
+      g.fillPoints(this.pts([16, 26, 48, 26, 54, 62, 10, 62]), true)
+    }
+    this.drawHeroLegs(g, shade(s.robe, 0.75), dark)
     g.fillStyle(dark, 1)
     g.fillRoundedRect(x0 - 1.5, 26.5, w + 3, 27, 6)
     g.fillStyle(s.robe, 1)
     g.fillRoundedRect(x0, 28, w, 25, 5)
     g.fillStyle(s.robeHi, 0.95)
-    g.fillPoints(this.pts([32, 30, x0 + w - 4, 34, x0 + w - 6, 50, x0 + 6, 50, x0 + 4, 34]), true) // V-plate
-    // Chestplate decoration varies by `pattern` so adjacent heroes differ.
+    g.fillPoints(this.pts([32, 30, x0 + w - 4, 34, x0 + w - 6, 50, x0 + 6, 50, x0 + 4, 34]), true)
     g.fillStyle(s.trim, 1)
-    if (s.pattern === 1) {
-      g.fillRect(x0 + 3, 36, w - 6, 2) // stripe
-    } else if (s.pattern === 2) {
-      g.fillTriangle(32, 33, 37, 40, 32, 47) // diamond emblem
-      g.fillTriangle(32, 33, 27, 40, 32, 47)
-    }
-    g.fillStyle(s.trim, 1) // belt + emblem
+    if (s.pattern === 1) g.fillRect(x0 + 3, 36, w - 6, 2)
+    else if (s.pattern === 2) { g.fillTriangle(32, 33, 37, 40, 32, 47); g.fillTriangle(32, 33, 27, 40, 32, 47) }
+    g.fillStyle(s.trim, 1)
     g.fillRect(x0, 48, w, 4)
     g.fillCircle(32, 40, 2 + s.rank * 2)
-    // Shoulders: angular pauldrons once unlocked, else small nubs
     if (has('pauldrons')) {
       const pad = 4 + Math.round(3 * bulk)
       g.fillStyle(s.trim, 1)
@@ -1357,30 +1391,238 @@ export class BootScene extends Phaser.Scene {
       g.fillCircle(x0 + 1, 31, 4)
       g.fillCircle(x0 + w - 1, 31, 4)
     }
-    // Gauntlet fists
     g.fillStyle(s.robeHi, 1)
     g.fillCircle(x0 - 4, 40, 3.5)
     g.fillCircle(x0 + w + 4, 40, 3.5)
-    // Helmet SHAPE by archetype (smaller/plainer at low rank).
     this.drawHeroHelm(g, s, dark)
-    if (has('horns')) {
-      g.fillStyle(s.trim, 1)
-      g.fillTriangle(16, 14, 8, 2, 22, 12)
-      g.fillTriangle(48, 14, 56, 2, 42, 12)
-    }
-    if (has('crest')) { // plume crest
+    if (has('crest')) {
       g.fillStyle(s.trim, 1)
       g.fillPoints(this.pts([30, 8, 34, 8, 34, 0, 30, 2]), true)
       g.fillPoints(this.pts([31, 6, 33, 6, 38, 4, 36, 10]), true)
     }
-    if (has('crown')) {
-      g.fillStyle(s.trim, 1)
-      for (const x of [22, 27, 32, 37, 42]) g.fillTriangle(x - 2.5, 8, x, 1, x + 2.5, 8)
+  }
+
+  private drawHeroBarbarian(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    const flesh = 0xc9a27a
+    this.drawHeroLegs(g, s.hood, dark) // fur/leather breeches
+    // Bare, broad torso.
+    g.fillStyle(dark, 1)
+    g.fillRoundedRect(15, 27, 34, 24, 7)
+    g.fillStyle(flesh, 1)
+    g.fillRoundedRect(16, 28, 32, 22, 6)
+    g.fillStyle(shade(flesh, 0.85), 1)
+    g.fillRect(31, 30, 2, 18) // sternum
+    g.fillStyle(s.trim, 1) // belt
+    g.fillRect(16, 46, 32, 4)
+    // Huge fur shoulders.
+    g.fillStyle(s.robe, 1)
+    g.fillCircle(15, 30, 9)
+    g.fillCircle(49, 30, 9)
+    g.fillStyle(flesh, 1) // fists
+    g.fillCircle(9, 42, 4)
+    g.fillCircle(55, 42, 4)
+    // Head + war-paint + topknot / horns.
+    g.fillStyle(flesh, 1)
+    g.fillEllipse(32, 18, 20, 19)
+    g.fillStyle(s.trim, 0.8)
+    g.fillRect(24, 14, 16, 2)
+    g.fillStyle(s.eye, 1)
+    g.fillRect(27, 17, 3, 3)
+    g.fillRect(35, 17, 3, 3)
+    g.fillStyle(dark, 1) // beard
+    g.fillPoints(this.pts([24, 22, 40, 22, 36, 30, 28, 30]), true)
+    g.fillStyle(s.robe, 1) // topknot
+    g.fillCircle(32, 7, 4)
+  }
+
+  private drawHeroMage(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    // Long flaring robe.
+    g.fillStyle(dark, 1)
+    g.fillPoints(this.pts([26, 22, 38, 22, 50, 62, 14, 62]), true)
+    g.fillStyle(s.robe, 1)
+    g.fillPoints(this.pts([27, 23, 37, 23, 48, 61, 16, 61]), true)
+    g.fillStyle(s.robeHi, 0.9)
+    g.fillPoints(this.pts([30, 24, 34, 24, 40, 61, 24, 61]), true)
+    g.fillStyle(s.trim, 1) // hem + sash
+    g.fillRect(16, 58, 32, 3)
+    g.fillRect(28, 34, 8, 3)
+    // Sleeves.
+    g.fillStyle(s.robe, 1)
+    g.fillPoints(this.pts([27, 26, 20, 44, 26, 44]), true)
+    g.fillPoints(this.pts([37, 26, 44, 44, 38, 44]), true)
+    // Face.
+    g.fillStyle(dark, 1)
+    g.fillEllipse(32, 20, 15, 15)
+    g.fillStyle(s.eye, 1)
+    g.fillRect(28, 19, 3, 3)
+    g.fillRect(34, 19, 3, 3)
+    // Tall pointed hat.
+    g.fillStyle(s.hood, 1)
+    g.fillPoints(this.pts([20, 15, 44, 15, 33, -2]), true)
+    g.fillStyle(s.trim, 1)
+    g.fillRect(20, 13, 24, 3)
+    g.fillStyle(s.eye, 1) // hat star
+    g.fillCircle(31, 6, 1.6)
+    // Glowing staff.
+    g.fillStyle(0x5c3b22, 1)
+    g.fillRect(48, 20, 2, 34)
+    g.fillStyle(s.trim, 1)
+    g.fillCircle(49, 17, 4)
+    g.fillStyle(0xffffff, 0.8)
+    g.fillCircle(48, 16, 1.4)
+  }
+
+  private drawHeroSamurai(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    // Hakama split skirt.
+    g.fillStyle(s.hood, 1)
+    g.fillPoints(this.pts([22, 44, 31, 44, 30, 62, 22, 62]), true)
+    g.fillPoints(this.pts([33, 44, 42, 44, 42, 62, 34, 62]), true)
+    // Torso (do / cuirass).
+    g.fillStyle(dark, 1)
+    g.fillRoundedRect(21, 27, 22, 20, 4)
+    g.fillStyle(s.robe, 1)
+    g.fillRoundedRect(22, 28, 20, 18, 3)
+    g.fillStyle(s.trim, 1)
+    for (const ly of [32, 37, 42]) g.fillRect(22, ly, 20, 1.5) // lamellar rows
+    // Wide layered shoulders (sode).
+    g.fillStyle(s.robeHi, 1)
+    g.fillPoints(this.pts([8, 30, 22, 28, 22, 40, 10, 40]), true)
+    g.fillPoints(this.pts([56, 30, 42, 28, 42, 40, 54, 40]), true)
+    g.fillStyle(dark, 0.4)
+    g.fillRect(10, 34, 12, 1.5)
+    g.fillRect(42, 34, 12, 1.5)
+    // Menpo (masked face).
+    g.fillStyle(dark, 1)
+    g.fillEllipse(32, 19, 17, 16)
+    g.fillStyle(s.eye, 1)
+    g.fillRect(27, 18, 4, 2.5)
+    g.fillRect(33, 18, 4, 2.5)
+    // Kabuto dome + neck guard + crescent maedate.
+    g.fillStyle(s.hood, 1)
+    g.fillEllipse(32, 12, 26, 16)
+    g.fillEllipse(32, 16, 34, 10)
+    g.fillStyle(s.trim, 1)
+    g.fillPoints(this.pts([24, 8, 40, 8, 32, 1]), true) // crest
+    g.lineStyle(2, s.trim, 1)
+    g.beginPath()
+    g.arc(32, 9, 7, Math.PI, 0, false)
+    g.strokePath()
+  }
+
+  private drawHeroRogue(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    this.drawHeroLegs(g, dark, dark)
+    // Draping cloak.
+    g.fillStyle(dark, 1)
+    g.fillPoints(this.pts([18, 22, 46, 22, 52, 60, 12, 60]), true)
+    g.fillStyle(s.robe, 1)
+    g.fillPoints(this.pts([20, 24, 44, 24, 48, 58, 16, 58]), true)
+    g.fillStyle(s.trim, 1) // clasp
+    g.fillCircle(32, 27, 2.5)
+    // Hood with a shadowed face.
+    g.fillStyle(s.hood, 1)
+    g.fillPoints(this.pts([22, 20, 42, 20, 38, 4, 32, 0, 26, 4]), true)
+    g.fillStyle(dark, 1)
+    g.fillEllipse(32, 17, 13, 13)
+    g.fillStyle(s.eye, 1)
+    g.fillRect(28, 16, 3, 2.5)
+    g.fillRect(34, 16, 3, 2.5)
+    // Twin daggers.
+    g.fillStyle(0xcdd3e0, 1)
+    g.fillPoints(this.pts([14, 40, 16, 40, 15, 30]), true)
+    g.fillPoints(this.pts([48, 40, 50, 40, 49, 30]), true)
+  }
+
+  private drawHeroGolem(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    // Massive blocky stone body.
+    g.fillStyle(dark, 1)
+    g.fillRoundedRect(11, 24, 42, 34, 6)
+    g.fillStyle(s.robe, 1)
+    g.fillRoundedRect(13, 26, 38, 30, 5)
+    g.fillStyle(s.robeHi, 0.8)
+    g.fillRoundedRect(16, 29, 12, 12, 3)
+    g.fillRoundedRect(36, 29, 12, 12, 3)
+    // Glowing cracks / core.
+    g.fillStyle(s.glow || s.trim, 1)
+    g.fillCircle(32, 40, 4)
+    g.lineStyle(1.5, s.glow || s.trim, 0.9)
+    g.lineBetween(32, 40, 24, 30)
+    g.lineBetween(32, 40, 42, 46)
+    // Blocky fists.
+    g.fillStyle(s.robe, 1)
+    g.fillRoundedRect(6, 40, 9, 12, 2)
+    g.fillRoundedRect(49, 40, 9, 12, 2)
+    // Small sunken head with glowing eyes.
+    g.fillStyle(dark, 1)
+    g.fillRoundedRect(24, 14, 16, 12, 3)
+    g.fillStyle(s.eye, 1)
+    g.fillRect(27, 18, 4, 3)
+    g.fillRect(33, 18, 4, 3)
+  }
+
+  private drawHeroLich(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    // Tattered robe (jagged hem).
+    g.fillStyle(dark, 1)
+    g.fillPoints(this.pts([24, 24, 40, 24, 48, 62, 40, 54, 34, 62, 30, 54, 24, 62, 16, 54]), true)
+    g.fillStyle(s.robe, 1)
+    g.fillPoints(this.pts([25, 25, 39, 25, 45, 58, 39, 52, 34, 60, 30, 52, 25, 60, 19, 52]), true)
+    // Bony arms.
+    g.fillStyle(0xd8d2c0, 1)
+    g.fillRect(18, 28, 3, 16)
+    g.fillRect(43, 28, 3, 16)
+    g.fillCircle(19, 45, 3)
+    g.fillCircle(45, 45, 3)
+    // Collar + amulet.
+    g.fillStyle(s.trim, 1)
+    g.fillPoints(this.pts([24, 24, 40, 24, 36, 30, 28, 30]), true)
+    g.fillStyle(s.glow || s.eye, 1)
+    g.fillCircle(32, 34, 2.5)
+    // Skull head + hood.
+    g.fillStyle(s.hood, 1)
+    g.fillPoints(this.pts([22, 20, 42, 20, 38, 2, 26, 2]), true)
+    g.fillStyle(0xe6e0cf, 1)
+    g.fillEllipse(32, 16, 16, 16)
+    g.fillStyle(0x120d08, 1)
+    g.fillEllipse(28, 16, 5, 6)
+    g.fillEllipse(36, 16, 5, 6)
+    g.fillStyle(s.eye, 1)
+    g.fillCircle(28, 16, 1.8)
+    g.fillCircle(36, 16, 1.8)
+    g.fillStyle(0x120d08, 1)
+    for (let i = 0; i < 4; i++) g.fillRect(27 + i * 3, 22, 1.4, 3)
+  }
+
+  private drawHeroDragoon(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    const has = (f: string) => s.features.includes(f)
+    if (has('cape')) {
+      g.fillStyle(s.cape, 1)
+      g.fillPoints(this.pts([18, 26, 46, 26, 52, 62, 12, 62]), true)
     }
-    if (has('halo')) {
-      g.lineStyle(2, s.trim, 1)
-      g.strokeEllipse(32, 5, 26, 8)
-    }
+    this.drawHeroLegs(g, shade(s.robe, 0.7), dark)
+    g.fillStyle(dark, 1)
+    g.fillRoundedRect(18, 27, 28, 25, 5)
+    g.fillStyle(s.robe, 1)
+    g.fillRoundedRect(19, 28, 26, 23, 4)
+    g.fillStyle(s.robeHi, 0.9)
+    g.fillPoints(this.pts([32, 30, 42, 34, 40, 48, 24, 48, 22, 34]), true)
+    // Spiked pauldrons.
+    g.fillStyle(s.trim, 1)
+    g.fillTriangle(8, 36, 20, 26, 20, 38)
+    g.fillTriangle(56, 36, 44, 26, 44, 38)
+    g.fillTriangle(12, 30, 18, 22, 20, 31)
+    g.fillTriangle(52, 30, 46, 22, 44, 31)
+    // Winged/horned helm.
+    g.fillStyle(dark, 1)
+    g.fillEllipse(32, 17, 24, 24)
+    g.fillStyle(s.hood, 1)
+    g.fillEllipse(32, 17, 21, 21)
+    g.fillStyle(s.trim, 1) // side wings on helm
+    g.fillPoints(this.pts([21, 14, 10, 8, 18, 18]), true)
+    g.fillPoints(this.pts([43, 14, 54, 8, 46, 18]), true)
+    g.fillStyle(dark, 1)
+    g.fillRect(24, 16, 16, 5)
+    g.fillStyle(s.eye, 1)
+    g.fillRect(26, 17, 4, 3)
+    g.fillRect(34, 17, 4, 3)
   }
 
   private drawSword(g: Phaser.GameObjects.Graphics): void {
@@ -1432,6 +1674,14 @@ export class BootScene extends Phaser.Scene {
       kris: [8, 1, 11, 6, 6.5, 11, 11, 16, 6.5, 21, 10.5, 27, 8, 29, 5.5, 27, 9.5, 21, 5, 16, 9.5, 11, 5, 6],
       // Curved sickle (khopesh) — hooks to one side.
       khopesh: [7, 2, 13, 8, 13.5, 16, 10, 22, 8, 22, 8, 12, 6.5, 6],
+      flamberge: [8, 0, 11, 6, 6.5, 11, 11, 16, 6.5, 21, 11, 26, 8, 29, 5, 26, 9.5, 21, 5, 16, 9.5, 11, 5, 6],
+      claymore: [8, 0, 11.5, 6, 11.5, 29, 4.5, 29, 4.5, 6],
+      cutlass: [7, 2, 13, 10, 12, 22, 8, 29, 6, 28, 5.5, 11],
+      estoc: [8, 1, 9, 10, 8.8, 29, 7.2, 29, 7, 10],
+      crystal: [8, 0, 11.5, 10, 10, 20, 8, 29, 6, 20, 4.5, 10],
+      bone: [8, 1, 10.5, 8, 9, 12, 11, 18, 8.5, 24, 9.5, 28, 6.5, 28, 7.5, 24, 5, 18, 7, 12, 5.5, 8],
+      machete: [6, 6, 12, 10, 12.5, 26, 5, 28, 5, 10],
+      falchion: [7, 2, 12.5, 9, 13, 20, 9, 29, 6, 28, 5.5, 10],
     }
     const roundGuard = shape === 'katana' || shape === 'nodachi' // tsuba
     const blade: number[] = shapes[shape] ?? shapes.leaf ?? []
