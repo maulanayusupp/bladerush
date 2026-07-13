@@ -89,7 +89,7 @@ function unlock(features: string[], at: number, rank: number, f: string): void {
   if (rank >= at) features.push(f)
 }
 
-const CHAMPION_COUNT = 500
+const CHAMPION_COUNT = 100
 
 /**
  * 500 UNIQUE knight heroes. Uniqueness comes from combining several dimensions
@@ -1437,13 +1437,27 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(s.trim, 1)
     if (s.pattern === 1) g.fillRect(x0 + 3, 36, w - 6, 2)
     else if (s.pattern === 2) { g.fillTriangle(32, 33, 37, 40, 32, 47); g.fillTriangle(32, 33, 27, 40, 32, 47) }
+    // Muscle/plate seam shading for definition.
+    g.fillStyle(dark, 0.4)
+    g.fillRect(31, 30, 1.4, 18)
     g.fillStyle(s.trim, 1) // belt + gem
     g.fillRect(x0, 48, w, 4)
-    g.fillCircle(32, 40, 2 + r * 2.5)
+    const gem = 2 + r * 2.5
+    g.fillCircle(32, 40, gem)
+    g.fillStyle(0xffffff, 0.7) // gem shine
+    g.fillCircle(31, 39, gem * 0.4)
+    // Rivets down the chest edges (detail).
+    g.fillStyle(shade(s.trim, 0.7), 1)
+    for (let k = 0; k < 3; k++) {
+      g.fillCircle(x0 + 2.5, 31 + k * 5, 0.9)
+      g.fillCircle(x0 + w - 2.5, 31 + k * 5, 0.9)
+    }
     // Gorget (neck plate) on higher ranks.
     if (r > 0.25) {
       g.fillStyle(s.robeHi, 1)
       g.fillRoundedRect(27, 25, 10, 4, 2)
+      g.fillStyle(dark, 0.5)
+      g.fillRect(31, 25, 2, 4)
     }
     // Pauldrons — angular, growing with rank.
     const pad = 4 + Math.round(4 * bulk)
@@ -1453,6 +1467,9 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(s.robeHi, 1)
     g.fillCircle(x0 - 2, 31, pad - 4)
     g.fillCircle(x0 + w + 2, 31, pad - 4)
+    g.fillStyle(dark, 0.5) // pauldron rivet
+    g.fillCircle(x0 - 2, 31, 1)
+    g.fillCircle(x0 + w + 2, 31, 1)
     if (r > 0.6) { // spikes on the pauldrons at high rank
       g.fillStyle(s.trim, 1)
       g.fillTriangle(x0 - 6, 30, x0 - 2, 20, x0 + 1, 30)

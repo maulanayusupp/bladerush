@@ -1840,18 +1840,22 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.shake(220, 0.01)
     audioService.nova()
 
+    // Scale with the hero's sword damage so it stays lethal as enemy HP grows.
+    const dmg = Math.max(
+      SKILLS.nova.damage,
+      Math.round(this.power.stats.damage * this.swordDamageMul * SKILLS.nova.damageMul),
+    )
     for (const obj of this.enemies.getChildren()) {
       const enemy = obj as Enemy
       if (!enemy.active) continue
-      if (enemy.takeDamage(SKILLS.nova.damage)) {
-        const ex = enemy.x
-        const ey = enemy.y
-        const val = enemy.value
-        this.killFx(ex, ey)
-        enemy.deactivate()
-        this.registerKill(val, ex, ey)
-        this.maybeDropChest(ex, ey)
-      }
+      this.damageNumber(enemy.x, enemy.y - 14, dmg, '#c9a0ff')
+      if (enemy.takeDamage(dmg)) this.killEnemy(enemy)
+    }
+    // Also chunk the boss (a few ticks' worth, respecting the per-hit cap).
+    if (this.bossActive && this.boss.active) {
+      const bossDmg = Math.min(this.bossTickDamage(), Math.ceil(this.boss.maxHp * BOSS.maxHitFraction)) * SKILLS.nova.bossTicks
+      this.damageNumber(this.boss.x, this.boss.y - this.boss.displayHeight * 0.3, bossDmg, '#c9a0ff')
+      if (this.boss.takeDamage(bossDmg)) this.bossDefeat()
     }
   }
 

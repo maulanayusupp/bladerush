@@ -87,15 +87,14 @@ export const SWORD_SHAPES = [
  * astronomical survivor scores.
  */
 export const HERO = {
-  skins: 500,
-  // Look/size evolve with SCORE (which only ever rises) — NOT power, which
-  // fluctuates during rival duels and would make the hero flip backwards.
-  // tier = floor(tierPerLog10 * log10(1 + score)); ~9.2 reaches the golden
-  // top tiers around score 1e54 (survivor scores climb astronomically).
-  tierPerLog10: 9.2,
-  // The hero physically grows from scrawny to towering across the tiers.
-  minScale: 0.7,
-  maxScale: 1.65,
+  skins: 100,
+  // Look/size evolve with SCORE (monotonic — never flips backwards). tier =
+  // floor(tierPerLog10 * log10(1 + score)); ~1.85 reaches the golden top tier
+  // around score 1e54 (survivor scores climb astronomically).
+  tierPerLog10: 1.85,
+  // The hero physically grows from scrawny "culun" to a towering champion.
+  minScale: 0.6,
+  maxScale: 1.85,
 } as const
 
 /**
@@ -196,7 +195,9 @@ export const ENEMY_TIERS = [
  */
 export const SKILLS = {
   fury: { id: 'fury', cooldownMs: 12000, durationMs: 4500, orbitMul: 2, radiusMul: 1.35, damageMul: 2.2 },
-  nova: { id: 'nova', cooldownMs: 15000, durationMs: 0, damage: 140 },
+  // Nova damage scales with the hero's sword damage (a fixed value is useless
+  // once enemy HP scales with power) — a big screen-clearing nuke.
+  nova: { id: 'nova', cooldownMs: 15000, durationMs: 0, damage: 140, damageMul: 14, bossTicks: 8 },
   dash: { id: 'dash', cooldownMs: 4500, durationMs: 300, speedMul: 4.5 },
 } as const
 
