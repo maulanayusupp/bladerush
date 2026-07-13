@@ -65,22 +65,22 @@ export const MAPS = [
 
 export const PLAYER = {
   size: 44, // texture footprint in px
-  speed: 360, // px/s, free 2D movement toward the pointer
+  speed: 300, // px/s, free 2D movement toward the pointer (calmer, less chaotic)
   maxHp: 100,
   invulnMs: 750, // brief immunity after taking contact damage
   colorHex: 0x7c4dff,
 } as const
 
-/** The hero visually evolves every 1000 power through 100 champion looks. */
+/** The hero visually evolves every 1000 power through 500 unique champion looks. */
 export const HERO = {
-  skins: 100,
+  skins: 500,
   powerPerSkin: 1000,
 } as const
 
 export const SWORD = {
   orbitRadius: 84, // distance of the ring from the hero
   poolSize: 60, // must equal POWER_CURVE.maxSwordCount
-  hitCooldownMs: 150, // per-enemy cooldown so a sweep doesn't drain HP each frame
+  hitCooldownMs: 120, // per-enemy cooldown so a sweep doesn't drain HP each frame
 } as const
 
 /** Soft glow disc baked in BootScene; one tinted copy per unlocked layer. */
@@ -185,9 +185,9 @@ export const POWER_CURVE = {
   baseDamage: 6,
   damagePerPower: 0.6,
 
-  baseOrbitSpeed: 2.2, // rad/s with a single sword
-  orbitSpeedPerSword: 0.12, // spin accelerates as the ring grows
-  maxOrbitSpeed: 8, // rad/s cap
+  baseOrbitSpeed: 2.6, // rad/s with a single sword (a touch snappier)
+  orbitSpeedPerSword: 0.13, // spin accelerates as the ring grows
+  maxOrbitSpeed: 9, // rad/s cap
 } as const
 
 /**

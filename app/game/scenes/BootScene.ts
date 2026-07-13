@@ -89,37 +89,55 @@ function unlock(features: string[], at: number, rank: number, f: string): void {
   if (rank >= at) features.push(f)
 }
 
-/** 100 knight heroes; regalia + bulk + glow escalate with rank (grandeur). */
+const CHAMPION_COUNT = 500
+
+/**
+ * 500 UNIQUE knight heroes. Uniqueness comes from combining several dimensions
+ * that cycle at different (co-prime-ish) rates, so even adjacent indices differ:
+ *  - armor hue: golden-angle (fine, continuous spread)
+ *  - cape hue & eye hue: independent fast cycles
+ *  - plate `pattern` (3) and `visor` style (2)
+ *  - rank-gated regalia (cape/crest/pauldrons/horns/crown/wings/halo) + bulk + glow
+ * Regalia + richness escalate with rank (higher index = grander), top tier gold.
+ */
 function genChampions(): ChampionSkin[] {
   const out: ChampionSkin[] = []
-  for (let i = 0; i < 100; i++) {
-    const p = unitPalette(i, 'hero')
-    let base = p.base
-    let accent = p.accent
-    if (i >= 90) {
-      accent = 0xffd700 // top tier: golden regal
+  const last = CHAMPION_COUNT - 1
+  for (let i = 0; i < CHAMPION_COUNT; i++) {
+    const rank = i / last
+    const hue = (i * 137.508) % 360
+    const capeHue = (i * 57.31 + 40) % 360
+    const eyeHue = (i * 93.7 + 200) % 360
+    let base = hsl(hue, 0.2 + 0.5 * rank, 0.24 + 0.12 * rank)
+    let accent = hsl((hue + 46) % 360, 0.55 + 0.4 * rank, 0.5 + 0.18 * rank)
+    let cape = hsl(capeHue, 0.4 + 0.32 * rank, 0.32 + 0.12 * rank)
+    if (i >= CHAMPION_COUNT - 50) {
+      accent = 0xffd700 // top 50: golden regal
       base = i % 2 ? 0x2a2418 : 0x241f28
+      cape = i % 2 ? 0x7a1616 : 0x3a0c4a
     }
     const features: string[] = []
-    unlock(features, 0.12, p.rank, 'cape')
-    unlock(features, 0.2, p.rank, 'crest')
-    unlock(features, 0.3, p.rank, 'pauldrons')
-    unlock(features, 0.45, p.rank, 'horns')
-    unlock(features, 0.6, p.rank, 'crown')
-    unlock(features, 0.75, p.rank, 'wings')
-    unlock(features, 0.88, p.rank, 'halo')
+    unlock(features, 0.12, rank, 'cape')
+    unlock(features, 0.2, rank, 'crest')
+    unlock(features, 0.3, rank, 'pauldrons')
+    unlock(features, 0.45, rank, 'horns')
+    unlock(features, 0.6, rank, 'crown')
+    unlock(features, 0.75, rank, 'wings')
+    unlock(features, 0.88, rank, 'halo')
     out.push({
       robe: base,
       robeHi: shade(base, 1.55),
-      cape: shade(accent, 0.5),
+      cape,
       hood: shade(base, 0.6), // helmet
       trim: accent,
       skin: 0x0c0a12,
-      eye: p.eye,
+      eye: hsl(eyeHue, 0.85, 0.62),
       features,
       wing: shade(accent, 1.1),
-      rank: p.rank,
-      glow: p.rank >= 0.75 ? accent : p.glow, // winged tiers always radiate
+      rank,
+      glow: rank >= 0.75 ? accent : rank > 0.5 ? accent : 0, // winged/strong tiers radiate
+      pattern: i % 3,
+      visor: i % 2,
     })
   }
   return out
@@ -255,9 +273,11 @@ interface ChampionSkin {
   wing?: number
   rank: number
   glow: number // 0 = none
+  pattern: number // 0..2 chestplate decoration
+  visor: number // 0..1 helmet visor style
 }
 
-/** 10 hero looks that escalate in grandeur (unlocked every 1000 power). */
+/** 500 unique hero looks that escalate in grandeur (evolve every 1000 power). */
 const CHAMPION_SKINS: ChampionSkin[] = genChampions()
 
 interface BossSkin {
@@ -998,6 +1018,14 @@ export class BootScene extends Phaser.Scene {
     g.fillRoundedRect(x0, 28, w, 25, 5)
     g.fillStyle(s.robeHi, 0.95)
     g.fillPoints(this.pts([32, 30, x0 + w - 4, 34, x0 + w - 6, 50, x0 + 6, 50, x0 + 4, 34]), true) // V-plate
+    // Chestplate decoration varies by `pattern` so adjacent heroes differ.
+    g.fillStyle(s.trim, 1)
+    if (s.pattern === 1) {
+      g.fillRect(x0 + 3, 36, w - 6, 2) // stripe
+    } else if (s.pattern === 2) {
+      g.fillTriangle(32, 33, 37, 40, 32, 47) // diamond emblem
+      g.fillTriangle(32, 33, 27, 40, 32, 47)
+    }
     g.fillStyle(s.trim, 1) // belt + emblem
     g.fillRect(x0, 48, w, 4)
     g.fillCircle(32, 40, 2 + s.rank * 2)
@@ -1027,9 +1055,15 @@ export class BootScene extends Phaser.Scene {
     g.fillEllipse(32, 18, hw, 26)
     g.fillStyle(s.robeHi, 1) // brow band
     g.fillRect(32 - hw / 2 + 2, 15, hw - 4, 3)
-    g.fillStyle(dark, 1) // visor slit + nasal guard
-    g.fillRect(32 - hw / 2 + 3, 18, hw - 6, 6)
-    g.fillRect(31, 18, 2, 9)
+    g.fillStyle(dark, 1) // visor + nasal guard (style varies by `visor`)
+    if (s.visor === 0) {
+      g.fillRect(32 - hw / 2 + 3, 18, hw - 6, 6) // single horizontal slit
+      g.fillRect(31, 18, 2, 9)
+    } else {
+      g.fillPoints(this.pts([32 - hw / 2 + 3, 17, 30, 22, 32 - hw / 2 + 3, 23]), true) // twin angled slits
+      g.fillPoints(this.pts([32 + hw / 2 - 3, 17, 34, 22, 32 + hw / 2 - 3, 23]), true)
+      g.fillRect(31, 16, 2, 11)
+    }
     g.fillStyle(s.eye, 1) // glowing eyes in the slit
     g.fillRect(25, 19, 4, 3)
     g.fillRect(35, 19, 4, 3)
