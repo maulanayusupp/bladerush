@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -396,7 +396,7 @@ export class BattleScene extends Phaser.Scene {
 
     if (this.comboCount > 0 && this.elapsedMs > this.comboUntil) this.resetCombo()
 
-    this.updateEnemies()
+    this.updateEnemies(deltaMs)
     this.updateGates(deltaMs)
     this.updateRivals(deltaMs)
     this.updateHeals(deltaMs)
@@ -1088,13 +1088,38 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- Per-frame updates --------------------------------------------------
 
-  private updateEnemies(): void {
+  private updateEnemies(deltaMs: number): void {
     const limit = Math.max(this.worldW, this.worldH) + OFFSCREEN_MARGIN * 3
+    const now = this.elapsedMs
+    const dt = deltaMs / 1000
     for (const obj of this.enemies.getChildren()) {
       const enemy = obj as Enemy
       if (!enemy.active) continue
+
+      // Damage-over-time (burn + poison). Kill through the normal path.
+      let dps = 0
+      if (now < enemy.burnUntil) dps += enemy.burnDps
+      if (now < enemy.poisonUntil) dps += enemy.poisonDps
+      if (dps > 0) {
+        if (enemy.takeDamage(dps * dt)) {
+          this.killEnemy(enemy)
+          continue
+        }
+        if (Math.random() < 0.14) this.sparks.explode(1, enemy.x, enemy.y)
+      }
+
+      // Chill slows movement.
+      const chilled = now < enemy.chillUntil
+      const speed = chilled ? enemy.speed * enemy.chillMul : enemy.speed
       const angle = angleBetween(enemy.x, enemy.y, this.player.x, this.player.y)
-      enemy.setVelocity(Math.cos(angle) * enemy.speed, Math.sin(angle) * enemy.speed)
+      enemy.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed)
+
+      // Status tint (burn > poison > chill), else restore normal/elite tint.
+      if (now < enemy.burnUntil) enemy.setTint(STATUS.burnTint)
+      else if (now < enemy.poisonUntil) enemy.setTint(STATUS.poisonTint)
+      else if (chilled) enemy.setTint(STATUS.chillTint)
+      else enemy.restoreTint()
+
       // Safety net: recycle anything that somehow strays far off-field.
       if (distance(enemy.x, enemy.y, this.player.x, this.player.y) > limit) enemy.deactivate()
     }
@@ -1328,18 +1353,10 @@ export class BattleScene extends Phaser.Scene {
     if (this.elapsedMs - enemy.lastHitAt < SWORD.hitCooldownMs * this.upgrades.cooldownMul) return
     enemy.lastHitAt = this.elapsedMs
     this.playHitSound()
+    this.applyStatusOnHit(enemy)
 
     if (enemy.takeDamage(Math.round(this.power.stats.damage * this.swordDamageMul))) {
-      const reward = enemy.value
-      const ex = enemy.x
-      const ey = enemy.y
-      const volatile = enemy.affix === 'volatile'
-      this.killFx(ex, ey)
-      audioService.death()
-      enemy.deactivate()
-      this.registerKill(reward, ex, ey)
-      this.maybeDropChest(ex, ey)
-      if (volatile) this.explodeVolatile(ex, ey)
+      this.killEnemy(enemy)
     } else {
       // Non-lethal hit: quick spark + white impact flash (restore elite tint after).
       this.sparks.explode(3, enemy.x, enemy.y)
@@ -1348,6 +1365,37 @@ export class BattleScene extends Phaser.Scene {
       this.time.delayedCall(60, () => {
         if (enemy.active) enemy.restoreTint()
       })
+    }
+  }
+
+  /** Standard enemy death: fx, reward, chest, volatile chain. */
+  private killEnemy(enemy: Enemy): void {
+    const ex = enemy.x
+    const ey = enemy.y
+    const reward = enemy.value
+    const volatile = enemy.affix === 'volatile'
+    this.killFx(ex, ey)
+    audioService.death()
+    enemy.deactivate()
+    this.registerKill(reward, ex, ey)
+    this.maybeDropChest(ex, ey)
+    if (volatile) this.explodeVolatile(ex, ey)
+  }
+
+  /** Apply owned elemental status upgrades to an enemy on a sword hit. */
+  private applyStatusOnHit(enemy: Enemy): void {
+    const dmg = this.power.stats.damage * this.swordDamageMul
+    if (this.upgrades.burn > 0) {
+      enemy.burnUntil = this.elapsedMs + STATUS.burnMs
+      enemy.burnDps = this.upgrades.burn * STATUS.burnDpsPer * dmg
+    }
+    if (this.upgrades.venom > 0) {
+      enemy.poisonUntil = this.elapsedMs + STATUS.poisonMs
+      enemy.poisonDps = this.upgrades.venom * STATUS.poisonDpsPer * dmg
+    }
+    if (this.upgrades.frost > 0) {
+      enemy.chillUntil = this.elapsedMs + STATUS.chillMs
+      enemy.chillMul = Math.max(STATUS.chillFloor, 1 - this.upgrades.frost * STATUS.chillPer)
     }
   }
 

@@ -10,6 +10,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   affix = ''
   private dmgTaken = 1
   private eliteTint = 0
+  // Elemental status (scene-elapsed ms timers).
+  burnUntil = 0
+  burnDps = 0
+  poisonUntil = 0
+  poisonDps = 0
+  chillUntil = 0
+  chillMul = 1
   /** Timestamp (scene-elapsed ms) of the last sword hit, for hit cooldown. */
   lastHitAt = Number.NEGATIVE_INFINITY
 
@@ -24,6 +31,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.affix = config.affix
     this.dmgTaken = config.dmgTaken
     this.eliteTint = config.tint
+    this.burnUntil = 0
+    this.poisonUntil = 0
+    this.chillUntil = 0
+    this.chillMul = 1
     this.lastHitAt = Number.NEGATIVE_INFINITY
     this.setTexture(config.textureKey)
     this.setScale(config.scale)

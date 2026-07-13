@@ -55,7 +55,10 @@
     "haste": { "name": "Haste", "text": "Blades strike more often" },
     "greed": { "name": "Greed", "text": "+15% sword reward" },
     "vigor": { "name": "Vigor", "text": "+20 max HP (and heal)" },
-    "lifesteal": { "name": "Lifesteal", "text": "Heal 1 HP per kill" }
+    "lifesteal": { "name": "Lifesteal", "text": "Heal 1 HP per kill" },
+    "burn": { "name": "Ignite", "text": "Blades set enemies on fire (burn damage)" },
+    "frost": { "name": "Frostbite", "text": "Blades chill enemies, slowing them" },
+    "venom": { "name": "Venom", "text": "Blades poison enemies (damage over time)" }
   },
   "shop": {
     "title": "Upgrade Shop",

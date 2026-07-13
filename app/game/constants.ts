@@ -344,6 +344,9 @@ export const UPGRADES = [
   { id: 'greed', icon: '💰' },
   { id: 'vigor', icon: '❤️' },
   { id: 'lifesteal', icon: '🩸' },
+  { id: 'burn', icon: '🔥' },
+  { id: 'frost', icon: '❄️' },
+  { id: 'venom', icon: '🧪' },
 ] as const
 
 export const UPGRADE_TUNE = {
@@ -355,6 +358,26 @@ export const UPGRADE_TUNE = {
   rewardMulPer: 0.15,
   maxHpPer: 20,
   lifestealPer: 1,
+} as const
+
+/**
+ * Elemental status effects applied by the sword ring when the matching upgrade
+ * is owned. Damage-over-time scales with the hero's hit damage × level.
+ * - burn: fire DoT for a short time.  - venom: poison DoT (longer).
+ * - frost: chills, slowing the enemy's movement.
+ */
+export const STATUS = {
+  burnMs: 2200,
+  burnDpsPer: 0.45, // × level × hit damage, per second
+  poisonMs: 3200,
+  poisonDpsPer: 0.32,
+  chillMs: 1600,
+  chillPer: 0.18, // slow per level
+  chillFloor: 0.35, // never slower than 35% speed
+  tickMs: 220, // DoT application cadence (also spark cadence)
+  burnTint: 0xff7a3a,
+  poisonTint: 0x8cff5a,
+  chillTint: 0x8ad0ff,
 } as const
 
 /**

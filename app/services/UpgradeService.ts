@@ -54,4 +54,17 @@ export class UpgradeService {
   get lifesteal(): number {
     return UPGRADE_TUNE.lifestealPer * this.levelOf('lifesteal')
   }
+
+  /** Elemental status upgrade levels (0 = not owned). */
+  get burn(): number {
+    return this.levelOf('burn')
+  }
+
+  get frost(): number {
+    return this.levelOf('frost')
+  }
+
+  get venom(): number {
+    return this.levelOf('venom')
+  }
 }

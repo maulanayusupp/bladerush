@@ -55,7 +55,10 @@
     "haste": { "name": "Gesit", "text": "Pedang memukul lebih sering" },
     "greed": { "name": "Serakah", "text": "+15% reward pedang" },
     "vigor": { "name": "Bugar", "text": "+20 HP maks (dan pulih)" },
-    "lifesteal": { "name": "Serap Nyawa", "text": "Pulih 1 HP tiap bunuh" }
+    "lifesteal": { "name": "Serap Nyawa", "text": "Pulih 1 HP tiap bunuh" },
+    "burn": { "name": "Bakar", "text": "Pedang membakar musuh (damage api)" },
+    "frost": { "name": "Beku", "text": "Pedang membekukan musuh, gerak melambat" },
+    "venom": { "name": "Racun", "text": "Pedang meracuni musuh (damage bertahap)" }
   },
   "shop": {
     "title": "Toko Upgrade",
