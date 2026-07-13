@@ -223,6 +223,7 @@ export const RIVAL = {
  * melts it faster — keeping the fight length roughly balanced across power.
  */
 export const BOSS = {
+  skins: 100, // number of distinct boss textures (boss0..99)
   firstMs: 55000,
   intervalMs: 70000,
   speed: 40,

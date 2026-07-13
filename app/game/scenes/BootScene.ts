@@ -173,6 +173,39 @@ function genTroops(): TrooperSkin[] {
   return out
 }
 
+const BOSS_HORNS = ['ram', 'straight', 'back', 'antler', 'crown']
+
+/**
+ * 100 boss demons. Each has an ELEMENTAL theme (hue by index) and menace that
+ * climbs with rank: darker/bigger hide, more & fiercer horns, extra eyes, jaw
+ * plates, a searing glow. Highest indices are the most monstrous.
+ */
+function genBosses(): BossSkin[] {
+  const out: BossSkin[] = []
+  for (let i = 0; i < 100; i++) {
+    const rank = i / 99
+    const hue = (i * 137.508) % 360 // elemental color per boss
+    const hide = hsl(hue, 0.35 + 0.2 * rank, 0.09 + 0.05 * rank) // near-black, tinted
+    const accent = hsl(hue, 0.7 + 0.25 * rank, 0.5 + 0.12 * rank)
+    out.push({
+      rank,
+      hide,
+      hideHi: shade(hide, 1.9),
+      snout: shade(hide, 0.7),
+      horn: hsl(hue, 0.25, 0.12 + 0.06 * rank),
+      eye: hsl(hue, 0.95, 0.58),
+      accent,
+      glow: rank > 0.35 ? accent : 0,
+      hornStyle: BOSS_HORNS[i % BOSS_HORNS.length] as string,
+      eyeCount: rank >= 0.8 ? 4 : rank >= 0.5 ? 3 : 2,
+      crown: rank >= 0.4,
+      plates: rank >= 0.6,
+      crest: rank >= 0.25,
+    })
+  }
+  return out
+}
+
 interface WarlordSkin {
   armor: number
   armorHi: number
@@ -227,6 +260,25 @@ interface ChampionSkin {
 /** 10 hero looks that escalate in grandeur (unlocked every 1000 power). */
 const CHAMPION_SKINS: ChampionSkin[] = genChampions()
 
+interface BossSkin {
+  rank: number
+  hide: number // head base
+  hideHi: number // highlight
+  snout: number // jaw/snout shade
+  horn: number
+  eye: number
+  accent: number // crown / plates
+  glow: number // 0 = none
+  hornStyle: string
+  eyeCount: number // 2, 3 or 4
+  crown: boolean
+  plates: boolean
+  crest: boolean
+}
+
+/** 100 elemental boss demons; menace escalates with rank. */
+const BOSS_SKINS: BossSkin[] = genBosses()
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('BootScene')
@@ -236,7 +288,7 @@ export class BootScene extends Phaser.Scene {
     CHAMPION_SKINS.forEach((skin, i) => this.bake(`hero${i}`, 64, 64, (g) => this.drawChampion(g, skin)))
     RIVAL_SKINS.forEach((skin, i) => this.bake(`rivalHero${i}`, 56, 64, (g) => this.drawWarlord(g, skin)))
     TROOP_SKINS.forEach((skin, i) => this.bake(`troop${i}`, 60, 60, (g) => this.drawTrooper(g, 60, skin)))
-    this.bake('boss', 76, 76, (g) => this.drawBoss(g))
+    BOSS_SKINS.forEach((skin, i) => this.bake(`boss${i}`, 76, 76, (g) => this.drawBoss(g, skin)))
     this.bake('heal', 30, 30, (g) => this.drawHeal(g))
     this.bake('chest', 32, 30, (g) => this.drawChest(g))
     this.bake('wMace', 28, 56, (g) => this.drawMace(g))
@@ -473,33 +525,98 @@ export class BootScene extends Phaser.Scene {
     }
   }
 
-  private drawBoss(g: Phaser.GameObjects.Graphics): void {
-    g.fillStyle(0x1a0d0d, 1) // horns
-    g.fillTriangle(18, 24, 2, 0, 28, 20)
-    g.fillTriangle(58, 24, 74, 0, 48, 20)
-    g.fillStyle(0x2a0f0f, 1) // crown spikes
-    for (const x of [24, 32, 38, 44, 52]) g.fillTriangle(x - 4, 18, x, 4, x + 4, 18)
-    g.fillStyle(0x3a1414, 1) // head
+  private drawBossHorns(g: Phaser.GameObjects.Graphics, style: string, color: number, sc: number): void {
+    g.fillStyle(color, 1)
+    const L = 20
+    const R = 56
+    const y = 24
+    switch (style) {
+      case 'straight':
+        g.fillTriangle(L, y, L - 4, y - 22 * sc, L + 6, y - 4)
+        g.fillTriangle(R, y, R + 4, y - 22 * sc, R - 6, y - 4)
+        break
+      case 'back':
+        g.fillTriangle(L, y, L - 18 * sc, y - 12 * sc, L + 4, y - 4)
+        g.fillTriangle(R, y, R + 18 * sc, y - 12 * sc, R - 4, y - 4)
+        break
+      case 'antler':
+        g.fillTriangle(L, y, L - 6, y - 20 * sc, L + 4, y - 4)
+        g.fillTriangle(L - 4, y - 12 * sc, L - 15 * sc, y - 16 * sc, L - 1, y - 9 * sc)
+        g.fillTriangle(R, y, R + 6, y - 20 * sc, R - 4, y - 4)
+        g.fillTriangle(R + 4, y - 12 * sc, R + 15 * sc, y - 16 * sc, R + 1, y - 9 * sc)
+        break
+      case 'crown':
+        for (const x of [16, 24, 32, 44, 52, 60]) g.fillTriangle(x - 3, y - 2, x, y - 16 * sc, x + 3, y - 2)
+        break
+      default: // 'ram' — curling
+        g.fillPoints(this.pts([L, y, L - 15 * sc, y - 4, L - 11 * sc, y - 18 * sc, L, y - 8]), true)
+        g.fillPoints(this.pts([R, y, R + 15 * sc, y - 4, R + 11 * sc, y - 18 * sc, R, y - 8]), true)
+    }
+  }
+
+  /**
+   * A boss demon head. `rank` drives menace: bigger horns, extra eyes, cheek
+   * plates, a forehead crest, more fangs and a searing elemental glow.
+   */
+  private drawBoss(g: Phaser.GameObjects.Graphics, s: BossSkin): void {
+    const dark = 0x0c0506
+    const sc = 1 + s.rank
+
+    if (s.glow) this.bakedGlow(g, 38, 40, s.glow, 36)
+    this.drawBossHorns(g, s.hornStyle, s.horn, sc)
+    if (s.crown) {
+      g.fillStyle(s.accent, 1) // crown spikes
+      for (const x of [24, 32, 38, 44, 52]) g.fillTriangle(x - 4, 18, x, 4 - s.rank * 2, x + 4, 18)
+    }
+    g.fillStyle(dark, 1) // head outline
+    g.fillEllipse(38, 40, 60, 56)
+    g.fillStyle(s.hide, 1) // hide
     g.fillEllipse(38, 40, 56, 52)
-    g.fillStyle(0x2a0e0e, 1) // snout
+    g.fillStyle(s.hideHi, 0.45) // forehead sheen
+    g.fillEllipse(38, 33, 44, 24)
+    if (s.plates) {
+      g.fillStyle(s.accent, 1) // armored cheek plates
+      g.fillPoints(this.pts([12, 40, 20, 34, 22, 48, 14, 52]), true)
+      g.fillPoints(this.pts([64, 40, 56, 34, 54, 48, 62, 52]), true)
+    }
+    if (s.crest) {
+      g.fillStyle(s.horn, 1) // forehead crest ridge
+      for (const cy of [20, 26, 32]) g.fillTriangle(35, cy + 4, 38, cy - 3, 41, cy + 4)
+    }
+    g.fillStyle(s.snout, 1) // snout / jaw
     g.fillEllipse(38, 54, 34, 24)
-    g.fillStyle(0x140707, 1) // brows
-    g.fillTriangle(16, 32, 36, 42, 36, 28)
-    g.fillTriangle(60, 32, 40, 42, 40, 28)
-    g.fillStyle(0xff3b1a, 1) // glowing eyes
-    g.fillEllipse(27, 36, 12, 9)
-    g.fillEllipse(49, 36, 12, 9)
-    g.fillStyle(0x1a0500, 1)
-    g.fillCircle(27, 37, 3)
-    g.fillCircle(49, 37, 3)
-    g.fillStyle(0xffd08a, 0.9)
-    g.fillCircle(26, 35, 1.4)
-    g.fillCircle(48, 35, 1.4)
-    g.fillStyle(0x140707, 1) // nostrils
+    g.fillStyle(dark, 1) // brows
+    g.fillTriangle(16, 32, 36, 42, 36, 27)
+    g.fillTriangle(60, 32, 40, 42, 40, 27)
+    // Eyes — 2, 3 or 4 by rank.
+    const eyePos: number[][] =
+      s.eyeCount >= 4
+        ? [[27, 37], [49, 37], [31, 28], [45, 28]]
+        : s.eyeCount === 3
+          ? [[27, 36], [49, 36], [38, 27]]
+          : [[27, 36], [49, 36]]
+    eyePos.forEach((p, idx) => {
+      const es = idx < 2 ? 1 + s.rank * 0.15 : 0.65
+      const px = p[0] as number
+      const py = p[1] as number
+      g.fillStyle(s.eye, 1)
+      g.fillEllipse(px, py, 12 * es, 9 * es)
+      g.fillStyle(0x140300, 1)
+      g.fillCircle(px, py + 1, 3 * es)
+      g.fillStyle(0xffe0b0, 0.9)
+      g.fillCircle(px - 1, py - 1, 1.4 * es)
+    })
+    g.fillStyle(dark, 1) // nostrils
     g.fillCircle(33, 50, 2)
     g.fillCircle(43, 50, 2)
-    g.fillStyle(0xffffff, 1) // fangs
-    for (let i = 0; i < 6; i++) g.fillTriangle(26 + i * 5, 62, 28 + i * 5, 62, 27 + i * 5, 70)
+    // Fangs — more and longer with rank.
+    const fangs = 6 + Math.round(s.rank * 3)
+    g.fillStyle(0xffffff, 1)
+    const gap = 24 / fangs
+    for (let i = 0; i < fangs; i++) {
+      const x = 26 + i * gap
+      g.fillTriangle(x, 62, x + 2.4, 62, x + 1.2, 70 + s.rank * 2)
+    }
   }
 
   /** CHEST — near-white so it can be tinted per rarity. */

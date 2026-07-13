@@ -10,18 +10,19 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   contactAt = Number.NEGATIVE_INFINITY
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'boss')
+    super(scene, x, y, 'boss0')
     scene.add.existing(this)
     scene.physics.add.existing(this)
     this.disableBody(true, true)
   }
 
-  spawn(x: number, y: number, hp: number, speed: number, scale: number): void {
+  spawn(x: number, y: number, hp: number, speed: number, scale: number, textureKey: string): void {
     this.maxHp = hp
     this.hp = hp
     this.speed = speed
     this.lastHitAt = Number.NEGATIVE_INFINITY
     this.contactAt = Number.NEGATIVE_INFINITY
+    this.setTexture(textureKey)
     this.setScale(scale)
     this.enableBody(true, x, y, true, true)
     const body = this.body as Phaser.Physics.Arcade.Body

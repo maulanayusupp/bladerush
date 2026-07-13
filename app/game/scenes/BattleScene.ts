@@ -84,6 +84,7 @@ export class BattleScene extends Phaser.Scene {
   private bossAcc = 0
   private nextBossMs: number = BOSS.firstMs
   private bossActive = false
+  private bossCount = 0
   private bossSummonAcc = 0
   private bossGateAcc = 0
   private comboCount = 0
@@ -129,6 +130,7 @@ export class BattleScene extends Phaser.Scene {
     this.bossAcc = 0
     this.nextBossMs = BOSS.firstMs
     this.bossActive = false
+    this.bossCount = 0
     this.bossSummonAcc = 0
     this.bossGateAcc = 0
     this.comboCount = 0
@@ -544,7 +546,10 @@ export class BattleScene extends Phaser.Scene {
     const seconds = BOSS.targetSeconds + (elapsedSec / 60) * BOSS.secondsPerMin
     const hp = Math.max(BOSS.minHp, Math.round(dps * seconds))
     const { x, y } = this.randomEdgePoint()
-    this.boss.spawn(x, y, hp, BOSS.speed, 1.5)
+    // Nastier boss each appearance and with power (higher index = more monstrous).
+    this.bossCount++
+    const idx = clamp(Math.round((this.bossCount - 1) * 8 + this.power.power * 0.02), 0, BOSS.skins - 1)
+    this.boss.spawn(x, y, hp, BOSS.speed, 1.5, `boss${idx}`)
     this.bossActive = true
     this.bossSummonAcc = 0
     this.bossGateAcc = 0
