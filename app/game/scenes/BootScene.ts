@@ -22,63 +22,127 @@ function shade(hex: number, f: number): number {
   return (r << 16) | (g << 8) | b
 }
 
-// Shared palettes used to procedurally generate 100 variations of each unit.
-const ARMORS = [
-  0x3a4a6a, 0x5a2a2a, 0x2a5a3a, 0x5a4a10, 0x3a2a5a, 0x20242e, 0x1a4a4a, 0x5a3a1a, 0x2a3a5a, 0x4a2a3a,
-  0x3a5a2a, 0x5a2a4a, 0x2a4a4a, 0x4a3a2a, 0x3a3a4a, 0x5a1a1a, 0x1a3a2a, 0x2a2a3a, 0x4a4a1a, 0x3a1a3a,
-]
-const TRIMS = [0xffd700, 0xc7ccd8, 0x00e0ff, 0xff5aa0, 0xff3b3b, 0x2ee67a, 0x9d5cff, 0xffffff, 0xff8a00, 0x5ad0ff]
-const EYES = [0x00e0ff, 0xff3b3b, 0xffd700, 0x8cff5a, 0xd400ff, 0xffffff, 0xff8a00, 0x5ad0ff]
-const HORN_STYLES = ['straight', 'wide', 'back', 'crown', 'antler', 'single', 'spikes', 'trident', 'ram', 'none']
+// --- Procedural unit generation --------------------------------------------
+// Every one of the 300 sprites (100 heroes / rivals / troops) is derived from a
+// single `rank` (0..1, i.e. how strong/advanced the unit is) plus a per-index
+// hue. Rank drives color richness, body bulk, effects and which features unlock
+// — so "low rank looks weak/cupu, high rank looks fierce/beringas" is one dial,
+// and retuning the whole roster means editing the tables below, nothing else.
+
+const HORN_STYLES = ['none', 'single', 'straight', 'wide', 'back', 'ram', 'antler', 'spikes', 'trident', 'crown']
 const WEAPONS = ['dagger', 'sword', 'axe', 'mace', 'spear']
 
-/** 100 gallant knight heroes; higher indices unlock more regalia (grandeur). */
+/** Convert HSL (h 0..360, s/l 0..1) to a packed 0xRRGGBB color. */
+function hsl(h: number, s: number, l: number): number {
+  const c = (1 - Math.abs(2 * l - 1)) * s
+  const hp = ((h % 360) + 360) % 360 / 60
+  const x = c * (1 - Math.abs((hp % 2) - 1))
+  let r = 0
+  let g = 0
+  let b = 0
+  if (hp < 1) [r, g] = [c, x]
+  else if (hp < 2) [r, g] = [x, c]
+  else if (hp < 3) [g, b] = [c, x]
+  else if (hp < 4) [g, b] = [x, c]
+  else if (hp < 5) [r, b] = [x, c]
+  else [r, b] = [c, x]
+  const m = l - c / 2
+  return (Math.round((r + m) * 255) << 16) | (Math.round((g + m) * 255) << 8) | Math.round((b + m) * 255)
+}
+
+interface UnitPalette {
+  rank: number
+  base: number // main body / armor color
+  hi: number // highlight
+  dark: number // shadow / outline-ish
+  accent: number // trim, spikes, emblem
+  eye: number
+  glow: number // baked aura color, 0 = none
+}
+
+/**
+ * A distinct, rank-scaled palette for unit `i` of a family. A golden-angle hue
+ * makes every index its own color; saturation & lightness climb with rank
+ * (dull/desaturated when weak → vivid when strong). A baked glow appears past
+ * the mid-rank so stronger units literally radiate menace.
+ */
+function unitPalette(i: number, family: 'hero' | 'rival' | 'troop'): UnitPalette {
+  const rank = i / 99
+  const hue = (i * 137.508) % 360
+  const accentHue = (hue + (family === 'rival' ? 28 : 46)) % 360
+  const sat = 0.2 + 0.55 * rank
+  const light = (family === 'rival' ? 0.22 : 0.26) + 0.12 * rank
+  const accent = hsl(accentHue, 0.5 + 0.42 * rank, 0.46 + 0.2 * rank)
+  return {
+    rank,
+    base: hsl(hue, sat, light),
+    hi: hsl(hue, sat * 0.85, Math.min(0.74, light + 0.24)),
+    dark: hsl(hue, Math.min(1, sat + 0.1), light * 0.45),
+    accent,
+    eye: family === 'rival' ? hsl(accentHue, 0.92, 0.58) : hsl((hue + 180) % 360, 0.85, 0.62),
+    glow: rank > 0.5 ? accent : 0,
+  }
+}
+
+/** Push feature `f` once rank crosses `at` (0..1). */
+function unlock(features: string[], at: number, rank: number, f: string): void {
+  if (rank >= at) features.push(f)
+}
+
+/** 100 knight heroes; regalia + bulk + glow escalate with rank (grandeur). */
 function genChampions(): ChampionSkin[] {
   const out: ChampionSkin[] = []
   for (let i = 0; i < 100; i++) {
-    let armor = ARMORS[i % ARMORS.length] as number
-    let trim = TRIMS[(i * 3) % TRIMS.length] as number
-    const eye = EYES[(i * 5) % EYES.length] as number
+    const p = unitPalette(i, 'hero')
+    let base = p.base
+    let accent = p.accent
     if (i >= 90) {
-      trim = 0xffd700 // top tier: golden regal
-      armor = i % 2 ? 0x4a3a08 : 0x241f28
+      accent = 0xffd700 // top tier: golden regal
+      base = i % 2 ? 0x2a2418 : 0x241f28
     }
     const features: string[] = []
-    if (i >= 10) features.push('pauldrons')
-    if (i >= 30) features.push('horns')
-    if (i >= 50) features.push('crown')
-    if (i >= 70) features.push('wings')
-    if (i >= 85) features.push('halo')
+    unlock(features, 0.12, p.rank, 'cape')
+    unlock(features, 0.2, p.rank, 'crest')
+    unlock(features, 0.3, p.rank, 'pauldrons')
+    unlock(features, 0.45, p.rank, 'horns')
+    unlock(features, 0.6, p.rank, 'crown')
+    unlock(features, 0.75, p.rank, 'wings')
+    unlock(features, 0.88, p.rank, 'halo')
     out.push({
-      robe: armor,
-      robeHi: shade(armor, 1.5),
-      cape: shade(trim, 0.55),
-      hood: shade(armor, 0.6),
-      trim,
+      robe: base,
+      robeHi: shade(base, 1.55),
+      cape: shade(accent, 0.5),
+      hood: shade(base, 0.6), // helmet
+      trim: accent,
       skin: 0x0c0a12,
-      eye,
+      eye: p.eye,
       features,
-      wing: shade(trim, 1.05),
+      wing: shade(accent, 1.1),
+      rank: p.rank,
+      glow: p.rank >= 0.75 ? accent : p.glow, // winged tiers always radiate
     })
   }
   return out
 }
 
-/** 100 rival warlords. */
+/** 100 rival warlords; menace (bulk, spikes, glow, horns) rises with rank. */
 function genWarlords(): WarlordSkin[] {
   const out: WarlordSkin[] = []
   for (let i = 0; i < 100; i++) {
-    const armor = shade(ARMORS[i % ARMORS.length] as number, 0.7)
-    const accent = TRIMS[(i * 2) % TRIMS.length] as number
+    const p = unitPalette(i, 'rival')
+    // Bigger, nastier horns unlock as rank climbs (indexed into HORN_STYLES).
+    const hornIdx = Math.min(HORN_STYLES.length - 1, 1 + Math.floor(p.rank * (HORN_STYLES.length - 1)))
     out.push({
-      armor,
-      armorHi: shade(armor, 1.5),
-      cape: shade(accent, 0.5),
-      helm: shade(armor, 0.6),
-      horn: HORN_STYLES[i % HORN_STYLES.length] as string,
-      hornColor: i % 3 ? shade(armor, 0.7) : accent,
-      eye: EYES[(i * 7) % EYES.length] as number,
-      accent,
+      armor: p.base,
+      armorHi: p.hi,
+      cape: shade(p.accent, 0.5),
+      helm: p.dark,
+      horn: HORN_STYLES[i % 3 === 0 ? hornIdx : (hornIdx + i) % HORN_STYLES.length] as string,
+      hornColor: i % 3 ? p.dark : p.accent,
+      eye: p.eye,
+      accent: p.accent,
+      rank: p.rank,
+      glow: p.glow,
     })
   }
   return out
@@ -86,20 +150,24 @@ function genWarlords(): WarlordSkin[] {
 
 /** 100 enemy troops in 5 menace bands of 20 (easy→legend). */
 function genTroops(): TrooperSkin[] {
-  const bandSkin = [0x8ccf5a, 0x5faa4a, 0x4a8f3f, 0x3f7f3a, 0x4a7f3a]
   const out: TrooperSkin[] = []
   for (let i = 0; i < 100; i++) {
     const band = Math.floor(i / 20)
-    const armor = ARMORS[i % ARMORS.length] as number
+    const rank = band / 4 // 0..1 by band, so a band shares a menace level
+    const p = unitPalette(i, 'troop')
+    // Orc/undead flesh darkens & sickens with the band.
+    const flesh = hsl(96 - band * 12, 0.4 + 0.12 * band, 0.5 - 0.06 * band)
     out.push({
-      skin: bandSkin[band] as number,
-      armor,
-      armor2: shade(armor, 1.5),
-      helm: band >= 2 ? shade(armor, 0.6) : 0,
-      horns: band >= 4,
+      skin: flesh,
+      armor: p.base,
+      armor2: p.hi,
+      helm: band >= 2 ? p.dark : 0,
+      horns: band >= 3,
       tuskBig: band >= 2,
-      eye: band >= 4 ? 0xffd700 : band >= 3 ? 0xff4d4d : 0x14200f,
+      eye: band >= 4 ? 0xffd700 : band >= 3 ? 0xff4d4d : hsl(90, 0.5, 0.2),
       weapon: WEAPONS[i % WEAPONS.length] as string,
+      rank,
+      glow: band >= 3 ? p.accent : 0,
     })
   }
   return out
@@ -114,6 +182,8 @@ interface WarlordSkin {
   hornColor: number
   eye: number
   accent: number
+  rank: number
+  glow: number
 }
 
 /** 10 distinct rival warlord looks (palette + horn style). */
@@ -133,6 +203,8 @@ interface TrooperSkin {
   tuskBig: boolean
   eye: number
   weapon: string
+  rank: number
+  glow: number // 0 = none
 }
 
 /** Humanoid enemy troops (orcs/soldiers) by tier — drawn front-facing. */
@@ -148,6 +220,8 @@ interface ChampionSkin {
   eye: number
   features: string[]
   wing?: number
+  rank: number
+  glow: number // 0 = none
 }
 
 /** 10 hero looks that escalate in grandeur (unlocked every 1000 power). */
@@ -320,6 +394,7 @@ export class BootScene extends Phaser.Scene {
   /** A front-facing humanoid troop (orc/soldier) scaled to box size S. */
   private drawTrooper(g: Phaser.GameObjects.Graphics, S: number, p: TrooperSkin): void {
     g.scaleCanvas(S / 56, S / 56)
+    if (p.glow) this.bakedGlow(g, 28, 32, p.glow, 26)
     // legs + boots
     g.fillStyle(p.armor2, 1)
     g.fillRect(20, 45, 6, 10)
@@ -674,15 +749,23 @@ export class BootScene extends Phaser.Scene {
   /** The RIVAL hero — a horned, red-eyed dark warlord (not the player recolored). */
   /** Parametric dark warlord — 10 skins differ by palette + horn style. */
   private drawWarlord(g: Phaser.GameObjects.Graphics, s: WarlordSkin): void {
+    const dark = 0x0c0a12
+    const spike = 1 + s.rank // shoulder spikes grow menacing with rank
+
+    if (s.glow) this.bakedGlow(g, 28, 40, s.glow, 26)
     g.fillStyle(s.cape, 1)
     g.fillPoints(this.pts([14, 26, 42, 26, 48, 60, 8, 60]), true)
+    g.fillStyle(dark, 1) // torso outline
+    g.fillPoints(this.pts([16, 31, 40, 31, 46, 63, 10, 63]), true)
     g.fillStyle(s.armor, 1)
     g.fillPoints(this.pts([18, 32, 38, 32, 44, 62, 12, 62]), true)
     g.fillStyle(s.armorHi, 0.9)
     g.fillPoints(this.pts([24, 34, 32, 34, 35, 62, 21, 62]), true)
     g.fillStyle(s.accent, 1) // shoulder spikes
-    g.fillTriangle(10, 34, 18, 26, 20, 37)
-    g.fillTriangle(46, 34, 38, 26, 36, 37)
+    g.fillTriangle(10, 34, 18, 34 - 8 * spike, 20, 37)
+    g.fillTriangle(46, 34, 38, 34 - 8 * spike, 36, 37)
+    g.fillStyle(dark, 1) // helm outline
+    g.fillEllipse(28, 20, 35, 29)
     g.fillStyle(s.helm, 1) // helm
     g.fillEllipse(28, 20, 32, 26)
     this.drawHorns(g, s.horn, s.hornColor)
@@ -695,7 +778,7 @@ export class BootScene extends Phaser.Scene {
     g.fillCircle(23, 23, 1)
     g.fillCircle(33, 23, 1)
     g.fillStyle(s.accent, 1) // chest emblem
-    g.fillCircle(28, 42, 3)
+    g.fillCircle(28, 42, 2 + s.rank * 2)
   }
 
   private drawHorns(g: Phaser.GameObjects.Graphics, style: string, color: number): void {
@@ -746,11 +829,31 @@ export class BootScene extends Phaser.Scene {
 
   // ---- Hero (10 evolving champion looks, box 64x64, centered x=32) ---------
 
-  /** A gallant armored knight (helmet + crest + broad pauldrons + cape). */
+  /**
+   * Soft radial aura baked into a texture: concentric translucent discs from a
+   * faint outer edge to a brighter core. Gives strong units a permanent glow.
+   */
+  private bakedGlow(g: Phaser.GameObjects.Graphics, cx: number, cy: number, color: number, radius: number): void {
+    const steps = 5
+    for (let k = steps; k >= 1; k--) {
+      g.fillStyle(color, 0.05 + 0.02 * (steps - k))
+      g.fillCircle(cx, cy, (radius * k) / steps)
+    }
+  }
+
+  /**
+   * A knight hero. `rank` drives everything: low rank is a lean, plain footman
+   * (dull plate, bare head), high rank is a broad, glowing, winged champion —
+   * regalia unlocks via `features`, body bulk & glow scale continuously.
+   */
   private drawChampion(g: Phaser.GameObjects.Graphics, s: ChampionSkin): void {
     const has = (f: string) => s.features.includes(f)
     const dark = 0x0c0a12
+    const bulk = 0.8 + 0.34 * s.rank
+    const w = Math.round(28 * bulk) // torso width
+    const x0 = 32 - w / 2
 
+    if (s.glow) this.bakedGlow(g, 32, 34, s.glow, 30)
     // Wings (behind everything)
     if (has('wings')) {
       g.fillStyle(s.wing ?? 0xeef2ff, 1)
@@ -760,9 +863,10 @@ export class BootScene extends Phaser.Scene {
       g.fillPoints(this.pts([16, 34, 4, 28, 6, 44, 15, 47]), true)
       g.fillPoints(this.pts([48, 34, 60, 28, 58, 44, 49, 47]), true)
     }
-    // Flowing cape
-    g.fillStyle(s.cape, 1)
-    g.fillPoints(this.pts([16, 26, 48, 26, 54, 62, 10, 62]), true)
+    if (has('cape')) {
+      g.fillStyle(s.cape, 1)
+      g.fillPoints(this.pts([16, 26, 48, 26, 54, 62, 10, 62]), true)
+    }
     // Legs
     g.fillStyle(shade(s.robe, 0.75), 1)
     g.fillRect(23, 50, 7, 12)
@@ -770,46 +874,58 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(dark, 1)
     g.fillRect(23, 58, 7, 4)
     g.fillRect(34, 58, 7, 4)
-    // Broad chestplate
+    // Chestplate with a dark outline for definition
+    g.fillStyle(dark, 1)
+    g.fillRoundedRect(x0 - 1.5, 26.5, w + 3, 27, 6)
     g.fillStyle(s.robe, 1)
-    g.fillRoundedRect(16, 28, 32, 25, 5)
+    g.fillRoundedRect(x0, 28, w, 25, 5)
     g.fillStyle(s.robeHi, 0.95)
-    g.fillPoints(this.pts([32, 30, 42, 34, 40, 50, 24, 50, 22, 34]), true) // V-plate
+    g.fillPoints(this.pts([32, 30, x0 + w - 4, 34, x0 + w - 6, 50, x0 + 6, 50, x0 + 4, 34]), true) // V-plate
     g.fillStyle(s.trim, 1) // belt + emblem
-    g.fillRect(17, 48, 30, 4)
-    g.fillCircle(32, 40, 3)
-    // Big angular pauldrons
-    const pad = has('pauldrons') ? 10 : 8
-    g.fillStyle(s.trim, 1)
-    g.fillPoints(this.pts([8, 34, 12, 26, 20, 30, 18, 38]), true)
-    g.fillPoints(this.pts([56, 34, 52, 26, 44, 30, 46, 38]), true)
-    g.fillStyle(s.robeHi, 1)
-    g.fillCircle(15, 31, pad - 4)
-    g.fillCircle(49, 31, pad - 4)
+    g.fillRect(x0, 48, w, 4)
+    g.fillCircle(32, 40, 2 + s.rank * 2)
+    // Shoulders: angular pauldrons once unlocked, else small nubs
+    if (has('pauldrons')) {
+      const pad = 4 + Math.round(3 * bulk)
+      g.fillStyle(s.trim, 1)
+      g.fillPoints(this.pts([x0 - 8, 34, x0 - 4, 26, x0 + 4, 30, x0 + 2, 38]), true)
+      g.fillPoints(this.pts([x0 + w + 8, 34, x0 + w + 4, 26, x0 + w - 4, 30, x0 + w - 2, 38]), true)
+      g.fillStyle(s.robeHi, 1)
+      g.fillCircle(x0 - 1, 31, pad - 4)
+      g.fillCircle(x0 + w + 1, 31, pad - 4)
+    } else {
+      g.fillStyle(s.robeHi, 1)
+      g.fillCircle(x0 + 1, 31, 4)
+      g.fillCircle(x0 + w - 1, 31, 4)
+    }
     // Gauntlet fists
     g.fillStyle(s.robeHi, 1)
-    g.fillCircle(12, 40, 3.5)
-    g.fillCircle(52, 40, 3.5)
-    // Helmet
+    g.fillCircle(x0 - 4, 40, 3.5)
+    g.fillCircle(x0 + w + 4, 40, 3.5)
+    // Helmet (dark outline + dome). Smaller/plainer at low rank.
+    const hw = 24 + Math.round(6 * s.rank)
+    g.fillStyle(dark, 1)
+    g.fillEllipse(32, 18, hw + 3, 29)
     g.fillStyle(s.hood, 1)
-    g.fillEllipse(32, 18, 28, 26)
+    g.fillEllipse(32, 18, hw, 26)
     g.fillStyle(s.robeHi, 1) // brow band
-    g.fillRect(19, 15, 26, 3)
-    g.fillStyle(dark, 1) // visor slit
-    g.fillRect(20, 18, 24, 6)
-    g.fillRect(31, 18, 2, 9) // nasal guard
+    g.fillRect(32 - hw / 2 + 2, 15, hw - 4, 3)
+    g.fillStyle(dark, 1) // visor slit + nasal guard
+    g.fillRect(32 - hw / 2 + 3, 18, hw - 6, 6)
+    g.fillRect(31, 18, 2, 9)
     g.fillStyle(s.eye, 1) // glowing eyes in the slit
-    g.fillRect(23, 19, 4, 3)
-    g.fillRect(37, 19, 4, 3)
+    g.fillRect(25, 19, 4, 3)
+    g.fillRect(35, 19, 4, 3)
     if (has('horns')) {
       g.fillStyle(s.trim, 1)
       g.fillTriangle(16, 14, 8, 2, 22, 12)
       g.fillTriangle(48, 14, 56, 2, 42, 12)
     }
-    // Crest / plume — always, for gallantry
-    g.fillStyle(s.trim, 1)
-    g.fillPoints(this.pts([30, 8, 34, 8, 34, 0, 30, 2]), true)
-    g.fillPoints(this.pts([31, 6, 33, 6, 38, 4, 36, 10]), true)
+    if (has('crest')) { // plume crest
+      g.fillStyle(s.trim, 1)
+      g.fillPoints(this.pts([30, 8, 34, 8, 34, 0, 30, 2]), true)
+      g.fillPoints(this.pts([31, 6, 33, 6, 38, 4, 36, 10]), true)
+    }
     if (has('crown')) {
       g.fillStyle(s.trim, 1)
       for (const x of [22, 27, 32, 37, 42]) g.fillTriangle(x - 2.5, 8, x, 1, x + 2.5, 8)

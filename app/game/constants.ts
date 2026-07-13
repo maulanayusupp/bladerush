@@ -33,7 +33,7 @@ export const PLAYER = {
   colorHex: 0x7c4dff,
 } as const
 
-/** The hero visually evolves every 1000 power through 20 champion looks. */
+/** The hero visually evolves every 1000 power through 100 champion looks. */
 export const HERO = {
   skins: 100,
   powerPerSkin: 1000,
