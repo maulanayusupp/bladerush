@@ -81,11 +81,31 @@ export const SWORD_SHAPES = [
   'flamberge', 'claymore', 'cutlass', 'estoc', 'crystal', 'bone', 'machete', 'falchion',
 ] as const
 
-/** The hero visually evolves every 1000 power through 500 unique champion looks. */
+/**
+ * The hero's look evolves on a GEOMETRIC power curve, so transformations are
+ * rare and meaningful (roughly one every time power grows ~×evolveGrowth)
+ * instead of flickering every 1000 power early on — and it keeps advancing all
+ * the way to trillions. skinIndex = floor(log(1 + power/evolveBase) / log(growth)).
+ */
 export const HERO = {
   skins: 500,
-  powerPerSkin: 1000,
+  evolveBase: 180,
+  evolveGrowth: 1.7,
 } as const
+
+/**
+ * Hero equipment held in-hand (by skin index): a sword, dual swords, a spear,
+ * or a shield. Carrying a shield reduces incoming damage.
+ */
+export const GEAR = {
+  types: ['sword', 'dual', 'spear', 'shield'] as const,
+  shieldDefenseMul: 0.6, // incoming damage × this while shielded
+} as const
+
+/** Which gear a given hero skin carries (deterministic). */
+export function gearOf(skinIndex: number): number {
+  return skinIndex % GEAR.types.length
+}
 
 export const SWORD = {
   orbitRadius: 84, // distance of the ring from the hero

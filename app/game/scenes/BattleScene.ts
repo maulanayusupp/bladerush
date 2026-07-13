@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -64,6 +64,7 @@ export class BattleScene extends Phaser.Scene {
   private leveling = false
   private playerInvulnUntil = 0
   private metaDamageMul = 1
+  private playerDefenseMul = 1
   private dashUntil = 0
   private hitStopUntil = 0
   private frameTime = 0
@@ -158,6 +159,7 @@ export class BattleScene extends Phaser.Scene {
     this.level = 1
     this.leveling = false
     this.playerInvulnUntil = 0
+    this.playerDefenseMul = 1
     this.dashUntil = 0
     this.hitStopUntil = 0
     // Apply persistent meta-upgrades bought in the shop.
@@ -464,10 +466,15 @@ export class BattleScene extends Phaser.Scene {
 
   /** Swap the hero to the next champion look every 1000 power. */
   private checkEvolve(): void {
-    const tier = Math.min(HERO.skins - 1, Math.floor(this.power.power / HERO.powerPerSkin))
+    // Geometric curve: rare, meaningful transformations that keep advancing even
+    // at very high power (instead of flickering every 1000 power early on).
+    const raw = Math.log(1 + this.power.power / HERO.evolveBase) / Math.log(HERO.evolveGrowth)
+    const tier = clamp(Math.floor(raw), 0, HERO.skins - 1)
     if (tier === this.playerSkin) return
     this.playerSkin = tier
     this.player.setTexture(`hero${tier}`)
+    // Shield gear grants defense (reduced incoming damage).
+    this.playerDefenseMul = gearOf(tier) === 3 ? GEAR.shieldDefenseMul : 1
     this.cameras.main.flash(220, 180, 150, 255)
     this.sparks.explode(16, this.player.x, this.player.y)
     audioService.skill()
@@ -848,7 +855,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.isOver) return
     if (this.elapsedMs < this.playerInvulnUntil) return
     this.playerInvulnUntil = this.elapsedMs + PLAYER.invulnMs
-    const dead = this.player.takeDamage(amount)
+    const dead = this.player.takeDamage(Math.round(amount * this.playerDefenseMul))
     this.emitHp()
     audioService.hurt()
     this.cameras.main.flash(120, 255, 80, 40)
@@ -1429,7 +1436,7 @@ export class BattleScene extends Phaser.Scene {
     enemy.deactivate()
     if (this.elapsedMs < this.playerInvulnUntil) return
     this.playerInvulnUntil = this.elapsedMs + PLAYER.invulnMs
-    const dead = this.player.takeDamage(ENEMY.contactDamage)
+    const dead = this.player.takeDamage(Math.round(ENEMY.contactDamage * this.playerDefenseMul))
     this.emitHp()
     audioService.hurt()
     if (dead) this.gameOver()

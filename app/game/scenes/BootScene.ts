@@ -5,7 +5,7 @@
 // Swap these for real sprite sheets in the polish phase.
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, MAP_TILE, SWORD_SHAPES } from '../constants'
+import { AURA, MAP_TILE, SWORD_SHAPES, gearOf } from '../constants'
 
 type Draw = (g: Phaser.GameObjects.Graphics) => void
 
@@ -141,6 +141,7 @@ function genChampions(): ChampionSkin[] {
       helmType: i % 5, // greathelm / barbute / hood / spiked / crowned-open
       // Interleave classes so the gallery/evolution cycles silhouettes fast.
       cls: (i * 3 + Math.floor(i / HERO_CLASS_COUNT)) % HERO_CLASS_COUNT,
+      gear: gearOf(i),
     })
   }
   return out
@@ -281,6 +282,7 @@ interface ChampionSkin {
   visor: number // 0..1 helmet visor style
   helmType: number // 0..4 helmet archetype
   cls: number // body silhouette class (knight/barbarian/mage/…)
+  gear: number // 0 sword / 1 dual / 2 spear / 3 shield
 }
 
 const HERO_CLASS_COUNT = 8 // knight, barbarian, mage, samurai, rogue, golem, lich, dragoon
@@ -1333,6 +1335,9 @@ export class BootScene extends Phaser.Scene {
       default: this.drawHeroKnight(g, s, dark)
     }
 
+    // Held equipment (sword / dual / spear / shield).
+    this.drawHeroGear(g, s, dark)
+
     // Shared high-rank regalia (works over any class head near the top).
     if (has('crown')) {
       g.fillStyle(s.trim, 1)
@@ -1341,6 +1346,51 @@ export class BootScene extends Phaser.Scene {
     if (has('halo')) {
       g.lineStyle(2, s.trim, 1)
       g.strokeEllipse(32, 5, 26, 8)
+    }
+  }
+
+  /** A small held sword at hand position (x, y), blade pointing up. */
+  private drawHeldSword(g: Phaser.GameObjects.Graphics, x: number, y: number, trim: number): void {
+    g.fillStyle(0x9aa2b4, 1)
+    g.fillRect(x - 1.2, y - 18, 2.6, 18) // blade
+    g.fillTriangle(x, y - 22, x - 2.2, y - 18, x + 2.2, y - 18) // tip
+    g.fillStyle(trim, 1)
+    g.fillRect(x - 3.5, y - 1, 7, 2) // guard
+    g.fillStyle(0x3a2a1a, 1)
+    g.fillRect(x - 1, y + 1, 2, 5) // grip
+  }
+
+  /** Held equipment drawn over the hands: sword / dual / spear / shield. */
+  private drawHeroGear(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    const rx = 52
+    const lx = 12
+    const hy = 44
+    switch (s.gear) {
+      case 1: // dual swords
+        this.drawHeldSword(g, rx, hy, s.trim)
+        this.drawHeldSword(g, lx, hy, s.trim)
+        break
+      case 2: // spear
+        g.fillStyle(0x5c3b22, 1)
+        g.fillRect(rx - 1, 12, 2.4, 44)
+        g.fillStyle(0xcdd3e0, 1)
+        g.fillTriangle(rx + 0.2, 4, rx - 3, 14, rx + 3.4, 14)
+        g.fillStyle(s.trim, 1)
+        g.fillRect(rx - 2, 16, 4.4, 2)
+        break
+      case 3: // shield (left) + sword (right) — the defensive kit
+        g.fillStyle(dark, 1)
+        g.fillRoundedRect(4, 32, 16, 22, 4)
+        g.fillStyle(s.robe, 1)
+        g.fillRoundedRect(5, 33, 14, 20, 3)
+        g.fillStyle(s.robeHi, 0.9)
+        g.fillRoundedRect(7, 35, 5, 16, 2)
+        g.fillStyle(s.trim, 1)
+        g.fillCircle(12, 43, 3)
+        this.drawHeldSword(g, rx, hy, s.trim)
+        break
+      default: // single sword
+        this.drawHeldSword(g, rx, hy, s.trim)
     }
   }
 
