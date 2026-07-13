@@ -566,9 +566,14 @@ export class BattleScene extends Phaser.Scene {
     const seconds = BOSS.targetSeconds + (elapsedSec / 60) * BOSS.secondsPerMin
     const hp = Math.max(BOSS.minHp, Math.round(dps * seconds))
     const { x, y } = this.randomEdgePoint()
-    // Nastier boss each appearance and with power (higher index = more monstrous).
+    // Pick a DISTINCT boss skin each appearance (shape + color), biased upward
+    // over time so later bosses skew nastier — without saturating to one skin at
+    // high power. floorRank rises with elapsed minutes; a per-count offset cycles
+    // so consecutive bosses always differ in archetype.
     this.bossCount++
-    const idx = clamp(Math.round((this.bossCount - 1) * 8 + this.power.power * 0.02), 0, BOSS.skins - 1)
+    const floorRank = clamp(Math.floor(elapsedSec / 60) * 12, 0, 80)
+    const offset = (this.bossCount * 13) % 20
+    const idx = clamp(floorRank + offset, 0, BOSS.skins - 1)
     this.boss.spawn(x, y, hp, BOSS.speed, 1.5, `boss${idx}`)
     this.bossActive = true
     this.bossSummonAcc = 0
@@ -1330,13 +1335,10 @@ export class BattleScene extends Phaser.Scene {
 
   private onBossHitPlayer: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (playerObj, _bossObj) => {
     if (!this.boss.active) return
-    if (this.elapsedMs - this.boss.contactAt < BOSS.contactCooldownMs) return
-    this.boss.contactAt = this.elapsedMs
     void playerObj
-    const dead = this.player.takeDamage(BOSS.contactDamage)
-    this.emitHp()
-    audioService.hurt()
-    if (dead) this.gameOver()
+    // Share the player i-frame window with every other damage source (orbs,
+    // meteors, troops) so overlapping hits can't chain-kill in one instant.
+    this.hitPlayer(BOSS.contactDamage)
   }
 
   /** Throttle chatty sword-hit ticks so they don't overlap into noise. */
