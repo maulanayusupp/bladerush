@@ -309,6 +309,9 @@ export class BootScene extends Phaser.Scene {
     RIVAL_SKINS.forEach((skin, i) => this.bake(`rivalHero${i}`, 56, 64, (g) => this.drawWarlord(g, skin)))
     TROOP_SKINS.forEach((skin, i) => this.bake(`troop${i}`, 60, 60, (g) => this.drawTrooper(g, 60, skin)))
     BOSS_SKINS.forEach((skin, i) => this.bake(`boss${i}`, 76, 76, (g) => this.drawBoss(g, skin)))
+    this.bake('bossOrb', 24, 24, (g) => this.drawBossOrb(g))
+    this.bake('meteor', 30, 44, (g) => this.drawMeteor(g))
+    this.bake('meteorWarn', 64, 64, (g) => this.drawMeteorWarn(g))
     this.bake('heal', 30, 30, (g) => this.drawHeal(g))
     this.bake('chest', 32, 30, (g) => this.drawChest(g))
     this.bake('wMace', 28, 56, (g) => this.drawMace(g))
@@ -637,6 +640,49 @@ export class BootScene extends Phaser.Scene {
       const x = 26 + i * gap
       g.fillTriangle(x, 62, x + 2.4, 62, x + 1.2, 70 + s.rank * 2)
     }
+  }
+
+  /** Boss fireball projectile (24x24): white-hot core so it tints well. */
+  private drawBossOrb(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xff5a1a, 0.35)
+    g.fillCircle(12, 12, 12)
+    g.fillStyle(0xff8a3a, 0.7)
+    g.fillCircle(12, 12, 8)
+    g.fillStyle(0xffd27a, 1)
+    g.fillCircle(12, 12, 5)
+    g.fillStyle(0xfff4d0, 1)
+    g.fillCircle(11, 11, 2.4)
+  }
+
+  /** Falling meteor (30x44): fiery head + tapering trail. */
+  private drawMeteor(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xff7a2a, 0.4) // trail
+    g.fillPoints(this.pts([15, 0, 10, 22, 20, 22]), true)
+    g.fillStyle(0x3a2418, 1) // rock
+    g.fillCircle(15, 30, 11)
+    g.fillStyle(0x1e130c, 1)
+    g.fillCircle(11, 28, 3)
+    g.fillCircle(19, 33, 2.5)
+    g.fillStyle(0xff8a3a, 1) // molten glow rim
+    g.fillCircle(15, 26, 4)
+    g.fillStyle(0xffd27a, 1)
+    g.fillCircle(15, 25, 2)
+  }
+
+  /** Ground warning ring for a meteor AoE (64x64): tinted white so it colors well. */
+  private drawMeteorWarn(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xffffff, 0.12)
+    g.fillCircle(32, 32, 30)
+    g.lineStyle(3, 0xffffff, 0.95)
+    g.strokeCircle(32, 32, 29)
+    g.lineStyle(2, 0xffffff, 0.7)
+    g.strokeCircle(32, 32, 20)
+    // crosshair ticks
+    g.fillStyle(0xffffff, 0.9)
+    g.fillRect(31, 2, 2, 8)
+    g.fillRect(31, 54, 2, 8)
+    g.fillRect(2, 31, 8, 2)
+    g.fillRect(54, 31, 8, 2)
   }
 
   /** CHEST — near-white so it can be tinted per rarity. */

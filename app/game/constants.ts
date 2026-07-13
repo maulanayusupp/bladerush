@@ -250,6 +250,32 @@ export const BOSS = {
 } as const
 
 /**
+ * Boss attack patterns. Two telegraphed threats layered on the melee ring:
+ *  - fan: a spread of homing-launched fireballs aimed at the hero.
+ *  - meteors: telegraphed AoE — a warning ring blooms on the ground, then a
+ *    meteor slams down for a big radial hit. Dodge out of the ring in time.
+ * When the boss enrages, everything comes faster and denser.
+ */
+export const BOSS_ATTACK = {
+  fanIntervalMs: 2600,
+  fanCount: 7, // projectiles per fan (+2 when enraged)
+  fanSpreadRad: 1.15, // total angular spread
+  projectileSpeed: 250,
+  projectileDamage: 16,
+  projectilePool: 60,
+
+  meteorIntervalMs: 3400,
+  meteorCount: 3, // meteors per volley (+1 when enraged)
+  meteorTelegraphMs: 950, // warning-ring lead time before impact
+  meteorFallMs: 260,
+  meteorRadius: 74, // AoE damage radius
+  meteorSpread: 170, // how far around the hero they scatter
+  meteorDamage: 24,
+
+  enrageRateMul: 0.62, // intervals * this when enraged (faster cadence)
+} as const
+
+/**
  * XP + leveling: kills grant XP; each level offers a choice of 3 upgrades.
  * Threshold grows geometrically so level-ups get progressively rarer instead
  * of popping every few kills.

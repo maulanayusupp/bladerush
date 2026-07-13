@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE, WORLD } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE, WORLD } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -85,6 +85,9 @@ export class BattleScene extends Phaser.Scene {
   private nextBossMs: number = BOSS.firstMs
   private bossActive = false
   private bossCount = 0
+  private bossFanAcc = 0
+  private bossMeteorAcc = 0
+  private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   private bossSummonAcc = 0
   private bossGateAcc = 0
   private comboCount = 0
@@ -256,6 +259,12 @@ export class BattleScene extends Phaser.Scene {
       .setTint(0xff3020)
       .setDepth(-1)
       .setVisible(false)
+    // Pooled boss fireballs (fan attack).
+    this.bossOrbs = Array.from({ length: BOSS_ATTACK.projectilePool }, () => ({
+      img: this.add.image(0, 0, 'bossOrb').setDepth(4).setBlendMode(Phaser.BlendModes.ADD).setActive(false).setVisible(false),
+      vx: 0,
+      vy: 0,
+    }))
 
     // Pooled floating reward popups shown on kills.
     this.popupPool = Array.from({ length: 24 }, () =>
@@ -555,6 +564,8 @@ export class BattleScene extends Phaser.Scene {
     this.bossGateAcc = 0
     this.bossAngle = 0
     this.bossClashAcc = 0
+    this.bossFanAcc = 0
+    this.bossMeteorAcc = 0
     this.boss.clearTint()
     const weaponKey = pickOne(['wMace', 'wAxe', 'wSpear'])
     this.bossWeapons.forEach((wpn) => wpn.setTexture(weaponKey).setScale(1.7).setVisible(true))
@@ -566,6 +577,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private hideBossExtras(): void {
+    this.clearBossOrbs()
     this.bossWeapons.forEach((wpn) => wpn.setVisible(false))
     this.bossLabel.setVisible(false)
     this.bossAura.setVisible(false)
@@ -640,6 +652,154 @@ export class BattleScene extends Phaser.Scene {
       this.bossGateAcc = 0
       this.spawnMultiplierGate()
     }
+
+    // Attack patterns — faster & denser when enraged.
+    const rageMul = enraged ? BOSS_ATTACK.enrageRateMul : 1
+    this.bossFanAcc += deltaMs
+    if (this.bossFanAcc >= BOSS_ATTACK.fanIntervalMs * rageMul) {
+      this.bossFanAcc = 0
+      this.castFan(enraged)
+    }
+    this.bossMeteorAcc += deltaMs
+    if (this.bossMeteorAcc >= BOSS_ATTACK.meteorIntervalMs * rageMul) {
+      this.bossMeteorAcc = 0
+      this.castMeteors(enraged)
+    }
+    this.updateBossOrbs(deltaMs)
+  }
+
+  /** Fire a spread of fireballs from the boss toward the hero. */
+  private castFan(enraged: boolean): void {
+    const count = BOSS_ATTACK.fanCount + (enraged ? 2 : 0)
+    const base = angleBetween(this.boss.x, this.boss.y, this.player.x, this.player.y)
+    const spread = BOSS_ATTACK.fanSpreadRad
+    const speed = BOSS_ATTACK.projectileSpeed * (enraged ? 1.2 : 1)
+    for (let k = 0; k < count; k++) {
+      const orb = this.bossOrbs.find((o) => !o.img.active)
+      if (!orb) break
+      const a = base + (count > 1 ? (k / (count - 1) - 0.5) * spread : 0)
+      orb.vx = Math.cos(a) * speed
+      orb.vy = Math.sin(a) * speed
+      orb.img
+        .setPosition(this.boss.x, this.boss.y)
+        .setScale(enraged ? 1.35 : 1.1)
+        .setTint(enraged ? 0xff5030 : 0xffa050)
+        .setActive(true)
+        .setVisible(true)
+    }
+    audioService.nova()
+  }
+
+  /** Advance active fireballs; recycle offscreen and damage the hero on contact. */
+  private updateBossOrbs(deltaMs: number): void {
+    const dt = deltaMs / 1000
+    const hitDist = this.player.width / 2 + 10
+    const cam = this.cameras.main
+    const margin = 80
+    for (const orb of this.bossOrbs) {
+      if (!orb.img.active) continue
+      orb.img.x += orb.vx * dt
+      orb.img.y += orb.vy * dt
+      orb.img.rotation += deltaMs / 90
+      if (distance(orb.img.x, orb.img.y, this.player.x, this.player.y) < hitDist) {
+        this.sparks.explode(6, orb.img.x, orb.img.y)
+        orb.img.setActive(false).setVisible(false)
+        this.hitPlayer(BOSS_ATTACK.projectileDamage)
+        continue
+      }
+      // Recycle once well outside the current view.
+      if (
+        orb.img.x < cam.scrollX - margin ||
+        orb.img.x > cam.scrollX + this.viewW + margin ||
+        orb.img.y < cam.scrollY - margin ||
+        orb.img.y > cam.scrollY + this.viewH + margin
+      ) {
+        orb.img.setActive(false).setVisible(false)
+      }
+    }
+  }
+
+  /** Rain telegraphed meteors around the hero (dodge the warning rings). */
+  private castMeteors(enraged: boolean): void {
+    const count = BOSS_ATTACK.meteorCount + (enraged ? 1 : 0)
+    for (let k = 0; k < count; k++) {
+      const tx = this.player.x + randomRange(-BOSS_ATTACK.meteorSpread, BOSS_ATTACK.meteorSpread)
+      const ty = this.player.y + randomRange(-BOSS_ATTACK.meteorSpread, BOSS_ATTACK.meteorSpread)
+      this.spawnMeteor(tx, ty, enraged)
+    }
+    audioService.skill()
+  }
+
+  /** One meteor: warning ring blooms, then a rock slams down for a radial hit. */
+  private spawnMeteor(tx: number, ty: number, enraged: boolean): void {
+    const radius = BOSS_ATTACK.meteorRadius
+    const warn = this.add
+      .image(tx, ty, 'meteorWarn')
+      .setDepth(-1)
+      .setAlpha(0.9)
+      .setScale(0.15)
+      .setTint(enraged ? 0xff3020 : 0xff8a3a)
+    this.tweens.add({
+      targets: warn,
+      scale: (radius * 2) / 64,
+      alpha: { from: 0.5, to: 0.95 },
+      duration: BOSS_ATTACK.meteorTelegraphMs,
+      ease: 'Quad.Out',
+      onComplete: () => {
+        warn.destroy()
+        const meteor = this.add.image(tx, ty - 460, 'meteor').setDepth(6).setScale(enraged ? 1.7 : 1.4)
+        this.tweens.add({
+          targets: meteor,
+          y: ty,
+          duration: BOSS_ATTACK.meteorFallMs,
+          ease: 'Quad.In',
+          onComplete: () => {
+            meteor.destroy()
+            this.meteorImpact(tx, ty, radius, enraged)
+          },
+        })
+      },
+    })
+  }
+
+  /** Meteor impact: explosion, shockwave, shake, and a radial hit on the hero. */
+  private meteorImpact(tx: number, ty: number, radius: number, enraged: boolean): void {
+    this.sparks.explode(22, tx, ty)
+    const ring = this.add
+      .image(tx, ty, 'shock')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(enraged ? 0xff5030 : 0xffb060)
+      .setScale(0.2)
+      .setDepth(5)
+    this.tweens.add({
+      targets: ring,
+      scale: (radius * 2) / 64,
+      alpha: { from: 0.85, to: 0 },
+      duration: 320,
+      onComplete: () => ring.destroy(),
+    })
+    this.cameras.main.shake(180, 0.01)
+    audioService.nova()
+    if (distance(this.player.x, this.player.y, tx, ty) < radius + this.player.width / 2) {
+      this.hitPlayer(BOSS_ATTACK.meteorDamage)
+    }
+  }
+
+  /** Apply damage to the hero (respecting i-frames) with feedback. */
+  private hitPlayer(amount: number): void {
+    if (this.isOver) return
+    if (this.elapsedMs < this.playerInvulnUntil) return
+    this.playerInvulnUntil = this.elapsedMs + PLAYER.invulnMs
+    const dead = this.player.takeDamage(amount)
+    this.emitHp()
+    audioService.hurt()
+    this.cameras.main.flash(120, 255, 80, 40)
+    if (dead) this.gameOver()
+  }
+
+  /** Recycle every active fireball (on boss defeat / restart). */
+  private clearBossOrbs(): void {
+    for (const orb of this.bossOrbs) orb.img.setActive(false).setVisible(false)
   }
 
   private spawnMultiplierGate(): void {
