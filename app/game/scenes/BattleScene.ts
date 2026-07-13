@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE, WORLD } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -88,6 +88,7 @@ export class BattleScene extends Phaser.Scene {
   private bossFanAcc = 0
   private bossMeteorAcc = 0
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
+  private keys?: Record<string, Phaser.Input.Keyboard.Key>
   private bossSummonAcc = 0
   private bossGateAcc = 0
   private comboCount = 0
@@ -237,7 +238,7 @@ export class BattleScene extends Phaser.Scene {
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
     this.swordPool = Array.from({ length: SWORD.poolSize }, () => new Sword(this, 0, 0))
     // Pick one of the 10 blade skins for this run.
-    const swordSkin = Math.floor(Math.random() * 10)
+    const swordSkin = Math.floor(Math.random() * SWORD_SHAPES.length)
     this.swordPool.forEach((sword) => sword.setTexture(`sword${swordSkin}`))
     this.rivalPool = Array.from({ length: RIVAL.poolSize }, () => new Rival(this, 0, 0))
     this.healPool = Array.from({ length: 6 }, () => new Heal(this, 0, 0))
@@ -297,6 +298,9 @@ export class BattleScene extends Phaser.Scene {
     this.input.on('pointermove', this.onPointer)
     this.input.on('pointerdown', this.onPointer)
     this.input.once('pointerdown', () => audioService.unlock())
+    // WASD / arrow-key movement (desktop) in addition to pointer/touch.
+    const kb = this.input.keyboard
+    if (kb) this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Record<string, Phaser.Input.Keyboard.Key>
     this.scale.on('resize', this.onResize)
     gameEventBus.on('game:restart', this.onRestart)
     gameEventBus.on('skill:use', this.onSkill)
@@ -321,7 +325,14 @@ export class BattleScene extends Phaser.Scene {
     const elapsedSec = this.elapsedMs / 1000
 
     const dashing = this.elapsedMs < this.dashUntil
-    this.player.moveToward(deltaMs, { width: this.worldW, height: this.worldH }, dashing ? SKILLS.dash.speedMul : 1)
+    const speedMul = dashing ? SKILLS.dash.speedMul : 1
+    const bounds = { width: this.worldW, height: this.worldH }
+    const kb = this.readKeyboard()
+    if (kb.x !== 0 || kb.y !== 0) {
+      this.player.moveByVector(deltaMs, bounds, kb.x, kb.y, speedMul)
+    } else {
+      this.player.moveToward(deltaMs, bounds, speedMul)
+    }
     // Ground scrolls 1:1 with the camera so the terrain appears fixed in the
     // world — you're traversing it, not sliding on top of it.
     const cam = this.cameras.main
@@ -1350,7 +1361,22 @@ export class BattleScene extends Phaser.Scene {
   // ---- Lifecycle / input handlers -----------------------------------------
 
   private onPointer = (pointer: Phaser.Input.Pointer): void => {
+    // Only steer while pressed/touched — mouse hover no longer twitches the hero.
+    if (!pointer.isDown) return
     this.player.setTarget(pointer.worldX, pointer.worldY)
+  }
+
+  /** Current WASD / arrow-key movement vector (unnormalized, -1..1 per axis). */
+  private readKeyboard(): { x: number; y: number } {
+    const k = this.keys
+    if (!k) return { x: 0, y: 0 }
+    let x = 0
+    let y = 0
+    if (k.A?.isDown || k.LEFT?.isDown) x -= 1
+    if (k.D?.isDown || k.RIGHT?.isDown) x += 1
+    if (k.W?.isDown || k.UP?.isDown) y -= 1
+    if (k.S?.isDown || k.DOWN?.isDown) y += 1
+    return { x, y }
   }
 
   private onResize = (gameSize: Phaser.Structs.Size): void => {

@@ -69,7 +69,16 @@ export const PLAYER = {
   maxHp: 100,
   invulnMs: 750, // brief immunity after taking contact damage
   colorHex: 0x7c4dff,
+  // Pointer control: ignore tiny cursor movements within this radius of the
+  // hero so aiming isn't twitchy. Keyboard (WASD / arrows) ignores it.
+  pointerDeadzone: 30,
 } as const
+
+/** Distinct player blade silhouettes (baked as sword0..N, tinted per tier). */
+export const SWORD_SHAPES = [
+  'leaf', 'straight', 'curved', 'broad', 'rapier', 'shard', 'cleaver', 'saber', 'glaive', 'fork',
+  'katana', 'scimitar', 'greatsword', 'dagger', 'kris', 'trident', 'scythe', 'twin', 'nodachi', 'khopesh',
+] as const
 
 /** The hero visually evolves every 1000 power through 500 unique champion looks. */
 export const HERO = {

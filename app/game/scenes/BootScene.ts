@@ -5,7 +5,7 @@
 // Swap these for real sprite sheets in the polish phase.
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, MAP_TILE } from '../constants'
+import { AURA, MAP_TILE, SWORD_SHAPES } from '../constants'
 
 type Draw = (g: Phaser.GameObjects.Graphics) => void
 
@@ -241,10 +241,6 @@ interface WarlordSkin {
 const RIVAL_SKINS: WarlordSkin[] = genWarlords()
 
 /** 10 distinct player sword silhouettes (tinted by tier in-game). */
-const SWORD_SHAPES = [
-  'leaf', 'straight', 'curved', 'broad', 'rapier', 'shard', 'cleaver', 'saber', 'glaive', 'fork',
-] as const
-
 interface TrooperSkin {
   skin: number
   armor: number
@@ -1172,30 +1168,65 @@ export class BootScene extends Phaser.Scene {
       glaive: [8, 1, 11.5, 8, 10.5, 17, 5.5, 17, 4.5, 8],
       fork: [5, 11, 11, 11, 10.4, 28, 5.6, 28],
       leaf: [8, 1, 11.6, 12, 10.4, 28, 5.6, 28, 4.4, 12],
+      // Single-edged, gently back-curved (samurai).
+      katana: [10, 1, 11.5, 6, 11, 27, 9, 29, 7, 29, 7.5, 6],
+      nodachi: [10, 0, 11.5, 4, 11.2, 30, 9, 31, 6.5, 31, 7.2, 4],
+      scimitar: [7, 1, 13, 9, 12.5, 19, 8.5, 29, 6, 28, 5.5, 11],
+      greatsword: [8, 0, 11, 7, 11, 30, 5, 30, 5, 7],
+      dagger: [8, 8, 10.6, 13, 10.2, 27, 5.8, 27, 5.4, 13],
+      // Wavy kris blade.
+      kris: [8, 1, 11, 6, 6.5, 11, 11, 16, 6.5, 21, 10.5, 27, 8, 29, 5.5, 27, 9.5, 21, 5, 16, 9.5, 11, 5, 6],
+      // Curved sickle (khopesh) — hooks to one side.
+      khopesh: [7, 2, 13, 8, 13.5, 16, 10, 22, 8, 22, 8, 12, 6.5, 6],
     }
+    const roundGuard = shape === 'katana' || shape === 'nodachi' // tsuba
     const blade: number[] = shapes[shape] ?? shapes.leaf ?? []
 
     g.fillStyle(0xcdd3e0, 1)
-    g.fillPoints(this.pts(blade), true)
-    if (shape === 'glaive') {
-      g.fillStyle(0x99a1b4, 1)
-      g.fillRect(7, 17, 2, 11)
-    } else if (shape === 'fork') {
-      g.fillStyle(0xcdd3e0, 1)
-      g.fillPoints(this.pts([6.5, 1, 7.6, 11, 5, 11]), true)
-      g.fillPoints(this.pts([9.5, 1, 11, 11, 8.4, 11]), true)
+    if (shape === 'trident') {
+      // Three prongs on a shaft.
+      for (const px of [5.2, 8, 10.8]) g.fillPoints(this.pts([px, 2, px + 1, 12, px - 1, 12]), true)
+      g.fillRect(7, 11, 2, 18)
+      g.fillRect(4.5, 11, 7, 2)
+    } else if (shape === 'twin') {
+      // Two slim parallel blades.
+      g.fillPoints(this.pts([6, 1, 7.3, 10, 7, 28, 5, 28, 4.8, 10]), true)
+      g.fillPoints(this.pts([10, 1, 11.2, 10, 11, 28, 9, 28, 8.7, 10]), true)
+    } else if (shape === 'scythe') {
+      // Straight shaft with a long hooked head.
+      g.fillRect(7, 4, 2, 26)
+      g.fillPoints(this.pts([8, 4, 1, 6, 3, 1, 8, 1]), true)
+    } else {
+      g.fillPoints(this.pts(blade), true)
+      if (shape === 'glaive') {
+        g.fillStyle(0x99a1b4, 1)
+        g.fillRect(7, 17, 2, 11)
+      } else if (shape === 'fork') {
+        g.fillStyle(0xcdd3e0, 1)
+        g.fillPoints(this.pts([6.5, 1, 7.6, 11, 5, 11]), true)
+        g.fillPoints(this.pts([9.5, 1, 11, 11, 8.4, 11]), true)
+      }
+      // Dark outline for contrast on light maps.
+      g.lineStyle(1.6, 0x14171f, 1)
+      g.strokePoints(this.pts(blade), true)
     }
-    // Dark outline for contrast on light maps.
-    g.lineStyle(1.6, 0x14171f, 1)
-    g.strokePoints(this.pts(blade), true)
 
-    // Shared guard / grip / pommel.
-    g.fillStyle(0xffce5a, 1)
-    g.fillPoints(this.pts([0, 29, 16, 29, 13.5, 33, 2.5, 33]), true)
-    g.fillStyle(0x5c3b22, 1)
-    g.fillRect(6.3, 33, 3.4, 9)
-    g.fillStyle(0xffce5a, 1)
-    g.fillCircle(8, 43, 2.3)
+    // Guard / grip / pommel — round tsuba for the samurai blades, cross guard else.
+    if (roundGuard) {
+      g.fillStyle(0x3a2f22, 1)
+      g.fillCircle(8, 30, 4) // tsuba
+      g.fillStyle(0x1a1410, 1)
+      g.fillRect(6.6, 32, 2.8, 11) // wrapped grip (longer)
+      g.fillStyle(0x8a6a2a, 1)
+      for (const gy of [34, 37, 40]) g.fillRect(6.6, gy, 2.8, 1) // wrap ties
+    } else {
+      g.fillStyle(0xffce5a, 1)
+      g.fillPoints(this.pts([0, 29, 16, 29, 13.5, 33, 2.5, 33]), true)
+      g.fillStyle(0x5c3b22, 1)
+      g.fillRect(6.3, 33, 3.4, 9)
+      g.fillStyle(0xffce5a, 1)
+      g.fillCircle(8, 43, 2.3)
+    }
   }
 
   /** Flatten a [x0,y0,x1,y1,...] list into Vector2 points for fillPoints. */

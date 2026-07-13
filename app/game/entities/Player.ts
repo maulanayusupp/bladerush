@@ -28,18 +28,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.targetY = y
   }
 
+  /** Follow the pointer target, ignoring tiny movements within the deadzone. */
   moveToward(deltaMs: number, bounds: Bounds, speedMul = 1): void {
     const step = PLAYER.speed * speedMul * (deltaMs / 1000)
     const dx = this.targetX - this.x
     const dy = this.targetY - this.y
     const dist = Math.hypot(dx, dy)
 
+    if (dist < PLAYER.pointerDeadzone) return // too close — stay put (calmer aim)
     if (dist <= step) {
       this.setPosition(this.targetX, this.targetY)
     } else {
       this.setPosition(this.x + (dx / dist) * step, this.y + (dy / dist) * step)
     }
+    this.clampToBounds(bounds)
+  }
 
+  /** Move by a direction vector (WASD / arrows). Keeps the pointer target in
+   *  sync so releasing keys doesn't yank the hero back. */
+  moveByVector(deltaMs: number, bounds: Bounds, dx: number, dy: number, speedMul = 1): void {
+    const len = Math.hypot(dx, dy)
+    if (len === 0) return
+    const step = PLAYER.speed * speedMul * (deltaMs / 1000)
+    this.setPosition(this.x + (dx / len) * step, this.y + (dy / len) * step)
+    this.clampToBounds(bounds)
+    this.targetX = this.x
+    this.targetY = this.y
+  }
+
+  private clampToBounds(bounds: Bounds): void {
     const halfW = this.width / 2
     const halfH = this.height / 2
     this.setPosition(
