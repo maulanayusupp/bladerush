@@ -11,6 +11,8 @@
   padding: $space-1;
   border-radius: $radius-pill;
   background-color: rgba($color-surface, 0.7);
+  border: 1px solid rgba(#fff, 0.08);
+  backdrop-filter: blur(8px);
 
   &__option {
     @include button-reset;

@@ -73,17 +73,66 @@ class MetaService {
   }
 
   // ---- Derived bonuses applied at run start ----
+  /** Flat total for a per-level additive upgrade. */
+  private add(id: MetaId): number {
+    return META[id].per * this.levelOf(id)
+  }
+  /** 1 + total for a per-level percentage upgrade. */
+  private up(id: MetaId): number {
+    return 1 + this.add(id)
+  }
+
   get startPower(): number {
-    return META.startPower.per * this.levelOf('startPower')
+    return this.add('startPower')
   }
   get bonusMaxHp(): number {
-    return META.maxHp.per * this.levelOf('maxHp')
+    return this.add('maxHp')
   }
   get damageMul(): number {
-    return 1 + META.damage.per * this.levelOf('damage')
+    return this.up('damage')
   }
   get coinMul(): number {
-    return 1 + META.coin.per * this.levelOf('coin')
+    return this.up('coin')
+  }
+  get moveSpeedMul(): number {
+    return this.up('moveSpeed')
+  }
+  get orbitSpeedMul(): number {
+    return this.up('orbitSpeed')
+  }
+  get critChance(): number {
+    return Math.min(0.75, this.add('crit'))
+  }
+  get xpMul(): number {
+    return this.up('xp')
+  }
+  get startLifesteal(): number {
+    return this.add('lifesteal')
+  }
+  /** Incoming-damage multiplier (< 1 = tankier), floored so it never trivializes. */
+  get defenseMul(): number {
+    return Math.max(0.3, 1 - this.add('defense'))
+  }
+  get bossDamageMul(): number {
+    return this.up('bossDmg')
+  }
+  get luck(): number {
+    return this.add('luck')
+  }
+  get healMul(): number {
+    return this.up('heal')
+  }
+  get statusMul(): number {
+    return this.up('status')
+  }
+  get regenPerSec(): number {
+    return this.add('regen')
+  }
+  get magnetRange(): number {
+    return this.add('magnet')
+  }
+  get reviveCount(): number {
+    return this.levelOf('revive')
   }
 }
 

@@ -46,29 +46,41 @@ const features = computed(() => [
 <template>
   <main class="menu">
     <MenuBackground />
+    <div class="menu__aura" aria-hidden="true">
+      <span class="menu__orb menu__orb--a" />
+      <span class="menu__orb menu__orb--b" />
+      <span class="menu__orb menu__orb--c" />
+    </div>
+    <div class="menu__grid" aria-hidden="true" />
+    <div class="menu__vignette" aria-hidden="true" />
     <LanguageSwitcher />
 
     <div class="menu__content">
-      <MenuEmblem class="menu__emblem" />
+      <div class="menu__emblem-wrap">
+        <MenuEmblem class="menu__emblem" />
+      </div>
 
       <span class="menu__badge">⚔️ {{ $t('menu.badge') }}</span>
 
       <h1 class="menu__title">
-        BLADE<span class="menu__title-accent">RUSH</span>
+        <span class="menu__title-word" data-text="BLADE">BLADE</span>
+        <span class="menu__title-word menu__title-word--accent" data-text="RUSH">RUSH</span>
       </h1>
 
       <p class="menu__tagline">{{ $t('menu.subtitle') }}</p>
 
       <div class="menu__actions">
-        <NuxtLink to="/play" class="btn btn--primary btn--xl btn--glow" @click="startGame">
+        <NuxtLink to="/play" class="btn btn--primary btn--xl btn--glow btn--shine" @click="startGame">
           <span class="btn__icon" aria-hidden="true">▶</span>{{ $t('menu.play') }}
         </NuxtLink>
-        <button type="button" class="btn btn--block" @click="openShop">
-          🛒 {{ $t('shop.open') }} · 💰 {{ formatCompact(coins) }}
-        </button>
-        <NuxtLink to="/codex" class="btn btn--block">
-          📖 {{ $t('codex.open') }}
-        </NuxtLink>
+        <div class="menu__actions-row">
+          <button type="button" class="btn btn--block" @click="openShop">
+            🛒 {{ $t('shop.open') }} · 💰 {{ formatCompact(coins) }}
+          </button>
+          <NuxtLink to="/codex" class="btn btn--block">
+            📖 {{ $t('codex.open') }}
+          </NuxtLink>
+        </div>
         <span v-if="store.highScore" class="menu__best">
           🏆 {{ $t('menu.best', { score: formatCompact(store.highScore) }) }}
         </span>

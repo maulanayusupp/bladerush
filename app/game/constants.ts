@@ -390,12 +390,28 @@ export const STATUS = {
  * shop (persisted). Costs grow geometrically. name/text via i18n `meta.<id>`.
  */
 export const META = {
-  startPower: { baseCost: 50, per: 10, max: 20, icon: '⚔️' },
-  maxHp: { baseCost: 40, per: 20, max: 20, icon: '❤️' },
-  damage: { baseCost: 60, per: 0.1, max: 20, icon: '🗡️' },
-  coin: { baseCost: 80, per: 0.15, max: 15, icon: '💰' },
+  startPower: { baseCost: 50, per: 10, max: 50, icon: '⚔️' }, // +swords at run start
+  maxHp: { baseCost: 40, per: 20, max: 50, icon: '❤️' }, // +start max HP
+  damage: { baseCost: 60, per: 0.1, max: 60, icon: '🗡️' }, // +% base sword damage
+  coin: { baseCost: 80, per: 0.15, max: 40, icon: '💰' }, // +% coins earned
+  moveSpeed: { baseCost: 70, per: 0.05, max: 20, icon: '🏃' }, // +% move speed
+  orbitSpeed: { baseCost: 70, per: 0.06, max: 20, icon: '🌀' }, // +% ring spin
+  crit: { baseCost: 120, per: 0.03, max: 20, icon: '🎯' }, // +crit chance (2× dmg)
+  xp: { baseCost: 90, per: 0.1, max: 25, icon: '📘' }, // +% XP gained
+  lifesteal: { baseCost: 150, per: 1, max: 15, icon: '🩸' }, // +HP healed per kill
+  defense: { baseCost: 130, per: 0.04, max: 15, icon: '🛡️' }, // -% damage taken
+  bossDmg: { baseCost: 140, per: 0.12, max: 30, icon: '💀' }, // +% damage vs bosses
+  luck: { baseCost: 110, per: 0.05, max: 20, icon: '🍀' }, // +chest drop & rarity
+  heal: { baseCost: 90, per: 0.15, max: 20, icon: '💊' }, // +% heart pickup
+  status: { baseCost: 130, per: 0.15, max: 25, icon: '🔥' }, // +% burn/frost/venom
+  regen: { baseCost: 160, per: 0.5, max: 20, icon: '✨' }, // +HP regen / sec
+  magnet: { baseCost: 120, per: 40, max: 12, icon: '🧲' }, // +pull range for gates/hearts
+  revive: { baseCost: 1000, per: 1, max: 3, icon: '🕊️' }, // survive death N times
 } as const
-export const META_IDS = ['startPower', 'maxHp', 'damage', 'coin'] as const
+export const META_IDS = [
+  'startPower', 'maxHp', 'damage', 'coin', 'moveSpeed', 'orbitSpeed', 'crit', 'xp',
+  'lifesteal', 'defense', 'bossDmg', 'luck', 'heal', 'status', 'regen', 'magnet', 'revive',
+] as const
 export const META_COST_GROWTH = 1.6
 export const COINS_PER_SCORE = 0.01
 

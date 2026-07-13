@@ -16,6 +16,7 @@
     gap: $space-4;
     width: 100%;
     max-width: 460px;
+    max-height: 90vh;
     padding: $space-5;
     border-radius: $radius-lg;
     background-color: $color-surface;
@@ -44,6 +45,10 @@
     display: flex;
     flex-direction: column;
     gap: $space-2;
+    // Many upgrades now — scroll within the panel instead of overflowing.
+    overflow-y: auto;
+    max-height: min(60vh, 520px);
+    padding-right: $space-1;
   }
 
   &__item {

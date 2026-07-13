@@ -65,6 +65,20 @@ export class BattleScene extends Phaser.Scene {
   private leveling = false
   private playerInvulnUntil = 0
   private metaDamageMul = 1
+  private metaMoveMul = 1
+  private metaOrbitMul = 1
+  private metaCrit = 0
+  private metaXpMul = 1
+  private metaLifesteal = 0
+  private metaBossMul = 1
+  private metaLuck = 0
+  private metaHealMul = 1
+  private metaStatusMul = 1
+  private metaRegen = 0
+  private metaMagnet = 0
+  private metaDefenseBase = 1
+  private revivesLeft = 0
+  private regenAcc = 0
   private playerDefenseMul = 1
   private dashUntil = 0
   private hitStopUntil = 0
@@ -171,6 +185,21 @@ export class BattleScene extends Phaser.Scene {
     // Apply persistent meta-upgrades bought in the shop.
     metaService.load()
     this.metaDamageMul = metaService.damageMul
+    this.metaMoveMul = metaService.moveSpeedMul
+    this.metaOrbitMul = metaService.orbitSpeedMul
+    this.metaCrit = metaService.critChance
+    this.metaXpMul = metaService.xpMul
+    this.metaLifesteal = metaService.startLifesteal
+    this.metaBossMul = metaService.bossDamageMul
+    this.metaLuck = metaService.luck
+    this.metaHealMul = metaService.healMul
+    this.metaStatusMul = metaService.statusMul
+    this.metaRegen = metaService.regenPerSec
+    this.metaMagnet = metaService.magnetRange
+    this.metaDefenseBase = metaService.defenseMul
+    this.playerDefenseMul = this.metaDefenseBase
+    this.revivesLeft = metaService.reviveCount
+    this.regenAcc = 0
     if (metaService.startPower > 0) this.power.addEnemyValue(metaService.startPower)
     this.physics.resume()
 
@@ -368,8 +397,18 @@ export class BattleScene extends Phaser.Scene {
     const elapsedSec = this.elapsedMs / 1000
 
     const dashing = this.elapsedMs < this.dashUntil
-    const speedMul = dashing ? SKILLS.dash.speedMul : 1
+    const speedMul = (dashing ? SKILLS.dash.speedMul : 1) * this.metaMoveMul
     const bounds = { width: this.worldW, height: this.worldH }
+    // Passive HP regeneration (meta upgrade).
+    if (this.metaRegen > 0 && this.player.hp < this.player.maxHp) {
+      this.regenAcc += this.metaRegen * (deltaMs / 1000)
+      if (this.regenAcc >= 1) {
+        const whole = Math.floor(this.regenAcc)
+        this.regenAcc -= whole
+        this.player.heal(whole)
+        this.emitHp()
+      }
+    }
     const kb = this.readKeyboard()
     if (kb.x !== 0 || kb.y !== 0) {
       this.player.moveByVector(deltaMs, bounds, kb.x, kb.y, speedMul)
@@ -504,8 +543,8 @@ export class BattleScene extends Phaser.Scene {
     this.heroScale = HERO.minScale + (HERO.maxScale - HERO.minScale) * (tier / (HERO.skins - 1))
     this.player.setScale(this.heroScale)
     codexService.mark('hero', tier)
-    // Shield gear grants defense (reduced incoming damage).
-    this.playerDefenseMul = gearOf(tier) === 3 ? GEAR.shieldDefenseMul : 1
+    // Shield gear stacks with the meta Aegis defense (reduced incoming damage).
+    this.playerDefenseMul = this.metaDefenseBase * (gearOf(tier) === 3 ? GEAR.shieldDefenseMul : 1)
     // Aura color tracks the prestige theme; brighter/hotter as tier climbs.
     const rk = tier / (HERO.skins - 1)
     this.heroAuraColor =
@@ -663,7 +702,7 @@ export class BattleScene extends Phaser.Scene {
     const stats = this.power.stats
     return Math.max(
       1,
-      Math.round(stats.damage * (1 + stats.swordCount * BOSS.swordCountFactor) * this.swordDamageMul),
+      Math.round(stats.damage * (1 + stats.swordCount * BOSS.swordCountFactor) * this.swordDamageMul * this.metaBossMul),
     )
   }
 
@@ -985,16 +1024,17 @@ export class BattleScene extends Phaser.Scene {
   // ---- Chests -------------------------------------------------------------
 
   private maybeDropChest(x: number, y: number): void {
-    if (Math.random() < CHEST.dropChance) this.spawnChest(x, y, this.rollRarity())
+    // Luck raises the drop chance (meta upgrade).
+    if (Math.random() < CHEST.dropChance * (1 + this.metaLuck)) this.spawnChest(x, y, this.rollRarity())
   }
 
   private rollRarity(): number {
-    const total = CHEST.rarities.reduce((s, r) => s + r.weight, 0)
+    // Luck biases the roll toward rarer tiers by weighting later entries up.
+    const weights = CHEST.rarities.map((r, i) => r.weight * (1 + this.metaLuck * i * 1.5))
+    const total = weights.reduce((s, w) => s + w, 0)
     let roll = Math.random() * total
-    for (let i = 0; i < CHEST.rarities.length; i++) {
-      const r = CHEST.rarities[i]
-      if (!r) continue
-      roll -= r.weight
+    for (let i = 0; i < weights.length; i++) {
+      roll -= weights[i] as number
       if (roll <= 0) return i
     }
     return 0
@@ -1050,13 +1090,14 @@ export class BattleScene extends Phaser.Scene {
     this.emitScore()
     this.emitCombo()
 
-    if (this.upgrades.lifesteal > 0) {
-      this.player.heal(this.upgrades.lifesteal)
+    const lifesteal = this.upgrades.lifesteal + this.metaLifesteal
+    if (lifesteal > 0) {
+      this.player.heal(lifesteal)
       this.emitHp()
     }
     if (x >= 0) this.spawnPopup(x, y, `+${formatCompact(gained)}`)
 
-    this.xp += LEVEL.xpPerKill
+    this.xp += LEVEL.xpPerKill * this.metaXpMul
     this.checkLevelUp()
   }
 
@@ -1174,6 +1215,17 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- Per-frame updates --------------------------------------------------
 
+  /** Meta Magnet: pull a pickup toward the hero when within range. */
+  private magnetPull(obj: { x: number; y: number }, deltaMs: number): void {
+    if (this.metaMagnet <= 0) return
+    const d = distance(obj.x, obj.y, this.player.x, this.player.y)
+    if (d > this.metaMagnet || d < 2) return
+    const pull = 240 * (deltaMs / 1000)
+    const a = angleBetween(obj.x, obj.y, this.player.x, this.player.y)
+    obj.x += Math.cos(a) * pull
+    obj.y += Math.sin(a) * pull
+  }
+
   private updateHeals(deltaMs: number): void {
     const dy = HEAL.speed * (deltaMs / 1000)
     const despawnY = this.cameras.main.scrollY + this.viewH + HEAL.size * 2
@@ -1181,13 +1233,14 @@ export class BattleScene extends Phaser.Scene {
       if (!heal.active) continue
       heal.y += dy
       heal.idle(deltaMs)
+      this.magnetPull(heal, deltaMs)
       if (
         !heal.consumed &&
         Math.abs(heal.x - this.player.x) < HEAL.size + this.player.width / 2 &&
         Math.abs(heal.y - this.player.y) < HEAL.size + this.player.height / 2
       ) {
         heal.consumed = true
-        this.player.heal(HEAL.amount)
+        this.player.heal(Math.round(HEAL.amount * this.metaHealMul))
         this.emitHp()
         audioService.pickup()
         heal.deactivate()
@@ -1243,6 +1296,7 @@ export class BattleScene extends Phaser.Scene {
       if (!gate.active) continue
       gate.y += dy
       gate.idle(deltaMs)
+      this.magnetPull(gate, deltaMs)
       if (!gate.consumed && this.gateOverlapsPlayer(gate)) {
         gate.consumed = true
         this.power.applyGate(gate.config)
@@ -1267,7 +1321,7 @@ export class BattleScene extends Phaser.Scene {
     // Fury skill + upgrades: faster spin, harder hits, bigger blades.
     const fury = this.elapsedMs < this.furyUntil
     this.swordDamageMul = (fury ? SKILLS.fury.damageMul : 1) * this.upgrades.damageMul * this.metaDamageMul
-    const orbitSpeed = stats.orbitSpeed * (fury ? SKILLS.fury.orbitMul : 1) * this.upgrades.orbitMul
+    const orbitSpeed = stats.orbitSpeed * (fury ? SKILLS.fury.orbitMul : 1) * this.upgrades.orbitMul * this.metaOrbitMul
     const radius = SWORD.orbitRadius * (fury ? SKILLS.fury.radiusMul : 1)
     const baseScale = fury ? 1.3 : 1
     this.orbitAngle = (this.orbitAngle + orbitSpeed * (deltaMs / 1000)) % TAU
@@ -1492,8 +1546,9 @@ export class BattleScene extends Phaser.Scene {
     this.playHitSound()
     this.applyStatusOnHit(enemy)
 
-    const hitDmg = Math.round(this.power.stats.damage * this.swordDamageMul)
-    this.damageNumber(enemy.x, enemy.y - 14, hitDmg)
+    const crit = Math.random() < this.metaCrit
+    const hitDmg = Math.round(this.power.stats.damage * this.swordDamageMul * (crit ? 2 : 1))
+    this.damageNumber(enemy.x, enemy.y - 14, hitDmg, crit ? '#ff5a5a' : '#ffffff')
     if (enemy.takeDamage(hitDmg)) {
       this.killEnemy(enemy)
     } else {
@@ -1524,7 +1579,7 @@ export class BattleScene extends Phaser.Scene {
 
   /** Apply owned elemental status upgrades to an enemy on a sword hit. */
   private applyStatusOnHit(enemy: Enemy): void {
-    const dmg = this.power.stats.damage * this.swordDamageMul
+    const dmg = this.power.stats.damage * this.swordDamageMul * this.metaStatusMul
     if (this.upgrades.burn > 0) {
       enemy.burnUntil = this.elapsedMs + STATUS.burnMs
       enemy.burnDps = this.upgrades.burn * STATUS.burnDpsPer * dmg
@@ -1801,6 +1856,18 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private gameOver(): void {
+    // Second Wind (meta): survive a lethal hit — restore HP, brief mercy, clear
+    // the immediate threats, and press on.
+    if (this.revivesLeft > 0) {
+      this.revivesLeft--
+      this.player.hp = this.player.maxHp
+      this.emitHp()
+      this.playerInvulnUntil = this.elapsedMs + 2000
+      this.castNova()
+      this.cameras.main.flash(320, 180, 255, 220)
+      audioService.win()
+      return
+    }
     this.isOver = true
     this.physics.pause()
     const coins = Math.floor(this.scorer.score * COINS_PER_SCORE * metaService.coinMul)

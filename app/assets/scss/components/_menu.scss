@@ -11,9 +11,9 @@
   padding: $space-8 $space-4;
   overflow: hidden;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgba($color-primary, 0.2), transparent 55%),
-    radial-gradient(90% 60% at 50% 118%, rgba($color-success, 0.08), transparent 60%),
-    linear-gradient(180deg, $color-bg-alt, $color-bg 74%);
+    radial-gradient(130% 90% at 50% -15%, rgba($color-primary, 0.28), transparent 55%),
+    radial-gradient(100% 70% at 50% 120%, rgba($color-success, 0.12), transparent 60%),
+    linear-gradient(180deg, $color-bg-alt, $color-bg 70%, #0d1710 100%);
 }
 
 .menu-bg {
@@ -25,6 +25,75 @@
   pointer-events: none;
 }
 
+// --- Decorative backdrop layers -------------------------------------------
+.menu__aura {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  filter: blur(0.5px);
+}
+
+.menu__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+  will-change: transform;
+
+  &--a {
+    width: 46vmax;
+    height: 46vmax;
+    top: -14vmax;
+    left: -10vmax;
+    background: radial-gradient(circle, rgba($color-primary, 0.85), transparent 68%);
+    animation: orb-drift-a 18s ease-in-out infinite;
+  }
+
+  &--b {
+    width: 38vmax;
+    height: 38vmax;
+    bottom: -12vmax;
+    right: -8vmax;
+    background: radial-gradient(circle, rgba($color-warning, 0.55), transparent 68%);
+    animation: orb-drift-b 22s ease-in-out infinite;
+  }
+
+  &--c {
+    width: 34vmax;
+    height: 34vmax;
+    top: 40%;
+    right: 12%;
+    background: radial-gradient(circle, rgba($color-success, 0.45), transparent 70%);
+    animation: orb-drift-c 26s ease-in-out infinite;
+  }
+}
+
+.menu__grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba($color-primary, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba($color-primary, 0.12) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(120% 90% at 50% 60%, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 60%, #000 0%, transparent 72%);
+  opacity: 0.4;
+}
+
+.menu__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(80% 55% at 50% 42%, transparent 55%, rgba(#000, 0.55) 100%),
+    radial-gradient(60% 40% at 50% 4%, rgba($color-primary, 0.22), transparent 70%);
+}
+
 .menu__content {
   position: relative;
   z-index: 1;
@@ -33,23 +102,40 @@
   align-items: center;
   gap: $space-4;
   width: 100%;
-  max-width: 620px;
+  max-width: 640px;
   text-align: center;
 }
 
+// --- Emblem with pulsing halo ---------------------------------------------
+.menu__emblem-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-bottom: -$space-2;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 118%;
+    height: 118%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba($color-primary, 0.45), transparent 62%);
+    filter: blur(26px);
+    z-index: -1;
+    animation: halo-pulse 4.5s ease-in-out infinite;
+  }
+}
+
 .menu-emblem {
-  width: clamp(160px, 40vw, 240px);
+  width: clamp(170px, 42vw, 260px);
   aspect-ratio: 1;
+  animation: emblem-float 6s ease-in-out infinite;
 
   &__canvas {
     width: 100%;
     height: 100%;
     display: block;
   }
-}
-
-.menu__emblem {
-  margin-bottom: -$space-2;
 }
 
 .menu__badge {
@@ -60,35 +146,46 @@
   border-radius: $radius-pill;
   font-size: $font-size-sm;
   font-weight: $font-weight-bold;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: $color-text;
-  background: rgba($color-surface, 0.6);
-  border: 1px solid rgba($color-primary, 0.45);
-  backdrop-filter: blur(6px);
+  background: linear-gradient(120deg, rgba($color-surface, 0.75), rgba($color-surface-2, 0.55));
+  border: 1px solid rgba($color-primary, 0.5);
+  box-shadow: 0 0 22px rgba($color-primary, 0.28), inset 0 1px 0 rgba(#fff, 0.08);
+  backdrop-filter: blur(8px);
 }
 
+// --- Title with animated sheen --------------------------------------------
 .menu__title {
   margin: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 0 0.28em;
-  font-size: clamp(3rem, 13vw, 6rem);
-  line-height: 0.92;
+  font-size: clamp(3.4rem, 15vw, 7rem);
+  line-height: 0.9;
   font-weight: 900;
-  letter-spacing: 0.02em;
-  background: linear-gradient(180deg, #ffffff, $color-primary 140%);
+  letter-spacing: 0.01em;
+  filter: drop-shadow(0 10px 40px rgba($color-primary, 0.55));
+  animation: title-glow 5s ease-in-out infinite;
+}
+
+.menu__title-word {
+  background: linear-gradient(110deg, #ffffff 0%, #d8c7ff 34%, #ffffff 46%, #b9a3ff 60%, #ffffff 100%);
+  background-size: 250% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 8px 34px rgba($color-primary, 0.55));
+  animation: title-sheen 7s linear infinite;
 
-  &-accent {
-    background: linear-gradient(180deg, $color-warning, #ff8a3d);
+  &--accent {
+    background: linear-gradient(110deg, $color-warning 0%, #ffe9a8 42%, #ff8a3d 62%, $color-warning 100%);
+    background-size: 250% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    animation: title-sheen 7s linear infinite;
+    animation-delay: -1.5s;
   }
 }
 
@@ -96,17 +193,30 @@
   margin: 0;
   font-size: $font-size-lg;
   color: $color-text-muted;
-  max-width: 44ch;
+  max-width: 46ch;
 }
 
 .menu__actions {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: $space-3;
+  width: 100%;
+  max-width: 400px;
+}
+
+.menu__actions-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-3;
+
+  @include respond-to(mobile) {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .menu__best {
+  align-self: center;
   display: inline-flex;
   align-items: center;
   gap: $space-2;
@@ -117,7 +227,8 @@
   letter-spacing: 0.04em;
   color: $color-warning;
   background: rgba($color-surface, 0.6);
-  border: 1px solid rgba($color-warning, 0.35);
+  border: 1px solid rgba($color-warning, 0.4);
+  box-shadow: 0 0 18px rgba($color-warning, 0.18);
 }
 
 .menu__features {
@@ -141,25 +252,73 @@
   letter-spacing: 0.02em;
 }
 
+// --- Entrance & ambient motion --------------------------------------------
 @media (prefers-reduced-motion: no-preference) {
   .menu__content > * {
-    animation: menu-rise 0.6s both;
+    animation: menu-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   @for $i from 1 through 7 {
     .menu__content > *:nth-child(#{$i}) {
-      animation-delay: #{0.07 * $i}s;
+      animation-delay: #{0.09 * $i}s;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu__orb,
+  .menu-emblem,
+  .menu__emblem-wrap::before,
+  .menu__title,
+  .menu__title-word,
+  .menu__title-word--accent {
+    animation: none;
   }
 }
 
 @keyframes menu-rise {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(26px) scale(0.98);
+    filter: blur(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
+}
+
+@keyframes title-sheen {
+  to { background-position: -250% 0; }
+}
+
+@keyframes title-glow {
+  0%, 100% { filter: drop-shadow(0 10px 34px rgba($color-primary, 0.45)); }
+  50% { filter: drop-shadow(0 14px 52px rgba($color-primary, 0.75)); }
+}
+
+@keyframes emblem-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes halo-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.94); }
+  50% { opacity: 0.85; transform: scale(1.06); }
+}
+
+@keyframes orb-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(6vmax, 4vmax) scale(1.12); }
+}
+
+@keyframes orb-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-5vmax, -4vmax) scale(1.15); }
+}
+
+@keyframes orb-drift-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-4vmax, 5vmax) scale(0.9); }
 }

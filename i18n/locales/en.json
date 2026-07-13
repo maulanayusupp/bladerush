@@ -71,7 +71,20 @@
     "startPower": { "name": "Warmup", "text": "Start each run with more swords" },
     "maxHp": { "name": "Toughness", "text": "+20 starting max HP" },
     "damage": { "name": "Might", "text": "+10% base sword damage" },
-    "coin": { "name": "Fortune", "text": "+15% coins earned" }
+    "coin": { "name": "Fortune", "text": "+15% coins earned" },
+    "moveSpeed": { "name": "Swiftness", "text": "+5% move speed" },
+    "orbitSpeed": { "name": "Whirlwind", "text": "+6% sword-ring spin" },
+    "crit": { "name": "Precision", "text": "+3% critical hit chance (2× damage)" },
+    "xp": { "name": "Wisdom", "text": "+10% XP gained" },
+    "lifesteal": { "name": "Vampirism", "text": "Start with +1 HP healed per kill" },
+    "defense": { "name": "Aegis", "text": "-4% damage taken" },
+    "bossDmg": { "name": "Slayer", "text": "+12% damage to bosses" },
+    "luck": { "name": "Luck", "text": "+5% chest drop chance & rarity" },
+    "heal": { "name": "Vitality", "text": "+15% healing from hearts" },
+    "status": { "name": "Alchemy", "text": "+15% burn / frost / venom potency" },
+    "regen": { "name": "Regeneration", "text": "+0.5 HP regenerated per second" },
+    "magnet": { "name": "Magnet", "text": "Pull gates & hearts from farther away" },
+    "revive": { "name": "Second Wind", "text": "Survive a lethal hit (once per level)" }
   },
   "gameOver": {
     "title": "Defeated",

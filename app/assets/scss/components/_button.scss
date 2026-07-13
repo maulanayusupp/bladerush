@@ -4,17 +4,24 @@
 .btn {
   @include button-reset;
   @include flex-center;
+  position: relative;
+  overflow: hidden;
   gap: $space-2;
   padding: $space-3 $space-6;
   border-radius: $radius-pill;
   font-weight: $font-weight-bold;
   font-size: $font-size-lg;
-  background-color: $color-surface-2;
+  background-color: rgba($color-surface-2, 0.85);
+  border: 1px solid rgba(#fff, 0.08);
   color: $color-text;
-  transition: transform $transition-fast, background-color $transition-base;
+  backdrop-filter: blur(6px);
+  transition: transform $transition-fast, background-color $transition-base,
+    border-color $transition-base, box-shadow $transition-base;
 
   &:hover {
     transform: translateY(-2px);
+    border-color: rgba($color-primary, 0.55);
+    box-shadow: 0 8px 24px rgba(#000, 0.4);
   }
 
   &:active {
@@ -22,11 +29,12 @@
   }
 
   &--primary {
-    background-color: $color-primary;
+    background: linear-gradient(135deg, $color-primary, $color-primary-dark);
+    border-color: rgba(#fff, 0.18);
     box-shadow: $shadow-md;
 
     &:hover {
-      background-color: $color-primary-dark;
+      background: linear-gradient(135deg, color-mix(in srgb, $color-primary 88%, #fff), $color-primary-dark);
     }
   }
 
@@ -45,6 +53,23 @@
     animation: btn-glow 2.4s ease-in-out infinite;
   }
 
+  // Sweeping highlight that arcs across the face on hover.
+  &--shine::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -75%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(#fff, 0.45), transparent);
+    transform: skewX(-20deg);
+    pointer-events: none;
+  }
+
+  &--shine:hover::before {
+    animation: btn-shine 0.75s ease;
+  }
+
   &__icon {
     font-size: 0.7em;
   }
@@ -56,12 +81,20 @@
     box-shadow: 0 10px 30px rgba($color-primary, 0.4);
   }
   50% {
-    box-shadow: 0 16px 48px rgba($color-primary, 0.75);
+    box-shadow: 0 16px 52px rgba($color-primary, 0.8);
   }
+}
+
+@keyframes btn-shine {
+  from { left: -75%; }
+  to { left: 130%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .btn--glow {
+    animation: none;
+  }
+  .btn--shine:hover::before {
     animation: none;
   }
 }

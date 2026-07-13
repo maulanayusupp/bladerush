@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { metaService } from '~/services/MetaService'
 import { META, META_IDS } from '~/game/constants'
+import { formatCompact } from '~/helpers/format.helper'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -38,7 +39,7 @@ function buy(id: (typeof META_IDS)[number]): void {
     <div class="shop__panel">
       <div class="shop__head">
         <h2 class="shop__title">{{ $t('shop.title') }}</h2>
-        <span class="shop__coins">💰 {{ coins }}</span>
+        <span class="shop__coins">💰 {{ formatCompact(coins) }}</span>
       </div>
 
       <div class="shop__list">
@@ -53,7 +54,7 @@ function buy(id: (typeof META_IDS)[number]): void {
           </div>
           <button class="shop__buy" type="button" :disabled="!row.canBuy" @click="buy(row.id)">
             <template v-if="row.maxed">MAX</template>
-            <template v-else>💰 {{ row.cost }}</template>
+            <template v-else>💰 {{ formatCompact(row.cost) }}</template>
           </button>
         </div>
       </div>

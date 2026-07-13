@@ -71,7 +71,20 @@
     "startPower": { "name": "Pemanasan", "text": "Mulai run dengan pedang lebih banyak" },
     "maxHp": { "name": "Ketangguhan", "text": "+20 HP maks awal" },
     "damage": { "name": "Kekuatan", "text": "+10% damage pedang dasar" },
-    "coin": { "name": "Keberuntungan", "text": "+15% koin didapat" }
+    "coin": { "name": "Keberuntungan", "text": "+15% koin didapat" },
+    "moveSpeed": { "name": "Kegesitan", "text": "+5% kecepatan gerak" },
+    "orbitSpeed": { "name": "Pusaran", "text": "+6% putaran ring pedang" },
+    "crit": { "name": "Presisi", "text": "+3% peluang kritikal (damage 2×)" },
+    "xp": { "name": "Kebijaksanaan", "text": "+10% XP didapat" },
+    "lifesteal": { "name": "Vampirisme", "text": "Mulai dengan +1 HP tiap bunuh" },
+    "defense": { "name": "Perisai", "text": "-4% damage diterima" },
+    "bossDmg": { "name": "Pembasmi", "text": "+12% damage ke bos" },
+    "luck": { "name": "Hoki", "text": "+5% peluang & kelangkaan peti" },
+    "heal": { "name": "Vitalitas", "text": "+15% pemulihan dari hati" },
+    "status": { "name": "Alkimia", "text": "+15% potensi bakar / beku / racun" },
+    "regen": { "name": "Regenerasi", "text": "+0.5 HP pulih per detik" },
+    "magnet": { "name": "Magnet", "text": "Tarik gerbang & hati dari lebih jauh" },
+    "revive": { "name": "Napas Kedua", "text": "Selamat dari serangan mematikan (sekali/level)" }
   },
   "gameOver": {
     "title": "Kalah",
