@@ -564,7 +564,12 @@ export class BattleScene extends Phaser.Scene {
       const heal = this.nearestActive(npc, this.healPool, (h) => h.active && !h.consumed)
       if (heal) return { x: heal.x, y: heal.y }
     }
+    // Hunt a weaker NPC if one is nearby (predators chase prey → real skirmishes).
+    const prey = this.nearestNpc(npc)
     const enemy = this.nearestEnemy(npc)
+    if (prey && (!enemy || distance(npc.x, npc.y, prey.x, prey.y) < distance(npc.x, npc.y, enemy.x, enemy.y))) {
+      return { x: prey.x, y: prey.y }
+    }
     if (enemy) return { x: enemy.x, y: enemy.y }
     // Wander: pick a new roaming point occasionally.
     if (this.elapsedMs >= npc.wanderUntil) {
@@ -588,6 +593,22 @@ export class BattleScene extends Phaser.Scene {
       if (d < bestD) {
         bestD = d
         best = item
+      }
+    }
+    return best
+  }
+
+  /** Nearest weaker NPC within seek range (its prey). */
+  private nearestNpc(npc: NpcHero): NpcHero | null {
+    let best: NpcHero | null = null
+    let bestD: number = NPC.seekRange
+    for (const other of this.npcs) {
+      if (other === npc || !other.active) continue
+      if (other.power >= npc.power * 0.9) continue // only chase clearly weaker ones
+      const d = distance(npc.x, npc.y, other.x, other.y)
+      if (d < bestD) {
+        bestD = d
+        best = other
       }
     }
     return best
@@ -634,10 +655,11 @@ export class BattleScene extends Phaser.Scene {
     }
     // Brawl with other NPCs whose rings overlap — the STRONGER one wins and
     // absorbs the weaker (equal power = stalemate, neither is chipped).
+    const brawlReach = NPC.ringRadius * 2 // rings touch when centers are within 2r
     for (const other of this.npcs) {
       if (other === npc || !other.active) continue
       if (npc.power < other.power) continue // only the stronger deals damage
-      if (distance(npc.x, npc.y, other.x, other.y) > reach) continue
+      if (distance(npc.x, npc.y, other.x, other.y) > brawlReach) continue
       other.hp -= dmg
       this.sparks.explode(2, (npc.x + other.x) / 2, (npc.y + other.y) / 2)
       if (other.hp <= 0) {
