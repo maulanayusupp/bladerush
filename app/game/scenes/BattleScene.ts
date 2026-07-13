@@ -90,6 +90,7 @@ export class BattleScene extends Phaser.Scene {
   private bossMeteorAcc = 0
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   private keys?: Record<string, Phaser.Input.Keyboard.Key>
+  private paused = false
   private bossSummonAcc = 0
   private bossGateAcc = 0
   private comboCount = 0
@@ -306,6 +307,8 @@ export class BattleScene extends Phaser.Scene {
     if (kb) this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Record<string, Phaser.Input.Keyboard.Key>
     this.scale.on('resize', this.onResize)
     gameEventBus.on('game:restart', this.onRestart)
+    gameEventBus.on('game:pause', this.onPause)
+    gameEventBus.on('game:resume', this.onResume)
     gameEventBus.on('skill:use', this.onSkill)
     gameEventBus.on('levelup:pick', this.onLevelPick)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown)
@@ -321,7 +324,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   override update(time: number, deltaMs: number): void {
-    if (this.isOver) return
+    if (this.isOver || this.paused) return
     this.frameTime = time
     if (time < this.hitStopUntil) return // brief freeze for impact
     this.elapsedMs += deltaMs
@@ -1457,7 +1460,20 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private onRestart = (): void => {
+    this.paused = false
     this.scene.restart()
+  }
+
+  private onPause = (): void => {
+    if (this.isOver) return
+    this.paused = true
+    this.physics.pause()
+  }
+
+  private onResume = (): void => {
+    if (this.isOver) return
+    this.paused = false
+    this.physics.resume()
   }
 
   private onShutdown = (): void => {
@@ -1465,6 +1481,8 @@ export class BattleScene extends Phaser.Scene {
     this.input.off('pointerdown', this.onPointer)
     this.scale.off('resize', this.onResize)
     gameEventBus.off('game:restart', this.onRestart)
+    gameEventBus.off('game:pause', this.onPause)
+    gameEventBus.off('game:resume', this.onResume)
     gameEventBus.off('skill:use', this.onSkill)
     gameEventBus.off('levelup:pick', this.onLevelPick)
   }

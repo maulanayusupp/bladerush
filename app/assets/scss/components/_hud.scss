@@ -41,6 +41,11 @@
     &--score { color: $color-warning; }
   }
 
+  &__top-buttons {
+    display: flex;
+    gap: $space-2;
+  }
+
   &__mute {
     @include button-reset;
     @include flex-center;
@@ -51,6 +56,39 @@
     background-color: rgba($color-surface, 0.72);
     backdrop-filter: blur(4px);
     pointer-events: auto; // re-enable clicks (parent .hud disables them)
+  }
+
+  &__settings {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    width: 100%;
+    margin-bottom: $space-2;
+  }
+
+  &__setting {
+    @include button-reset;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    width: 100%;
+    padding: $space-3 $space-4;
+    border-radius: $radius-md;
+    background-color: rgba($color-surface, 0.6);
+    color: $color-text;
+    font-size: $font-size-base;
+    pointer-events: auto;
+
+    b { color: $color-primary; }
+
+    &--range { cursor: default; }
+
+    input[type='range'] {
+      flex: 1;
+      max-width: 140px;
+      accent-color: $color-primary;
+    }
   }
 
   &__chips {

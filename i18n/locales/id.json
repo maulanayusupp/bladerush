@@ -28,6 +28,15 @@
   "levelup": {
     "title": "Naik Level! Pilih upgrade"
   },
+  "pause": {
+    "title": "Jeda",
+    "resume": "Lanjut",
+    "sound": "Suara",
+    "music": "Musik",
+    "musicVolume": "Volume musik",
+    "on": "Nyala",
+    "off": "Mati"
+  },
   "upgrades": {
     "damage": { "name": "Bilah Tajam", "text": "+20% damage pedang" },
     "swords": { "name": "Pedang Ekstra", "text": "+2 pedang di ring" },

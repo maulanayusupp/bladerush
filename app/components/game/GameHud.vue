@@ -34,6 +34,30 @@ function toggleMute(): void {
   muted.value = audioService.toggleMuted()
 }
 
+// ---- Pause / Settings ----------------------------------------------------
+const paused = ref(false)
+const musicOn = ref(audioService.musicOn)
+const musicVolume = ref(Math.round(audioService.musicVolume * 100))
+
+function openPause(): void {
+  if (isOver.value) return
+  paused.value = true
+  gameEventBus.emit('game:pause', undefined)
+}
+function resume(): void {
+  paused.value = false
+  gameEventBus.emit('game:resume', undefined)
+}
+function toggleMusic(): void {
+  musicOn.value = !musicOn.value
+  audioService.setMusicOn(musicOn.value)
+}
+function onMusicVolume(e: Event): void {
+  const v = Number((e.target as HTMLInputElement).value)
+  musicVolume.value = v
+  audioService.setMusicVolume(v / 100)
+}
+
 const hpRatio = computed(() => (maxHp.value > 0 ? hp.value / maxHp.value : 0))
 const isLowHp = computed(() => hpRatio.value < 0.3)
 const hpText = computed(() => `${Math.max(0, Math.round(hp.value))} / ${Math.round(maxHp.value)}`)
@@ -145,14 +169,25 @@ function restart(): void {
         </div>
       </div>
 
-      <button
-        class="hud__mute"
-        type="button"
-        :aria-label="muted ? $t('hud.unmute') : $t('hud.mute')"
-        @click="toggleMute"
-      >
-        {{ muted ? '🔇' : '🔊' }}
-      </button>
+      <div class="hud__top-buttons">
+        <button
+          class="hud__mute"
+          type="button"
+          :aria-label="muted ? $t('hud.unmute') : $t('hud.mute')"
+          @click="toggleMute"
+        >
+          {{ muted ? '🔇' : '🔊' }}
+        </button>
+        <button
+          v-if="!isOver"
+          class="hud__mute"
+          type="button"
+          :aria-label="$t('pause.title')"
+          @click="openPause"
+        >
+          ⏸️
+        </button>
+      </div>
     </div>
 
     <div class="hud__xp">
@@ -204,6 +239,28 @@ function restart(): void {
     </div>
 
     <LevelUpOverlay />
+
+    <div v-if="paused && !isOver" class="overlay">
+      <div class="overlay__panel">
+        <h2 class="u-title">{{ $t('pause.title') }}</h2>
+        <div class="hud__settings">
+          <button class="hud__setting" type="button" @click="toggleMute">
+            <span>{{ $t('pause.sound') }}</span>
+            <b>{{ muted ? $t('pause.off') : $t('pause.on') }}</b>
+          </button>
+          <button class="hud__setting" type="button" @click="toggleMusic">
+            <span>{{ $t('pause.music') }}</span>
+            <b>{{ musicOn ? $t('pause.on') : $t('pause.off') }}</b>
+          </button>
+          <label class="hud__setting hud__setting--range">
+            <span>{{ $t('pause.musicVolume') }}</span>
+            <input type="range" min="0" max="100" :value="musicVolume" @input="onMusicVolume">
+          </label>
+        </div>
+        <BaseButton variant="primary" block @click="resume">{{ $t('pause.resume') }}</BaseButton>
+        <NuxtLink to="/" class="btn btn--block">{{ $t('gameOver.menu') }}</NuxtLink>
+      </div>
+    </div>
 
     <div v-if="isOver" class="overlay">
       <div class="overlay__panel">

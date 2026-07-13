@@ -28,6 +28,15 @@
   "levelup": {
     "title": "Level Up! Choose an upgrade"
   },
+  "pause": {
+    "title": "Paused",
+    "resume": "Resume",
+    "sound": "Sound",
+    "music": "Music",
+    "musicVolume": "Music volume",
+    "on": "On",
+    "off": "Off"
+  },
   "upgrades": {
     "damage": { "name": "Sharper Blades", "text": "+20% sword damage" },
     "swords": { "name": "Extra Blade", "text": "+2 swords to your ring" },
