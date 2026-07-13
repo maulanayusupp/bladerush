@@ -240,9 +240,24 @@
   }
 
   &__health {
-    height: 10px;
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    // Constrained + left-aligned so it never runs under the top-right minimap.
+    width: min(58%, 320px);
+  }
+
+  &__health-icon {
+    font-size: $font-size-base;
+    line-height: 1;
+    filter: drop-shadow(0 1px 1px rgba(#000, 0.6));
+  }
+
+  &__health-bar {
+    flex: 1;
+    height: 12px;
     border-radius: $radius-pill;
-    background-color: rgba(#000, 0.4);
+    background-color: rgba(#000, 0.45);
     overflow: hidden;
   }
 
@@ -255,5 +270,16 @@
     transition: width $transition-base, background-color $transition-base;
 
     &--low { background-color: $color-danger; }
+  }
+
+  &__health-value {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 2px rgba(#000, 0.7);
+    min-width: 62px;
+
+    &--low { color: $color-danger; }
   }
 }

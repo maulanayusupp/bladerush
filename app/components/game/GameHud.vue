@@ -36,6 +36,7 @@ function toggleMute(): void {
 
 const hpRatio = computed(() => (maxHp.value > 0 ? hp.value / maxHp.value : 0))
 const isLowHp = computed(() => hpRatio.value < 0.3)
+const hpText = computed(() => `${Math.max(0, Math.round(hp.value))} / ${Math.round(maxHp.value)}`)
 
 // Active skills + their live cooldowns.
 const skills = [
@@ -174,11 +175,15 @@ function restart(): void {
     </div>
 
     <div class="hud__health">
-      <div
-        class="hud__health-fill"
-        :class="{ 'hud__health-fill--low': isLowHp }"
-        :style="{ '--hp-ratio': hpRatio }"
-      />
+      <span class="hud__health-icon" aria-hidden="true">❤️</span>
+      <div class="hud__health-bar">
+        <div
+          class="hud__health-fill"
+          :class="{ 'hud__health-fill--low': isLowHp }"
+          :style="{ '--hp-ratio': hpRatio }"
+        />
+      </div>
+      <span class="hud__health-value" :class="{ 'hud__health-value--low': isLowHp }">{{ hpText }}</span>
     </div>
 
     <div class="hud__skills">
