@@ -111,10 +111,19 @@ function genChampions(): ChampionSkin[] {
     let base = hsl(hue, 0.2 + 0.5 * rank, 0.24 + 0.12 * rank)
     let accent = hsl((hue + 46) % 360, 0.55 + 0.4 * rank, 0.5 + 0.18 * rank)
     let cape = hsl(capeHue, 0.4 + 0.32 * rank, 0.32 + 0.12 * rank)
-    if (i >= CHAMPION_COUNT - 50) {
-      accent = 0xffd700 // top 50: golden regal
-      base = i % 2 ? 0x2a2418 : 0x241f28
-      cape = i % 2 ? 0x7a1616 : 0x3a0c4a
+    let glow = rank > 0.5 ? accent : 0
+    if (rank >= 0.85) {
+      // Top tiers: golden regal + infernal cape + fierce red glow (luxurious & menacing).
+      accent = 0xffd700
+      base = i % 2 ? 0x241f14 : 0x1c1622
+      cape = i % 2 ? 0x8a1020 : 0x3a0c4a
+      glow = i % 2 ? 0xff2d2d : 0xffd24a
+    } else if (rank >= 0.6) {
+      // Royal tier: gilded trim over a deeper armor, warm glow.
+      accent = 0xffca3a
+      base = shade(base, 0.8)
+      cape = shade(cape, 0.85)
+      glow = 0xff6a2a
     }
     const features: string[] = []
     unlock(features, 0.12, rank, 'cape')
@@ -135,7 +144,7 @@ function genChampions(): ChampionSkin[] {
       features,
       wing: shade(accent, 1.1),
       rank,
-      glow: rank > 0.5 ? accent : 0, // strong tiers radiate
+      glow,
       pattern: i % 3,
       visor: i % 2,
       // Helmet ORDERED by rank so armor clearly upgrades with power (no bare

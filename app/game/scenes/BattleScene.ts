@@ -83,7 +83,8 @@ export class BattleScene extends Phaser.Scene {
   private nextRivalMs: number = RIVAL.minIntervalMs
   private furyUntil = 0
   private swordDamageMul = 1
-  private playerSkin = 0
+  private playerSkin = -1
+  private heroScale: number = HERO.minScale
   private healAcc = 0
   private bossAcc = 0
   private nextBossMs: number = BOSS.firstMs
@@ -142,7 +143,7 @@ export class BattleScene extends Phaser.Scene {
     this.scheduleNextRival()
     this.furyUntil = 0
     this.swordDamageMul = 1
-    this.playerSkin = 0
+    this.playerSkin = -1
     this.healAcc = 0
     this.bossAcc = 0
     this.nextBossMs = BOSS.firstMs
@@ -482,23 +483,28 @@ export class BattleScene extends Phaser.Scene {
 
   /** Swap the hero to the next champion look every 1000 power. */
   private checkEvolve(): void {
-    // Geometric curve: rare, meaningful transformations that keep advancing even
-    // at very high power (instead of flickering every 1000 power early on).
-    const raw = Math.log(1 + this.power.power / HERO.evolveBase) / Math.log(HERO.evolveGrowth)
-    const tier = clamp(Math.floor(raw), 0, HERO.skins - 1)
+    // Tier follows SCORE (monotonic) so the hero never flips backwards, and a
+    // log curve keeps it advancing to the golden top tiers at huge scores.
+    const score = this.scorer.score
+    const tier = clamp(Math.floor(HERO.tierPerLog10 * Math.log10(1 + score)), 0, HERO.skins - 1)
     if (tier === this.playerSkin) return
+    const first = this.playerSkin < 0
     this.playerSkin = tier
     this.player.setTexture(`hero${tier}`)
+    // Physically grow from scrawny to towering across the tiers.
+    this.heroScale = HERO.minScale + (HERO.maxScale - HERO.minScale) * (tier / (HERO.skins - 1))
+    this.player.setScale(this.heroScale)
     codexService.mark('hero', tier)
     // Shield gear grants defense (reduced incoming damage).
     this.playerDefenseMul = gearOf(tier) === 3 ? GEAR.shieldDefenseMul : 1
-    this.evolveFx()
+    if (!first) this.evolveFx()
   }
 
   /** Big "power-up" transformation moment: shockwave, burst, flash + a pop. */
   private evolveFx(): void {
     const x = this.player.x
     const y = this.player.y
+    const hs = this.heroScale
     this.sparks.explode(30, x, y)
     for (const tint of [0xffe14d, 0xffffff]) {
       const ring = this.add
@@ -518,8 +524,8 @@ export class BattleScene extends Phaser.Scene {
     }
     this.tweens.add({
       targets: this.player,
-      scaleX: { from: 1.5, to: 1 },
-      scaleY: { from: 1.5, to: 1 },
+      scaleX: { from: hs * 1.4, to: hs },
+      scaleY: { from: hs * 1.4, to: hs },
       duration: 320,
       ease: 'Back.Out',
     })
@@ -1240,11 +1246,14 @@ export class BattleScene extends Phaser.Scene {
 
     this.updateAura(colors)
 
-    // Motion-blur disc: a glowing band that intensifies with spin speed.
+    // Glowing energy band: a wide soft halo + a bright inner highlight, so the
+    // ring reads as a cohesive glowing disc rather than clashing confetti.
     this.ringBlur.clear()
     if (count > 0) {
-      const blurA = Math.min(0.4, orbitSpeed * 0.045)
-      this.ringBlur.lineStyle(30, colors.length ? (colors[colors.length - 1] as number) : 0xffffff, blurA)
+      const top = colors.length ? (colors[colors.length - 1] as number) : 0xffffff
+      this.ringBlur.lineStyle(36, top, Math.min(0.5, orbitSpeed * 0.05))
+      this.ringBlur.strokeCircle(this.player.x, this.player.y, radius)
+      this.ringBlur.lineStyle(10, 0xffffff, Math.min(0.4, orbitSpeed * 0.03))
       this.ringBlur.strokeCircle(this.player.x, this.player.y, radius)
     }
 
@@ -1263,9 +1272,31 @@ export class BattleScene extends Phaser.Scene {
       )
       // Subtle breathing so the ring feels alive rather than stiff.
       sword.setScale(baseScale + 0.08 * Math.sin(this.elapsedMs / 130 + i * 0.6))
-      // During fury blades glow white-hot; otherwise cycle the unlocked colors.
-      sword.setTint(fury ? 0xffffff : colors.length > 0 ? (colors[i % colors.length] as number) : 0xffffff)
+      // Smooth color gradient AROUND the ring (blend between unlocked layers)
+      // so it reads as a flowing rainbow band, not random confetti.
+      sword.setTint(fury ? 0xffffff : this.ringColorAt(colors, i, count))
     }
+  }
+
+  /** Smoothly interpolate the ring palette around the circle for sword `i`. */
+  private ringColorAt(colors: number[], i: number, count: number): number {
+    const n = colors.length
+    if (n === 0) return 0xffffff
+    if (n === 1) return colors[0] as number
+    const f = ((i / count) * n) % n
+    const i0 = Math.floor(f)
+    const i1 = (i0 + 1) % n
+    return this.lerpColor(colors[i0] as number, colors[i1] as number, f - i0)
+  }
+
+  private lerpColor(a: number, b: number, t: number): number {
+    const ar = (a >> 16) & 255
+    const ag = (a >> 8) & 255
+    const ab = a & 255
+    const r = Math.round(ar + (((b >> 16) & 255) - ar) * t)
+    const g = Math.round(ag + (((b >> 8) & 255) - ag) * t)
+    const bl = Math.round(ab + ((b & 255) - ab) * t)
+    return (r << 16) | (g << 8) | bl
   }
 
   /** Move rivals toward the hero; when the rings meet, grind the duel out. */

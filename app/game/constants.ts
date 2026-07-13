@@ -82,15 +82,20 @@ export const SWORD_SHAPES = [
 ] as const
 
 /**
- * The hero's look evolves on a GEOMETRIC power curve, so transformations are
- * rare and meaningful (roughly one every time power grows ~×evolveGrowth)
- * instead of flickering every 1000 power early on — and it keeps advancing all
- * the way to trillions. skinIndex = floor(log(1 + power/evolveBase) / log(growth)).
+ * The hero's look + size evolve with SCORE (monotonic — never flips backwards),
+ * on a log curve that keeps advancing to the golden top tiers even at
+ * astronomical survivor scores.
  */
 export const HERO = {
   skins: 500,
-  evolveBase: 180,
-  evolveGrowth: 1.7,
+  // Look/size evolve with SCORE (which only ever rises) — NOT power, which
+  // fluctuates during rival duels and would make the hero flip backwards.
+  // tier = floor(tierPerLog10 * log10(1 + score)); ~9.2 reaches the golden
+  // top tiers around score 1e54 (survivor scores climb astronomically).
+  tierPerLog10: 9.2,
+  // The hero physically grows from scrawny to towering across the tiers.
+  minScale: 0.7,
+  maxScale: 1.65,
 } as const
 
 /**
