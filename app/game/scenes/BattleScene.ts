@@ -72,6 +72,7 @@ export class BattleScene extends Phaser.Scene {
   private ringBlur!: Phaser.GameObjects.Graphics
   private chestPool: Chest[] = []
   private popupPool: Phaser.GameObjects.Text[] = []
+  private dmgPool: Phaser.GameObjects.Text[] = []
 
   private elapsedMs = 0
   private orbitAngle = 0
@@ -295,6 +296,16 @@ export class BattleScene extends Phaser.Scene {
         .setActive(false)
         .setVisible(false),
     )
+    // Floating damage numbers on hits.
+    this.dmgPool = Array.from({ length: 30 }, () =>
+      this.add
+        .text(0, 0, '', { fontFamily: 'Segoe UI, sans-serif', fontSize: '15px', fontStyle: 'bold', color: '#ffffff' })
+        .setOrigin(0.5)
+        .setDepth(14)
+        .setStroke('#000000', 3)
+        .setActive(false)
+        .setVisible(false),
+    )
 
     // Reusable spark burst for clashes / deaths.
     this.sparks = this.add
@@ -481,9 +492,42 @@ export class BattleScene extends Phaser.Scene {
     codexService.mark('hero', tier)
     // Shield gear grants defense (reduced incoming damage).
     this.playerDefenseMul = gearOf(tier) === 3 ? GEAR.shieldDefenseMul : 1
-    this.cameras.main.flash(220, 180, 150, 255)
-    this.sparks.explode(16, this.player.x, this.player.y)
+    this.evolveFx()
+  }
+
+  /** Big "power-up" transformation moment: shockwave, burst, flash + a pop. */
+  private evolveFx(): void {
+    const x = this.player.x
+    const y = this.player.y
+    this.sparks.explode(30, x, y)
+    for (const tint of [0xffe14d, 0xffffff]) {
+      const ring = this.add
+        .image(x, y, 'shock')
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(tint)
+        .setScale(0.2)
+        .setDepth(6)
+      this.tweens.add({
+        targets: ring,
+        scale: 3.4,
+        alpha: { from: 0.9, to: 0 },
+        duration: 460,
+        ease: 'Cubic.Out',
+        onComplete: () => ring.destroy(),
+      })
+    }
+    this.tweens.add({
+      targets: this.player,
+      scaleX: { from: 1.5, to: 1 },
+      scaleY: { from: 1.5, to: 1 },
+      duration: 320,
+      ease: 'Back.Out',
+    })
+    this.hitStopUntil = this.frameTime + 60
+    this.cameras.main.flash(260, 255, 230, 150)
+    this.cameras.main.shake(220, 0.006)
     audioService.skill()
+    audioService.win()
   }
 
   // ---- Spawning -----------------------------------------------------------
@@ -1056,6 +1100,31 @@ export class BattleScene extends Phaser.Scene {
     })
   }
 
+  /** Floating white/gold damage number that drifts up and fades. */
+  private damageNumber(x: number, y: number, amount: number, color = '#ffffff'): void {
+    if (amount < 1) return
+    const text = this.dmgPool.find((t) => !t.active)
+    if (!text) return
+    const dx = x + randomRange(-8, 8)
+    text
+      .setText(formatCompact(Math.round(amount)))
+      .setColor(color)
+      .setPosition(dx, y - 6)
+      .setScale(1)
+      .setActive(true)
+      .setVisible(true)
+      .setAlpha(1)
+    this.tweens.add({
+      targets: text,
+      y: y - 34,
+      scale: { from: 1.25, to: 0.9 },
+      alpha: { from: 1, to: 0 },
+      duration: 480,
+      ease: 'Quad.Out',
+      onComplete: () => text.setActive(false).setVisible(false),
+    })
+  }
+
   private comboMult(): number {
     return 1 + Math.min(COMBO.maxBonus, Math.floor(this.comboCount / COMBO.per))
   }
@@ -1364,7 +1433,9 @@ export class BattleScene extends Phaser.Scene {
     this.playHitSound()
     this.applyStatusOnHit(enemy)
 
-    if (enemy.takeDamage(Math.round(this.power.stats.damage * this.swordDamageMul))) {
+    const hitDmg = Math.round(this.power.stats.damage * this.swordDamageMul)
+    this.damageNumber(enemy.x, enemy.y - 14, hitDmg)
+    if (enemy.takeDamage(hitDmg)) {
       this.killEnemy(enemy)
     } else {
       // Non-lethal hit: quick spark + white impact flash (restore elite tint after).
@@ -1466,6 +1537,7 @@ export class BattleScene extends Phaser.Scene {
     boss.lastHitAt = this.elapsedMs
     this.sparks.explode(6, boss.x, boss.y)
     const dmg = Math.min(this.bossTickDamage(), Math.ceil(boss.maxHp * BOSS.maxHitFraction))
+    this.damageNumber(boss.x, boss.y - boss.displayHeight * 0.3, dmg, '#ffd24a')
     if (boss.takeDamage(dmg)) {
       this.bossDefeat()
     } else {
