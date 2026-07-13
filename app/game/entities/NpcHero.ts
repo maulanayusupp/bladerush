@@ -1,14 +1,15 @@
 import Phaser from 'phaser'
-import { HERO, NPC } from '../constants'
+import { HERO, NPC, SWORD_SHAPES } from '../constants'
 import { formatCompact } from '~/helpers/format.helper'
 import { clamp } from '~/helpers/math.helper'
 
 const TAU = Math.PI * 2
+const MAX_BLADES = 14
 
 /**
- * An AI survivor: a hero sprite + its own spinning sword ring + a power label.
- * Behaviour (targeting/combat/pickups) is driven by BattleScene; this class
- * owns only its own state and rendering.
+ * An AI survivor: a hero sprite + its OWN ring of real swords (same baked blade
+ * art as the player) + a power label. Behaviour is driven by BattleScene; this
+ * class owns its state and rendering.
  */
 export class NpcHero extends Phaser.GameObjects.Container {
   hp: number = NPC.baseHp
@@ -24,18 +25,21 @@ export class NpcHero extends Phaser.GameObjects.Container {
   ringColor = 0xffffff
 
   private readonly heroImg: Phaser.GameObjects.Image
-  private readonly ring: Phaser.GameObjects.Graphics
+  private readonly blades: Phaser.GameObjects.Image[]
   private readonly label: Phaser.GameObjects.Text
+  private bladeSkin = 0
 
   constructor(scene: Phaser.Scene) {
     super(scene, 0, 0)
-    this.ring = scene.add.graphics()
+    this.blades = Array.from({ length: MAX_BLADES }, () =>
+      scene.add.image(0, 0, 'sword0').setScale(0.7).setActive(false).setVisible(false),
+    )
     this.heroImg = scene.add.image(0, 0, 'hero0').setScale(0.8)
     this.label = scene.add
       .text(0, -34, '', { fontFamily: 'Segoe UI, sans-serif', fontSize: '12px', fontStyle: 'bold', color: '#ffffff' })
       .setOrigin(0.5)
     this.label.setStroke('#000000', 3)
-    this.add([this.ring, this.heroImg, this.label])
+    this.add([...this.blades, this.heroImg, this.label])
     scene.add.existing(this)
     this.setDepth(1)
     this.setActive(false).setVisible(false)
@@ -46,49 +50,46 @@ export class NpcHero extends Phaser.GameObjects.Container {
     this.hp = this.maxHp = NPC.baseHp
     this.power = Math.max(1, power)
     this.ringColor = color
+    this.bladeSkin = Math.floor(Math.random() * SWORD_SHAPES.length)
     this.targetX = x
     this.targetY = y
     this.respawnAt = 0
     this.hitAcc = 0
+    for (const b of this.blades) b.setTexture(`sword${this.bladeSkin}`).setTint(color)
     this.setActive(true).setVisible(true)
     this.refresh()
   }
 
-  /** Update the hero look + label to match current power (tier like the player). */
+  /** Update the hero look + label + toughness to match current power. */
   refresh(): void {
     const tier = clamp(Math.floor(HERO.tierPerLog10 * Math.log10(1 + this.power)), 0, HERO.skins - 1)
     this.heroImg.setTexture(`hero${tier}`)
     this.heroImg.setScale(0.62 + (tier / (HERO.skins - 1)) * 0.5)
     this.label.setText(formatCompact(Math.round(this.power)))
-    // Tougher as it grows so a strong NPC is a real duel (not instantly absorbed).
     this.maxHp = NPC.baseHp + Math.min(500, Math.sqrt(this.power) * 5)
     if (this.hp > this.maxHp) this.hp = this.maxHp
   }
 
-  /** Spin + redraw the sword ring (blade count grows a little with power). */
+  /** Spin the ring of real sword blades (more blades as power grows). */
   spin(deltaMs: number): void {
-    this.spinAngle = (this.spinAngle + 2 * (deltaMs / 1000)) % TAU
-    const blades = NPC.blades + Math.min(6, Math.floor(Math.log10(1 + this.power)))
+    this.spinAngle = (this.spinAngle + 1.8 * (deltaMs / 1000)) % TAU
+    const count = Math.min(MAX_BLADES, 5 + Math.floor(Math.log10(1 + this.power) * 1.6))
     const r = NPC.ringRadius
-    const g = this.ring
-    g.clear()
-    g.fillStyle(this.ringColor, 0.95)
-    for (let k = 0; k < blades; k++) {
-      const a = this.spinAngle + (k / blades) * TAU
-      const bx = Math.cos(a) * r
-      const by = Math.sin(a) * r
-      const tx = Math.cos(a + Math.PI / 2)
-      const ty = Math.sin(a + Math.PI / 2)
-      g.fillTriangle(
-        bx + Math.cos(a) * 7, by + Math.sin(a) * 7,
-        bx + tx * 3, by + ty * 3,
-        bx - tx * 3, by - ty * 3,
-      )
+    for (let i = 0; i < this.blades.length; i++) {
+      const b = this.blades[i] as Phaser.GameObjects.Image
+      if (i >= count) {
+        b.setVisible(false)
+        continue
+      }
+      const a = this.spinAngle + (i / count) * TAU
+      b.setVisible(true)
+      b.setPosition(Math.cos(a) * r, Math.sin(a) * r)
+      b.setRotation(a + Math.PI / 2 + 0.5)
     }
   }
 
   deactivate(): void {
-    this.ring.clear()
+    for (const b of this.blades) b.setVisible(false)
     this.setActive(false).setVisible(false)
   }
 }

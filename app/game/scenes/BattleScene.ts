@@ -625,6 +625,18 @@ export class BattleScene extends Phaser.Scene {
         if (this.boss.takeDamage(capped)) this.bossDefeat()
       }
     }
+    // Brawl with other NPCs whose rings overlap — winner absorbs the loser.
+    for (const other of this.npcs) {
+      if (other === npc || !other.active) continue
+      if (distance(npc.x, npc.y, other.x, other.y) > reach) continue
+      other.hp -= dmg
+      this.sparks.explode(2, (npc.x + other.x) / 2, (npc.y + other.y) / 2)
+      if (other.hp <= 0) {
+        npc.power += other.power
+        grew = true
+        this.npcDie(other)
+      }
+    }
     if (grew) npc.refresh()
     if (npc.hp <= 0) this.npcDie(npc)
   }
