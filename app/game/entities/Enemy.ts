@@ -6,6 +6,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   value = 1
   hp = 1
   speed = 60
+  /** Elite modifier ('' = normal) and its incoming-damage multiplier. */
+  affix = ''
+  private dmgTaken = 1
+  private eliteTint = 0
   /** Timestamp (scene-elapsed ms) of the last sword hit, for hit cooldown. */
   lastHitAt = Number.NEGATIVE_INFINITY
 
@@ -17,19 +21,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.value = config.value
     this.hp = config.hp
     this.speed = config.speed
+    this.affix = config.affix
+    this.dmgTaken = config.dmgTaken
+    this.eliteTint = config.tint
     this.lastHitAt = Number.NEGATIVE_INFINITY
     this.setTexture(config.textureKey)
     this.setScale(config.scale)
+    this.restoreTint()
     this.enableBody(true, x, y, true, true)
     // Keep the physics body in sync with the current texture.
     const body = this.body as Phaser.Physics.Arcade.Body
     body.setSize(this.width, this.height)
   }
 
-  /** @returns true when the enemy has died. */
+  /** @returns true when the enemy has died. Shielded elites take reduced damage. */
   takeDamage(amount: number): boolean {
-    this.hp -= amount
+    this.hp -= amount * this.dmgTaken
     return this.hp <= 0
+  }
+
+  /** Restore the elite tint (or none) after a white hit-flash. */
+  restoreTint(): void {
+    if (this.eliteTint) this.setTint(this.eliteTint)
+    else this.clearTint()
   }
 
   deactivate(): void {

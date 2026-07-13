@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -39,6 +39,7 @@ export class BattleScene extends Phaser.Scene {
   private vignette!: Phaser.GameObjects.Image
   private ambient?: Phaser.GameObjects.Particles.ParticleEmitter
   private minimap!: Phaser.GameObjects.Graphics
+  private bossArrow!: Phaser.GameObjects.Graphics
   private decor: { img: Phaser.GameObjects.Image; nx: number; ny: number }[] = []
   private auraLayers: Phaser.GameObjects.Image[] = []
   private sparks!: Phaser.GameObjects.Particles.ParticleEmitter
@@ -233,6 +234,8 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, WORLD.cameraLerp, WORLD.cameraLerp)
     // Screen-pinned minimap, redrawn each frame in drawMinimap().
     this.minimap = this.add.graphics().setScrollFactor(0).setDepth(24)
+    // Screen-pinned arrow pointing to an off-screen boss.
+    this.bossArrow = this.add.graphics().setScrollFactor(0).setDepth(23)
 
     this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'troop0', maxSize: ENEMY.poolSize })
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
@@ -594,6 +597,7 @@ export class BattleScene extends Phaser.Scene {
 
   private hideBossExtras(): void {
     this.clearBossOrbs()
+    this.bossArrow.clear()
     this.bossWeapons.forEach((wpn) => wpn.setVisible(false))
     this.bossLabel.setVisible(false)
     this.bossAura.setVisible(false)
@@ -682,6 +686,30 @@ export class BattleScene extends Phaser.Scene {
       this.castMeteors(enraged)
     }
     this.updateBossOrbs(deltaMs)
+    this.updateBossArrow()
+  }
+
+  /** Point a screen-edge arrow at the boss when it's off-screen. */
+  private updateBossArrow(): void {
+    const g = this.bossArrow
+    g.clear()
+    const cam = this.cameras.main
+    const sx = this.boss.x - cam.scrollX
+    const sy = this.boss.y - cam.scrollY
+    const m = 44
+    if (sx > m && sx < this.viewW - m && sy > m && sy < this.viewH - m) return // on-screen
+    const ang = Math.atan2(sy - this.viewH / 2, sx - this.viewW / 2)
+    const px = clamp(sx, m, this.viewW - m)
+    const py = clamp(sy, m, this.viewH - m)
+    const pulse = 0.7 + 0.3 * Math.sin(this.elapsedMs / 160)
+    g.fillStyle(0xff2020, pulse)
+    g.fillTriangle(
+      px + Math.cos(ang) * 16, py + Math.sin(ang) * 16,
+      px + Math.cos(ang + 2.5) * 11, py + Math.sin(ang + 2.5) * 11,
+      px + Math.cos(ang - 2.5) * 11, py + Math.sin(ang - 2.5) * 11,
+    )
+    g.fillStyle(0x3a0000, pulse)
+    g.fillCircle(px, py, 3)
   }
 
   /** Fire a spread of fireballs from the boss toward the hero. */
@@ -1284,19 +1312,52 @@ export class BattleScene extends Phaser.Scene {
       const reward = enemy.value
       const ex = enemy.x
       const ey = enemy.y
+      const volatile = enemy.affix === 'volatile'
       this.killFx(ex, ey)
       audioService.death()
       enemy.deactivate()
       this.registerKill(reward, ex, ey)
       this.maybeDropChest(ex, ey)
+      if (volatile) this.explodeVolatile(ex, ey)
     } else {
-      // Non-lethal hit: quick spark + white impact flash.
+      // Non-lethal hit: quick spark + white impact flash (restore elite tint after).
       this.sparks.explode(3, enemy.x, enemy.y)
       enemy.setTint(0xffffff)
       enemy.setTintFill()
       this.time.delayedCall(60, () => {
-        if (enemy.active) enemy.clearTint()
+        if (enemy.active) enemy.restoreTint()
       })
+    }
+  }
+
+  /** A volatile elite detonates: shockwave + killing nearby foes (chain, no re-trigger). */
+  private explodeVolatile(x: number, y: number): void {
+    this.sparks.explode(20, x, y)
+    const ring = this.add
+      .image(x, y, 'shock')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xff8a3a)
+      .setScale(0.2)
+      .setDepth(6)
+    this.tweens.add({
+      targets: ring,
+      scale: (ELITE.volatileRadius * 2) / 64,
+      alpha: { from: 0.85, to: 0 },
+      duration: 300,
+      onComplete: () => ring.destroy(),
+    })
+    this.cameras.main.shake(120, 0.006)
+    audioService.nova()
+    for (const obj of this.enemies.getChildren()) {
+      const other = obj as Enemy
+      if (!other.active) continue
+      if (distance(other.x, other.y, x, y) > ELITE.volatileRadius) continue
+      const ox = other.x
+      const oy = other.y
+      const reward = other.value
+      this.killFx(ox, oy)
+      other.deactivate() // collateral dies directly (no recursive detonation)
+      this.registerKill(reward, ox, oy)
     }
   }
 

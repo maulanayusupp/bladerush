@@ -133,6 +133,24 @@ export const ENEMY = {
 } as const
 
 /**
+ * Elite affixes: some enemies spawn "elite" with a modifier + a telltale tint.
+ * - swift: fast & small; - brute: tanky, big, high reward; - shielded: halves
+ *   incoming damage; - volatile: detonates on death, chaining into nearby foes.
+ * Chance rises over the run.
+ */
+export const ELITE = {
+  baseChance: 0.06,
+  chancePerMin: 0.012,
+  maxChance: 0.24,
+  affixes: ['swift', 'brute', 'shielded', 'volatile'] as const,
+  swift: { hp: 0.8, speed: 1.7, scale: 0.85, reward: 1.6, dmgTaken: 1, tint: 0xffe14d },
+  brute: { hp: 3.6, speed: 0.72, scale: 1.35, reward: 3, dmgTaken: 1, tint: 0xff5a5a },
+  shielded: { hp: 1.8, speed: 0.9, scale: 1.12, reward: 2, dmgTaken: 0.5, tint: 0x5ad0ff },
+  volatile: { hp: 1.1, speed: 1.15, scale: 1.05, reward: 2.2, dmgTaken: 1, tint: 0xff8a3a },
+  volatileRadius: 95,
+} as const
+
+/**
  * Enemy tiers from easy to legend. Each has a distinct baked shape, HP, speed
  * range, size scale and a RANDOM sword-reward range. Spawn weight shifts toward
  * tougher tiers as the run goes on (see SpawnService.pickTier).

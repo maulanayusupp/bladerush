@@ -30,6 +30,12 @@ export interface EnemyConfig {
   textureKey: string
   scale: number
   tier: string
+  /** Elite modifier ('' = normal). See ELITE in constants. */
+  affix: string
+  /** Incoming-damage multiplier (shielded elites take less). */
+  dmgTaken: number
+  /** Tint for elites (0 = none). */
+  tint: number
 }
 
 export interface PlayerHealth {
