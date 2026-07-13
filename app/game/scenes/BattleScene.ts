@@ -91,6 +91,13 @@ export class BattleScene extends Phaser.Scene {
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   private keys?: Record<string, Phaser.Input.Keyboard.Key>
   private paused = false
+  // Floating virtual joystick (touch/drag): origin set on press, vector from drag.
+  private joyActive = false
+  private joyOriginX = 0
+  private joyOriginY = 0
+  private joyVecX = 0
+  private joyVecY = 0
+  private joystick!: Phaser.GameObjects.Graphics
   private bossSummonAcc = 0
   private bossGateAcc = 0
   private comboCount = 0
@@ -299,10 +306,13 @@ export class BattleScene extends Phaser.Scene {
     this.physics.add.overlap(this.swordPool, this.boss, this.onSwordHitBoss)
     this.physics.add.overlap(this.player, this.boss, this.onBossHitPlayer)
 
-    this.input.on('pointermove', this.onPointer)
-    this.input.on('pointerdown', this.onPointer)
+    this.joystick = this.add.graphics().setScrollFactor(0).setDepth(22)
+    this.input.on('pointerdown', this.onPointerDown)
+    this.input.on('pointermove', this.onPointerMove)
+    this.input.on('pointerup', this.onPointerUp)
+    this.input.on('pointerupoutside', this.onPointerUp)
     this.input.once('pointerdown', () => audioService.unlock())
-    // WASD / arrow-key movement (desktop) in addition to pointer/touch.
+    // WASD / arrow-key movement (desktop) in addition to touch/drag.
     const kb = this.input.keyboard
     if (kb) this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Record<string, Phaser.Input.Keyboard.Key>
     this.scale.on('resize', this.onResize)
@@ -336,9 +346,10 @@ export class BattleScene extends Phaser.Scene {
     const kb = this.readKeyboard()
     if (kb.x !== 0 || kb.y !== 0) {
       this.player.moveByVector(deltaMs, bounds, kb.x, kb.y, speedMul)
-    } else {
-      this.player.moveToward(deltaMs, bounds, speedMul)
+    } else if (this.joyActive && (this.joyVecX !== 0 || this.joyVecY !== 0)) {
+      this.player.moveByVector(deltaMs, bounds, this.joyVecX, this.joyVecY, speedMul)
     }
+    this.drawJoystick()
     // Ground scrolls 1:1 with the camera so the terrain appears fixed in the
     // world — you're traversing it, not sliding on top of it.
     const cam = this.cameras.main
@@ -1426,10 +1437,56 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- Lifecycle / input handlers -----------------------------------------
 
-  private onPointer = (pointer: Phaser.Input.Pointer): void => {
-    // Only steer while pressed/touched — mouse hover no longer twitches the hero.
-    if (!pointer.isDown) return
-    this.player.setTarget(pointer.worldX, pointer.worldY)
+  private static readonly JOY_RADIUS = 56
+  private static readonly JOY_DEADZONE = 10
+
+  private onPointerDown = (pointer: Phaser.Input.Pointer): void => {
+    this.joyActive = true
+    this.joyOriginX = pointer.x
+    this.joyOriginY = pointer.y
+    this.joyVecX = 0
+    this.joyVecY = 0
+  }
+
+  private onPointerMove = (pointer: Phaser.Input.Pointer): void => {
+    if (!this.joyActive) return
+    const dx = pointer.x - this.joyOriginX
+    const dy = pointer.y - this.joyOriginY
+    const mag = Math.hypot(dx, dy)
+    if (mag < BattleScene.JOY_DEADZONE) {
+      this.joyVecX = 0
+      this.joyVecY = 0
+      return
+    }
+    // Re-center the origin if the drag exceeds the ring (sticky follow).
+    if (mag > BattleScene.JOY_RADIUS) {
+      this.joyOriginX = pointer.x - (dx / mag) * BattleScene.JOY_RADIUS
+      this.joyOriginY = pointer.y - (dy / mag) * BattleScene.JOY_RADIUS
+    }
+    this.joyVecX = dx / mag
+    this.joyVecY = dy / mag
+  }
+
+  private onPointerUp = (): void => {
+    this.joyActive = false
+    this.joyVecX = 0
+    this.joyVecY = 0
+    this.joystick.clear()
+  }
+
+  /** Draw the floating joystick base + thumb while a drag is active. */
+  private drawJoystick(): void {
+    const g = this.joystick
+    g.clear()
+    if (!this.joyActive) return
+    const ox = this.joyOriginX
+    const oy = this.joyOriginY
+    g.fillStyle(0xffffff, 0.12)
+    g.fillCircle(ox, oy, BattleScene.JOY_RADIUS)
+    g.lineStyle(2, 0xffffff, 0.4)
+    g.strokeCircle(ox, oy, BattleScene.JOY_RADIUS)
+    g.fillStyle(0xffffff, 0.5)
+    g.fillCircle(ox + this.joyVecX * BattleScene.JOY_RADIUS, oy + this.joyVecY * BattleScene.JOY_RADIUS, 20)
   }
 
   /** Current WASD / arrow-key movement vector (unnormalized, -1..1 per axis). */
@@ -1477,8 +1534,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private onShutdown = (): void => {
-    this.input.off('pointermove', this.onPointer)
-    this.input.off('pointerdown', this.onPointer)
+    this.input.off('pointerdown', this.onPointerDown)
+    this.input.off('pointermove', this.onPointerMove)
+    this.input.off('pointerup', this.onPointerUp)
+    this.input.off('pointerupoutside', this.onPointerUp)
     this.scale.off('resize', this.onResize)
     gameEventBus.off('game:restart', this.onRestart)
     gameEventBus.off('game:pause', this.onPause)
