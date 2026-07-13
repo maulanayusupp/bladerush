@@ -376,10 +376,16 @@ export class BattleScene extends Phaser.Scene {
     this.input.on('pointermove', this.onPointerMove)
     this.input.on('pointerup', this.onPointerUp)
     this.input.on('pointerupoutside', this.onPointerUp)
-    this.input.once('pointerdown', () => audioService.unlock())
+    // Unlock audio on the FIRST user gesture of any kind — pointer OR keyboard —
+    // so sound works even when reloading straight onto /play and moving via WASD.
+    const unlockAudio = (): void => audioService.unlock()
+    this.input.once('pointerdown', unlockAudio)
     // WASD / arrow-key movement (desktop) in addition to touch/drag.
     const kb = this.input.keyboard
-    if (kb) this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Record<string, Phaser.Input.Keyboard.Key>
+    if (kb) {
+      this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Record<string, Phaser.Input.Keyboard.Key>
+      kb.once('keydown', unlockAudio)
+    }
     this.scale.on('resize', this.onResize)
     gameEventBus.on('game:restart', this.onRestart)
     gameEventBus.on('game:pause', this.onPause)
