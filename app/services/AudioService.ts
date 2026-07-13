@@ -8,10 +8,24 @@ type OscType = OscillatorType
 class AudioService {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
+  private musicBus: GainNode | null = null
   private _muted = false
+  private _musicOn = true
+  private musicVol = 0.3
+  private musicTimer: number | null = null
+  private nextNoteAt = 0
+  private step = 0
 
   get muted(): boolean {
     return this._muted
+  }
+
+  get musicOn(): boolean {
+    return this._musicOn
+  }
+
+  get musicVolume(): number {
+    return this.musicVol
   }
 
   /** Create/resume the context. Call from a user gesture (click/tap). */
@@ -25,8 +39,14 @@ class AudioService {
       this.master = this.ctx.createGain()
       this.master.gain.value = this._muted ? 0 : 0.5
       this.master.connect(this.ctx.destination)
+      // Music routes through its own bus into master, so the mute button still
+      // silences everything while music has an independent on/off + volume.
+      this.musicBus = this.ctx.createGain()
+      this.musicBus.gain.value = this._musicOn ? this.musicVol : 0
+      this.musicBus.connect(this.master)
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume()
+    this.startMusic()
   }
 
   setMuted(muted: boolean): void {
@@ -37,6 +57,81 @@ class AudioService {
   toggleMuted(): boolean {
     this.setMuted(!this._muted)
     return this._muted
+  }
+
+  setMusicOn(on: boolean): void {
+    this._musicOn = on
+    if (this.musicBus) this.musicBus.gain.value = on ? this.musicVol : 0
+  }
+
+  setMusicVolume(v: number): void {
+    this.musicVol = Math.max(0, Math.min(1, v))
+    if (this.musicBus && this._musicOn) this.musicBus.gain.value = this.musicVol
+  }
+
+  // ---- Background music: a looping 16-step ambient battle groove -----------
+
+  private startMusic(): void {
+    if (!this.ctx || this.musicTimer !== null) return
+    this.nextNoteAt = this.ctx.currentTime + 0.1
+    this.step = 0
+    this.musicTimer = window.setInterval(() => this.scheduleMusic(), 25)
+  }
+
+  private scheduleMusic(): void {
+    if (!this.ctx) return
+    const stepDur = 0.17 // ~ 88 BPM sixteenths
+    while (this.nextNoteAt < this.ctx.currentTime + 0.12) {
+      this.playStep(this.step, this.nextNoteAt)
+      this.nextNoteAt += stepDur
+      this.step = (this.step + 1) % 16
+    }
+  }
+
+  private playStep(step: number, when: number): void {
+    if (this._muted || !this._musicOn || !this.musicBus) return
+    // Am-pentatonic: bass on the quarter, a sparse lead arpeggio, soft hats.
+    const bass = [110, 0, 0, 0, 146.83, 0, 0, 0, 130.81, 0, 0, 0, 98, 0, 0, 0]
+    const lead = [440, 0, 523.25, 0, 392, 0, 659.25, 0, 523.25, 0, 440, 0, 587.33, 0, 392, 0]
+    if (bass[step]) this.musicTone(bass[step] as number, 0.36, 'triangle', 0.5, when)
+    if (lead[step]) this.musicTone(lead[step] as number, 0.2, 'sine', 0.2, when)
+    if (step % 4 === 2) this.musicNoise(0.03, 0.05, when, 8000)
+  }
+
+  private musicTone(freq: number, dur: number, type: OscType, peak: number, when: number): void {
+    if (!this.ctx || !this.musicBus) return
+    const osc = this.ctx.createOscillator()
+    osc.type = type
+    osc.frequency.setValueAtTime(freq, when)
+    const gain = this.ctx.createGain()
+    gain.gain.setValueAtTime(0.0001, when)
+    gain.gain.exponentialRampToValueAtTime(peak, when + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + dur)
+    osc.connect(gain)
+    gain.connect(this.musicBus)
+    osc.start(when)
+    osc.stop(when + dur + 0.02)
+  }
+
+  private musicNoise(dur: number, peak: number, when: number, filterHz: number): void {
+    if (!this.ctx || !this.musicBus) return
+    const frames = Math.floor(this.ctx.sampleRate * dur)
+    const buffer = this.ctx.createBuffer(1, frames, this.ctx.sampleRate)
+    const data = buffer.getChannelData(0)
+    for (let i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1
+    const src = this.ctx.createBufferSource()
+    src.buffer = buffer
+    const hp = this.ctx.createBiquadFilter()
+    hp.type = 'highpass'
+    hp.frequency.value = filterHz
+    const gain = this.ctx.createGain()
+    gain.gain.setValueAtTime(peak, when)
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + dur)
+    src.connect(hp)
+    hp.connect(gain)
+    gain.connect(this.musicBus)
+    src.start(when)
+    src.stop(when + dur + 0.02)
   }
 
   private get t(): number {
