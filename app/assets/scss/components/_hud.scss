@@ -92,6 +92,9 @@
 
   &__xp {
     margin-top: $space-2;
+    // Same constrained, left-aligned width as the health bar so it reads as a
+    // stacked pair and never runs under the top-right minimap.
+    width: min(58%, 320px);
     height: 6px;
     border-radius: $radius-pill;
     background-color: rgba(#000, 0.4);
