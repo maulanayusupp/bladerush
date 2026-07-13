@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE } from '../constants'
+import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE, WORLD } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -37,6 +37,7 @@ export class BattleScene extends Phaser.Scene {
   private player!: Player
   private bg!: Phaser.GameObjects.TileSprite
   private vignette!: Phaser.GameObjects.Image
+  private ambient?: Phaser.GameObjects.Particles.ParticleEmitter
   private decor: { img: Phaser.GameObjects.Image; nx: number; ny: number }[] = []
   private auraLayers: Phaser.GameObjects.Image[] = []
   private sparks!: Phaser.GameObjects.Particles.ParticleEmitter
@@ -93,11 +94,21 @@ export class BattleScene extends Phaser.Scene {
     super('BattleScene')
   }
 
+  /** The full scrollable world (much larger than the screen). */
   private get worldW(): number {
-    return this.scale.width
+    return WORLD.width
   }
 
   private get worldH(): number {
+    return WORLD.height
+  }
+
+  /** The visible viewport (screen) size — for pinned UI and edge spawning. */
+  private get viewW(): number {
+    return this.scale.width
+  }
+
+  private get viewH(): number {
     return this.scale.height
   }
 
@@ -141,33 +152,53 @@ export class BattleScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, this.worldW, this.worldH)
 
-    // Random themed arena background (tiling + subtle parallax).
+    // Random themed ground, tiled and PINNED to the camera; its tile offset
+    // tracks the camera scroll (see update) so the terrain slides past as the
+    // hero roams the open world.
     const map = MAPS[randomInt(0, MAPS.length - 1)] ?? MAPS[0]
-    this.bg = this.add.tileSprite(0, 0, this.worldW, this.worldH, map.key).setOrigin(0, 0).setDepth(-10)
-    // Scatter decoration props (trees/rocks/…) at random world positions.
+    this.bg = this.add
+      .tileSprite(0, 0, this.viewW, this.viewH, map.key)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(-10)
+    // Scatter decoration props across the WHOLE world; each sways gently so the
+    // scenery feels alive rather than static.
     this.decor = Array.from({ length: DECOR_COUNT }, () => {
       const img = this.add
         .image(0, 0, pickOne(map.props))
         .setDepth(-9)
-        .setScale(0.7 + Math.random() * 0.9)
+        .setScale(0.7 + Math.random() * 1.1)
         .setAlpha(0.94)
       if (Math.random() < 0.5) img.setFlipX(true)
+      this.tweens.add({
+        targets: img,
+        angle: { from: -2.5, to: 2.5 },
+        duration: 1800 + Math.random() * 1600,
+        delay: Math.random() * 2000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+      })
       return { img, nx: Math.random(), ny: Math.random() }
     })
     this.positionDecor()
+    this.spawnAmbient(map.ambient)
+    // Vignette framing, pinned to the screen.
     this.vignette = this.add
       .image(0, 0, 'vignette')
       .setOrigin(0, 0)
+      .setScrollFactor(0)
       .setDepth(-8)
-      .setDisplaySize(this.worldW, this.worldH)
+      .setDisplaySize(this.viewW, this.viewH)
     const mapLabel = this.add
-      .text(this.worldW / 2, 72, map.name, {
+      .text(this.viewW / 2, 72, map.name, {
         fontFamily: 'Segoe UI, sans-serif',
         fontSize: '22px',
         fontStyle: 'bold',
         color: '#ffffff',
       })
       .setOrigin(0.5)
+      .setScrollFactor(0)
       .setDepth(20)
     mapLabel.setStroke('#000000', 4)
     this.tweens.add({
@@ -190,6 +221,9 @@ export class BattleScene extends Phaser.Scene {
 
     this.player = new Player(this, this.worldW / 2, this.worldH / 2)
     if (metaService.bonusMaxHp > 0) this.player.addMaxHp(metaService.bonusMaxHp)
+    // Open-world camera: bound to the world, smoothly following the hero.
+    this.cameras.main.setBounds(0, 0, this.worldW, this.worldH)
+    this.cameras.main.startFollow(this.player, true, WORLD.cameraLerp, WORLD.cameraLerp)
 
     this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'troop0', maxSize: ENEMY.poolSize })
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
@@ -274,8 +308,11 @@ export class BattleScene extends Phaser.Scene {
 
     const dashing = this.elapsedMs < this.dashUntil
     this.player.moveToward(deltaMs, { width: this.worldW, height: this.worldH }, dashing ? SKILLS.dash.speedMul : 1)
-    this.bg.tilePositionX = this.player.x * 0.08
-    this.bg.tilePositionY = this.player.y * 0.08
+    // Ground scrolls 1:1 with the camera so the terrain appears fixed in the
+    // world — you're traversing it, not sliding on top of it.
+    const cam = this.cameras.main
+    this.bg.tilePositionX = cam.scrollX
+    this.bg.tilePositionY = cam.scrollY
 
     this.enemyAcc += deltaMs
     if (this.enemyAcc >= this.spawner.enemyInterval(elapsedSec)) {
@@ -345,25 +382,66 @@ export class BattleScene extends Phaser.Scene {
     enemy.spawn(x, y, this.spawner.createEnemy(elapsedSec, this.power.power))
   }
 
+  /** A point just outside the current camera view, so foes enter from a screen
+   *  edge no matter where in the open world the hero has wandered. */
   private randomEdgePoint(): { x: number; y: number } {
-    const m = ENEMY.size
+    const cam = this.cameras.main
+    const m = ENEMY.size + OFFSCREEN_MARGIN
+    const left = cam.scrollX
+    const top = cam.scrollY
+    const right = left + this.viewW
+    const bottom = top + this.viewH
     switch (randomInt(0, 3)) {
       case 0:
-        return { x: randomRange(0, this.worldW), y: -m }
+        return { x: randomRange(left, right), y: top - m }
       case 1:
-        return { x: randomRange(0, this.worldW), y: this.worldH + m }
+        return { x: randomRange(left, right), y: bottom + m }
       case 2:
-        return { x: -m, y: randomRange(0, this.worldH) }
+        return { x: left - m, y: randomRange(top, bottom) }
       default:
-        return { x: this.worldW + m, y: randomRange(0, this.worldH) }
+        return { x: right + m, y: randomRange(top, bottom) }
     }
+  }
+
+  /** X across the current view; Y just above it — for items that drift down. */
+  private topSpawnPoint(halfWidth: number): { x: number; y: number } {
+    const cam = this.cameras.main
+    return {
+      x: randomRange(cam.scrollX + halfWidth, cam.scrollX + this.viewW - halfWidth),
+      y: cam.scrollY - halfWidth,
+    }
+  }
+
+  /** Configure the theme's living ambient layer (motes / snow / embers). */
+  private spawnAmbient(cfg: { tint: number; dir: string }): void {
+    const w = Math.max(this.viewW, 1500)
+    const h = Math.max(this.viewH, 1100)
+    const down = cfg.dir === 'fall'
+    const up = cfg.dir === 'rise'
+    const side = cfg.dir === 'side'
+    this.ambient = this.add
+      .particles(0, 0, 'spark', {
+        x: side ? -20 : { min: -20, max: w + 20 },
+        y: down ? -20 : up ? h + 20 : { min: -20, max: h + 20 },
+        lifespan: down || up ? 12000 : 7000,
+        frequency: 130,
+        quantity: 1,
+        speedX: side ? { min: 60, max: 150 } : { min: -20, max: 20 },
+        speedY: down ? { min: 60, max: 130 } : up ? { min: -130, max: -60 } : { min: -14, max: 14 },
+        scale: { min: 0.12, max: 0.5 },
+        alpha: { start: 0.5, end: 0 },
+        rotate: { min: 0, max: 360 },
+        tint: cfg.tint,
+      })
+      .setScrollFactor(0)
+      .setDepth(-7)
   }
 
   private spawnGate(): void {
     const gate = this.gatePool.find((g) => !g.active)
     if (!gate) return
-    const x = randomRange(GATE.width / 2, this.worldW - GATE.width / 2)
-    gate.spawn(x, -GATE.height, this.spawner.createGate())
+    const { x, y } = this.topSpawnPoint(GATE.width / 2)
+    gate.spawn(x, y - GATE.height / 2, this.spawner.createGate())
   }
 
   private spawnRival(elapsedSec: number): void {
@@ -382,7 +460,8 @@ export class BattleScene extends Phaser.Scene {
   private spawnHeal(): void {
     const heal = this.healPool.find((h) => !h.active)
     if (!heal) return
-    heal.spawn(randomRange(HEAL.size, this.worldW - HEAL.size), -HEAL.size)
+    const { x, y } = this.topSpawnPoint(HEAL.size)
+    heal.spawn(x, y - HEAL.size)
   }
 
   // ---- Boss ---------------------------------------------------------------
@@ -499,8 +578,8 @@ export class BattleScene extends Phaser.Scene {
   private spawnMultiplierGate(): void {
     const gate = this.gatePool.find((g) => !g.active)
     if (!gate) return
-    const x = randomRange(GATE.width / 2, this.worldW - GATE.width / 2)
-    gate.spawn(x, -GATE.height, { op: 'mul', value: pickOne(BOSS.gateValues) })
+    const { x, y } = this.topSpawnPoint(GATE.width / 2)
+    gate.spawn(x, y - GATE.height / 2, { op: 'mul', value: pickOne(BOSS.gateValues) })
   }
 
   private bossDefeat(): void {
@@ -694,6 +773,7 @@ export class BattleScene extends Phaser.Scene {
 
   private updateHeals(deltaMs: number): void {
     const dy = HEAL.speed * (deltaMs / 1000)
+    const despawnY = this.cameras.main.scrollY + this.viewH + HEAL.size * 2
     for (const heal of this.healPool) {
       if (!heal.active) continue
       heal.y += dy
@@ -710,7 +790,7 @@ export class BattleScene extends Phaser.Scene {
         heal.deactivate()
         continue
       }
-      if (heal.y - HEAL.size > this.worldH) heal.deactivate()
+      if (heal.y > despawnY) heal.deactivate()
     }
   }
 
@@ -730,6 +810,7 @@ export class BattleScene extends Phaser.Scene {
 
   private updateGates(deltaMs: number): void {
     const dy = GATE.speed * (deltaMs / 1000)
+    const despawnY = this.cameras.main.scrollY + this.viewH + GATE.height
     for (const gate of this.gatePool) {
       if (!gate.active) continue
       gate.y += dy
@@ -742,7 +823,7 @@ export class BattleScene extends Phaser.Scene {
         gate.deactivate()
         continue
       }
-      if (gate.y - GATE.height > this.worldH) gate.deactivate()
+      if (gate.y > despawnY) gate.deactivate()
     }
   }
 
@@ -1046,10 +1127,11 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private onResize = (gameSize: Phaser.Structs.Size): void => {
-    this.physics.world.setBounds(0, 0, gameSize.width, gameSize.height)
+    // World bounds stay fixed (the open world); only the screen-pinned layers
+    // resize to the new viewport.
+    this.physics.world.setBounds(0, 0, this.worldW, this.worldH)
     this.bg.setSize(gameSize.width, gameSize.height)
     this.vignette.setDisplaySize(gameSize.width, gameSize.height)
-    this.positionDecor()
   }
 
   private positionDecor(): void {

@@ -1,8 +1,8 @@
 // =============================================================================
 // Gameplay tuning constants. Centralized so balance can be tweaked without
-// touching logic. The arena now fills the viewport (Scale.RESIZE), so world
-// width/height are read live from the Scale Manager; ARENA is only the initial
-// fallback size before the canvas is measured.
+// touching logic. The game is an OPEN WORLD: a large fixed `WORLD` the camera
+// follows the hero across (Scale.RESIZE only governs the viewport). ARENA is a
+// legacy fallback size; WORLD is the real playfield.
 // =============================================================================
 
 export const ARENA = {
@@ -11,18 +11,33 @@ export const ARENA = {
 } as const
 
 /**
+ * Open-world arena: a large scrollable world the camera follows the hero across
+ * (instead of a single bounded screen). The ground tiles beneath, decor is
+ * scattered over the whole world, and ambient particles keep it alive.
+ */
+export const WORLD = {
+  width: 3200,
+  height: 3200,
+  cameraLerp: 0.11, // how snappily the camera tracks the hero (0..1)
+} as const
+
+/**
  * Arena themes: a SUBTLE tiling ground (fine grain only, so no obvious loop)
  * plus scattered decoration props (trees/rocks/etc.) placed at random world
- * positions for a natural, non-repeating look. One theme per run.
+ * positions for a natural, non-repeating look. Each theme also has an `ambient`
+ * layer — drifting motes / falling snow / rising embers — so the map moves and
+ * feels alive. One theme per run.
+ *
+ * ambient.dir: 'fall' (down) | 'rise' (up) | 'side' (wind) | 'drift' (float).
  */
 export const MAP_TILE = 256
-export const DECOR_COUNT = 34
+export const DECOR_COUNT = 220
 export const MAPS = [
-  { key: 'map0', name: 'Verdant Meadow', props: ['treePine', 'rockGray', 'bushGreen'] },
-  { key: 'map1', name: 'Sunscar Desert', props: ['cactus', 'rockSand', 'deadBush'] },
-  { key: 'map2', name: 'Frostwind Tundra', props: ['treeSnow', 'rockIce', 'snowMound'] },
-  { key: 'map3', name: 'Emberfall Caldera', props: ['deadTree', 'rockChar', 'lavaCrystal'] },
-  { key: 'map4', name: 'The Void Expanse', props: ['crystalVoid', 'asteroid', 'starCluster'] },
+  { key: 'map0', name: 'Verdant Meadow', props: ['treePine', 'rockGray', 'bushGreen'], ambient: { tint: 0xdff3b0, dir: 'drift' } },
+  { key: 'map1', name: 'Sunscar Desert', props: ['cactus', 'rockSand', 'deadBush'], ambient: { tint: 0xe8cf96, dir: 'side' } },
+  { key: 'map2', name: 'Frostwind Tundra', props: ['treeSnow', 'rockIce', 'snowMound'], ambient: { tint: 0xffffff, dir: 'fall' } },
+  { key: 'map3', name: 'Emberfall Caldera', props: ['deadTree', 'rockChar', 'lavaCrystal'], ambient: { tint: 0xff9a4a, dir: 'rise' } },
+  { key: 'map4', name: 'The Void Expanse', props: ['crystalVoid', 'asteroid', 'starCluster'], ambient: { tint: 0xc9b0ff, dir: 'drift' } },
 ] as const
 
 export const PLAYER = {
