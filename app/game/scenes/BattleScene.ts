@@ -1313,9 +1313,11 @@ export class BattleScene extends Phaser.Scene {
   private updateSwords(deltaMs: number): void {
     const stats = this.power.stats
     const colors = stats.layerColors
-    // Upgrades add flat swords (capped to the pool) on top of power's count.
+    // Upgrades add flat swords on top of power's count, but the DRAWN blades are
+    // capped (SWORD.maxVisible) so the ring stays readable — power keeps scaling
+    // damage regardless of how many blades are shown.
     const count = this.power.hasWeapon
-      ? Math.min(this.swordPool.length, stats.swordCount + this.upgrades.extraSwords)
+      ? Math.min(this.swordPool.length, SWORD.maxVisible, stats.swordCount + this.upgrades.extraSwords)
       : 0
 
     // Fury skill + upgrades: faster spin, harder hits, bigger blades.

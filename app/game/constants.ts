@@ -117,9 +117,12 @@ export const SWORD = {
   hitCooldownMs: 120, // per-enemy cooldown so a sweep doesn't drain HP each frame
   // When there are lots of swords, spread them across concentric rings so you
   // can still read individual blades instead of a solid "beyblade" disc.
-  ringGap: 30, // radius added per extra ring
-  bladeSpacing: 26, // target arc distance between blades on a ring (px)
-  minPerRing: 10,
+  ringGap: 32, // radius added per extra ring
+  bladeSpacing: 36, // target arc distance between blades on a ring (px)
+  minPerRing: 8,
+  // Hard cap on how many blades are DRAWN (power still scales damage) so the
+  // ring never becomes an unreadable swarm.
+  maxVisible: 24,
 } as const
 
 /** Soft glow disc baked in BootScene; one tinted copy per unlocked layer. */
@@ -244,9 +247,9 @@ export const POWER_CURVE = {
   baseDamage: 6,
   damagePerPower: 0.6,
 
-  baseOrbitSpeed: 2.1, // rad/s with a single sword
-  orbitSpeedPerSword: 0.04, // gentle acceleration as the ring grows
-  maxOrbitSpeed: 4.2, // rad/s cap — slow enough to SEE the blades (not a blur)
+  baseOrbitSpeed: 1.4, // rad/s with a single sword
+  orbitSpeedPerSword: 0.02, // very gentle acceleration as the ring grows
+  maxOrbitSpeed: 2.4, // rad/s cap — a calm, readable spin (not a blur)
 } as const
 
 /**
