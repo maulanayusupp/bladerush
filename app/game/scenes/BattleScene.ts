@@ -521,13 +521,20 @@ export class BattleScene extends Phaser.Scene {
     npc.duelAcc += deltaMs
     if (npc.duelAcc < BOSS.hitTickMs) return
     npc.duelAcc -= BOSS.hitTickMs
-    npc.hp -= this.bossTickDamage() // your ring output
-    this.hitPlayer(Math.min(45, 10 + Math.log10(1 + npc.power) * 4)) // it strikes back (i-frame gated)
     const mx = (npc.x + this.player.x) / 2
     const my = (npc.y + this.player.y) / 2
-    this.sparks.explode(5, mx, my)
+    this.sparks.explode(4, mx, my)
     audioService.clash()
-    if (npc.hp <= 0) this.absorbNpc(npc)
+    // Outcome is decided by POWER: you only wear an NPC down when you're at
+    // least as strong as it. A stronger NPC is unkillable by you and hits hard —
+    // you must out-grow it (or flee).
+    if (this.power.power >= npc.power) {
+      npc.hp -= this.bossTickDamage()
+      this.hitPlayer(Math.min(18, 6 + Math.log10(1 + npc.power) * 2)) // light chip
+      if (npc.hp <= 0) this.absorbNpc(npc)
+    } else {
+      this.hitPlayer(Math.min(60, 16 + Math.log10(1 + npc.power) * 5)) // it overwhelms you
+    }
   }
 
   /** Beat an NPC → absorb its power (big power + score gain), it respawns weaker. */
@@ -625,9 +632,11 @@ export class BattleScene extends Phaser.Scene {
         if (this.boss.takeDamage(capped)) this.bossDefeat()
       }
     }
-    // Brawl with other NPCs whose rings overlap — winner absorbs the loser.
+    // Brawl with other NPCs whose rings overlap — the STRONGER one wins and
+    // absorbs the weaker (equal power = stalemate, neither is chipped).
     for (const other of this.npcs) {
       if (other === npc || !other.active) continue
+      if (npc.power < other.power) continue // only the stronger deals damage
       if (distance(npc.x, npc.y, other.x, other.y) > reach) continue
       other.hp -= dmg
       this.sparks.explode(2, (npc.x + other.x) / 2, (npc.y + other.y) / 2)
