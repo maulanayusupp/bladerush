@@ -112,9 +112,14 @@ export function gearOf(skinIndex: number): number {
 }
 
 export const SWORD = {
-  orbitRadius: 84, // distance of the ring from the hero
+  orbitRadius: 84, // distance of the innermost ring from the hero
   poolSize: 60, // must equal POWER_CURVE.maxSwordCount
   hitCooldownMs: 120, // per-enemy cooldown so a sweep doesn't drain HP each frame
+  // When there are lots of swords, spread them across concentric rings so you
+  // can still read individual blades instead of a solid "beyblade" disc.
+  ringGap: 30, // radius added per extra ring
+  bladeSpacing: 26, // target arc distance between blades on a ring (px)
+  minPerRing: 10,
 } as const
 
 /** Soft glow disc baked in BootScene; one tinted copy per unlocked layer. */
@@ -239,9 +244,9 @@ export const POWER_CURVE = {
   baseDamage: 6,
   damagePerPower: 0.6,
 
-  baseOrbitSpeed: 2.6, // rad/s with a single sword (a touch snappier)
-  orbitSpeedPerSword: 0.13, // spin accelerates as the ring grows
-  maxOrbitSpeed: 9, // rad/s cap
+  baseOrbitSpeed: 2.1, // rad/s with a single sword
+  orbitSpeedPerSword: 0.04, // gentle acceleration as the ring grows
+  maxOrbitSpeed: 4.2, // rad/s cap — slow enough to SEE the blades (not a blur)
 } as const
 
 /**

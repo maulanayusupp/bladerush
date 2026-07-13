@@ -1328,35 +1328,43 @@ export class BattleScene extends Phaser.Scene {
 
     this.updateAura(colors)
 
-    // Glowing energy band: a wide soft halo + a bright inner highlight, so the
-    // ring reads as a cohesive glowing disc rather than clashing confetti.
+    const px = this.player.x
+    const py = this.player.y
+
+    // Distribute blades across CONCENTRIC rings so a large arsenal reads as
+    // layered orbiting swords, not a solid blurred disc. Each ring holds a
+    // spacing-limited number of blades and gets a slight phase/speed offset.
+    let placed = 0
+    let ring = 0
+    while (placed < count) {
+      const rr = radius + ring * SWORD.ringGap
+      const capacity = Math.max(SWORD.minPerRing, Math.floor((TAU * rr) / SWORD.bladeSpacing))
+      const onRing = Math.min(capacity, count - placed)
+      // Alternate direction + phase per ring so blades don't line up as spokes.
+      const dir = ring % 2 === 0 ? 1 : -1
+      const phase = this.orbitAngle * dir * (1 - ring * 0.12) + ring * 0.5
+      for (let k = 0; k < onRing; k++) {
+        const sword = this.swordPool[placed] as Sword
+        const angle = phase + (k / onRing) * TAU
+        sword.place(px + Math.cos(angle) * rr, py + Math.sin(angle) * rr, angle + Math.PI / 2 + 0.5)
+        sword.setScale(baseScale + 0.06 * Math.sin(this.elapsedMs / 150 + placed * 0.6))
+        sword.setTint(fury ? 0xffffff : this.ringColorAt(colors, placed, count))
+        placed++
+      }
+      ring++
+    }
+    for (let i = placed; i < this.swordPool.length; i++) (this.swordPool[i] as Sword).deactivate()
+
+    // Subtle per-ring glow trail (thin, not a heavy disc) — hints motion without
+    // hiding the blades.
     this.ringBlur.clear()
     if (count > 0) {
       const top = colors.length ? (colors[colors.length - 1] as number) : 0xffffff
-      this.ringBlur.lineStyle(36, top, Math.min(0.5, orbitSpeed * 0.05))
-      this.ringBlur.strokeCircle(this.player.x, this.player.y, radius)
-      this.ringBlur.lineStyle(10, 0xffffff, Math.min(0.4, orbitSpeed * 0.03))
-      this.ringBlur.strokeCircle(this.player.x, this.player.y, radius)
-    }
-
-    for (let i = 0; i < this.swordPool.length; i++) {
-      const sword = this.swordPool[i] as Sword
-      if (i >= count) {
-        sword.deactivate()
-        continue
+      const a = Math.min(0.28, orbitSpeed * 0.03)
+      for (let rIdx = 0; rIdx < ring; rIdx++) {
+        this.ringBlur.lineStyle(6, top, a)
+        this.ringBlur.strokeCircle(px, py, radius + rIdx * SWORD.ringGap)
       }
-      const angle = this.orbitAngle + (i / count) * TAU
-      sword.place(
-        this.player.x + Math.cos(angle) * radius,
-        this.player.y + Math.sin(angle) * radius,
-        // Lean the blade off-radial so the ring reads as slashing, not rigid.
-        angle + Math.PI / 2 + 0.5,
-      )
-      // Subtle breathing so the ring feels alive rather than stiff.
-      sword.setScale(baseScale + 0.08 * Math.sin(this.elapsedMs / 130 + i * 0.6))
-      // Smooth color gradient AROUND the ring (blend between unlocked layers)
-      // so it reads as a flowing rainbow band, not random confetti.
-      sword.setTint(fury ? 0xffffff : this.ringColorAt(colors, i, count))
     }
   }
 
