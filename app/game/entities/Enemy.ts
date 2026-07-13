@@ -10,7 +10,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   lastHitAt = Number.NEGATIVE_INFINITY
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'enemyA')
+    super(scene, x, y, 'troop0')
   }
 
   spawn(x: number, y: number, config: EnemyConfig): void {

@@ -14,6 +14,97 @@ function rnd(max: number): number {
   return Math.random() * max
 }
 
+/** Lighten (f>1) or darken (f<1) a 0xRRGGBB color. */
+function shade(hex: number, f: number): number {
+  const r = Math.min(255, Math.round(((hex >> 16) & 255) * f))
+  const g = Math.min(255, Math.round(((hex >> 8) & 255) * f))
+  const b = Math.min(255, Math.round((hex & 255) * f))
+  return (r << 16) | (g << 8) | b
+}
+
+// Shared palettes used to procedurally generate 100 variations of each unit.
+const ARMORS = [
+  0x3a4a6a, 0x5a2a2a, 0x2a5a3a, 0x5a4a10, 0x3a2a5a, 0x20242e, 0x1a4a4a, 0x5a3a1a, 0x2a3a5a, 0x4a2a3a,
+  0x3a5a2a, 0x5a2a4a, 0x2a4a4a, 0x4a3a2a, 0x3a3a4a, 0x5a1a1a, 0x1a3a2a, 0x2a2a3a, 0x4a4a1a, 0x3a1a3a,
+]
+const TRIMS = [0xffd700, 0xc7ccd8, 0x00e0ff, 0xff5aa0, 0xff3b3b, 0x2ee67a, 0x9d5cff, 0xffffff, 0xff8a00, 0x5ad0ff]
+const EYES = [0x00e0ff, 0xff3b3b, 0xffd700, 0x8cff5a, 0xd400ff, 0xffffff, 0xff8a00, 0x5ad0ff]
+const HORN_STYLES = ['straight', 'wide', 'back', 'crown', 'antler', 'single', 'spikes', 'trident', 'ram', 'none']
+const WEAPONS = ['dagger', 'sword', 'axe', 'mace', 'spear']
+
+/** 100 gallant knight heroes; higher indices unlock more regalia (grandeur). */
+function genChampions(): ChampionSkin[] {
+  const out: ChampionSkin[] = []
+  for (let i = 0; i < 100; i++) {
+    let armor = ARMORS[i % ARMORS.length] as number
+    let trim = TRIMS[(i * 3) % TRIMS.length] as number
+    const eye = EYES[(i * 5) % EYES.length] as number
+    if (i >= 90) {
+      trim = 0xffd700 // top tier: golden regal
+      armor = i % 2 ? 0x4a3a08 : 0x241f28
+    }
+    const features: string[] = []
+    if (i >= 10) features.push('pauldrons')
+    if (i >= 30) features.push('horns')
+    if (i >= 50) features.push('crown')
+    if (i >= 70) features.push('wings')
+    if (i >= 85) features.push('halo')
+    out.push({
+      robe: armor,
+      robeHi: shade(armor, 1.5),
+      cape: shade(trim, 0.55),
+      hood: shade(armor, 0.6),
+      trim,
+      skin: 0x0c0a12,
+      eye,
+      features,
+      wing: shade(trim, 1.05),
+    })
+  }
+  return out
+}
+
+/** 100 rival warlords. */
+function genWarlords(): WarlordSkin[] {
+  const out: WarlordSkin[] = []
+  for (let i = 0; i < 100; i++) {
+    const armor = shade(ARMORS[i % ARMORS.length] as number, 0.7)
+    const accent = TRIMS[(i * 2) % TRIMS.length] as number
+    out.push({
+      armor,
+      armorHi: shade(armor, 1.5),
+      cape: shade(accent, 0.5),
+      helm: shade(armor, 0.6),
+      horn: HORN_STYLES[i % HORN_STYLES.length] as string,
+      hornColor: i % 3 ? shade(armor, 0.7) : accent,
+      eye: EYES[(i * 7) % EYES.length] as number,
+      accent,
+    })
+  }
+  return out
+}
+
+/** 100 enemy troops in 5 menace bands of 20 (easy→legend). */
+function genTroops(): TrooperSkin[] {
+  const bandSkin = [0x8ccf5a, 0x5faa4a, 0x4a8f3f, 0x3f7f3a, 0x4a7f3a]
+  const out: TrooperSkin[] = []
+  for (let i = 0; i < 100; i++) {
+    const band = Math.floor(i / 20)
+    const armor = ARMORS[i % ARMORS.length] as number
+    out.push({
+      skin: bandSkin[band] as number,
+      armor,
+      armor2: shade(armor, 1.5),
+      helm: band >= 2 ? shade(armor, 0.6) : 0,
+      horns: band >= 4,
+      tuskBig: band >= 2,
+      eye: band >= 4 ? 0xffd700 : band >= 3 ? 0xff4d4d : 0x14200f,
+      weapon: WEAPONS[i % WEAPONS.length] as string,
+    })
+  }
+  return out
+}
+
 interface WarlordSkin {
   armor: number
   armorHi: number
@@ -26,28 +117,7 @@ interface WarlordSkin {
 }
 
 /** 10 distinct rival warlord looks (palette + horn style). */
-const RIVAL_SKINS: WarlordSkin[] = [
-  { armor: 0x2a2233, armorHi: 0x3a2f47, cape: 0x6e1616, helm: 0x14101c, horn: 'straight', hornColor: 0x14101c, eye: 0xff3b3b, accent: 0xff3b3b },
-  { armor: 0x1e2a1c, armorHi: 0x2f4a2b, cape: 0x14401a, helm: 0x0e160c, horn: 'back', hornColor: 0x0e160c, eye: 0x8cff5a, accent: 0x8cff5a },
-  { armor: 0x1c2740, armorHi: 0x2f4a6a, cape: 0x123a5a, helm: 0x0c1220, horn: 'crown', hornColor: 0x9fd8ff, eye: 0x5ad0ff, accent: 0x5ad0ff },
-  { armor: 0x241a14, armorHi: 0x3a2a1c, cape: 0x5a2408, helm: 0x140d08, horn: 'wide', hornColor: 0x140d08, eye: 0xff8a00, accent: 0xff8a00 },
-  { armor: 0x241033, armorHi: 0x3a1a52, cape: 0x3a0b5e, helm: 0x120620, horn: 'back', hornColor: 0x120620, eye: 0xd400ff, accent: 0xd400ff },
-  { armor: 0xcfc7b0, armorHi: 0xe8e2d0, cape: 0x7a6f55, helm: 0xa89f86, horn: 'antler', hornColor: 0xe8e2d0, eye: 0x8fd0ff, accent: 0xffd700 },
-  { armor: 0x14141a, armorHi: 0x24242e, cape: 0x0a0a0e, helm: 0x08080c, horn: 'none', hornColor: 0x08080c, eye: 0xffffff, accent: 0x9aa0aa },
-  { armor: 0x2a2233, armorHi: 0x3a2f47, cape: 0x5a4410, helm: 0x14101c, horn: 'crown', hornColor: 0xffd700, eye: 0xffd700, accent: 0xffd700 },
-  { armor: 0x14332f, armorHi: 0x1f5a52, cape: 0x0e4a42, helm: 0x0a201c, horn: 'straight', hornColor: 0x0a201c, eye: 0x2ee6c0, accent: 0x2ee6c0 },
-  { armor: 0x2a0e0e, armorHi: 0x4a1414, cape: 0x7a0b0b, helm: 0x180606, horn: 'wide', hornColor: 0x180606, eye: 0xff1a1a, accent: 0xff1a1a },
-  { armor: 0x1a2410, armorHi: 0x33471a, cape: 0x2a5a0e, helm: 0x0e1408, horn: 'spikes', hornColor: 0xaaff00, eye: 0xaaff00, accent: 0xaaff00 },
-  { armor: 0x24303a, armorHi: 0x3a566a, cape: 0x2a4a5a, helm: 0x141c22, horn: 'ram', hornColor: 0xdff4ff, eye: 0xbfefff, accent: 0xdff4ff },
-  { armor: 0x2a1408, armorHi: 0x4a2410, cape: 0x6e1e05, helm: 0x160a04, horn: 'single', hornColor: 0xff4500, eye: 0xffb300, accent: 0xff6a00 },
-  { armor: 0x0e2a2a, armorHi: 0x1a4a4a, cape: 0x0a3a3a, helm: 0x061818, horn: 'trident', hornColor: 0x00e0d0, eye: 0x00e0d0, accent: 0x00e0d0 },
-  { armor: 0x241033, armorHi: 0x3a1a52, cape: 0x2a0b4e, helm: 0x120620, horn: 'crown', hornColor: 0xffd700, eye: 0xffe14d, accent: 0xffd700 },
-  { armor: 0x1a0a0a, armorHi: 0x3a1414, cape: 0x2a0606, helm: 0x0e0404, horn: 'back', hornColor: 0x0e0404, eye: 0xff2d2d, accent: 0xff2d2d },
-  { armor: 0x0e2a1a, armorHi: 0x1a4a30, cape: 0x0a3a24, helm: 0x061810, horn: 'straight', hornColor: 0x2ee67a, eye: 0x2ee67a, accent: 0x2ee67a },
-  { armor: 0x14141a, armorHi: 0x2a2a34, cape: 0x3a2e08, helm: 0x08080c, horn: 'single', hornColor: 0xffd700, eye: 0xffd700, accent: 0xffd700 },
-  { armor: 0x14203a, armorHi: 0x24406a, cape: 0x0e2a5a, helm: 0x0a1120, horn: 'spikes', hornColor: 0x6ab0ff, eye: 0x9fd0ff, accent: 0x6ab0ff },
-  { armor: 0x2a1424, armorHi: 0x4a2440, cape: 0x6e0b4a, helm: 0x160616, horn: 'wide', hornColor: 0xff5aa0, eye: 0xff5aa0, accent: 0xff5aa0 },
-]
+const RIVAL_SKINS: WarlordSkin[] = genWarlords()
 
 /** 10 distinct player sword silhouettes (tinted by tier in-game). */
 const SWORD_SHAPES = [
@@ -66,13 +136,7 @@ interface TrooperSkin {
 }
 
 /** Humanoid enemy troops (orcs/soldiers) by tier — drawn front-facing. */
-const TROOPS = {
-  easy: { skin: 0x8ccf5a, armor: 0x6a5a3a, armor2: 0x8a7a4a, helm: 0, horns: false, tuskBig: false, eye: 0x1c2a12, weapon: 'dagger' },
-  med: { skin: 0x5faa4a, armor: 0x565b66, armor2: 0x7a808c, helm: 0, horns: false, tuskBig: false, eye: 0x14200f, weapon: 'sword' },
-  hard: { skin: 0x4a8f3f, armor: 0x8a6a3a, armor2: 0xb08a4a, helm: 0x3a2f22, horns: false, tuskBig: true, eye: 0x14200f, weapon: 'axe' },
-  elite: { skin: 0x3f7f3a, armor: 0x2a2f3a, armor2: 0x4a5060, helm: 0x1a1f28, horns: false, tuskBig: true, eye: 0xff4d4d, weapon: 'mace' },
-  legend: { skin: 0x4a7f3a, armor: 0x241f28, armor2: 0x4a3f48, helm: 0x14101a, horns: true, tuskBig: true, eye: 0xffd700, weapon: 'spear' },
-} satisfies Record<string, TrooperSkin>
+const TROOP_SKINS: TrooperSkin[] = genTroops()
 
 interface ChampionSkin {
   robe: number
@@ -87,28 +151,7 @@ interface ChampionSkin {
 }
 
 /** 10 hero looks that escalate in grandeur (unlocked every 1000 power). */
-const CHAMPION_SKINS: ChampionSkin[] = [
-  { robe: 0x6b6f7a, robeHi: 0x8a8f9a, cape: 0x4a4e57, hood: 0x55585f, trim: 0x9aa0aa, skin: 0xf2c9a0, eye: 0x2a2a33, features: [] },
-  { robe: 0x3a6ea5, robeHi: 0x5a94cf, cape: 0x2a527a, hood: 0x274b6a, trim: 0xcfe0f0, skin: 0xf2c9a0, eye: 0x1a2a40, features: [] },
-  { robe: 0x8a8f9a, robeHi: 0xb8bcc6, cape: 0x4a4e57, hood: 0x6f7787, trim: 0xffd700, skin: 0xf2c9a0, eye: 0x1a1a22, features: ['pauldrons'] },
-  { robe: 0x7c4dff, robeHi: 0x9d74ff, cape: 0x4a24b0, hood: 0x4a24b0, trim: 0xffb020, skin: 0xf2c9a0, eye: 0xd0b8ff, features: [] },
-  { robe: 0x241033, robeHi: 0x3a1a52, cape: 0x3a0b5e, hood: 0x120620, trim: 0xd400ff, skin: 0xe8c9a0, eye: 0xd400ff, features: ['horns'] },
-  { robe: 0xe8e2d0, robeHi: 0xffffff, cape: 0xb0a888, hood: 0xcfc7b0, trim: 0xffd700, skin: 0xf2c9a0, eye: 0x6ab0ff, features: ['crown'] },
-  { robe: 0x2a1450, robeHi: 0x4a2480, cape: 0x1a0b3a, hood: 0x1a0b3a, trim: 0xff5aa0, skin: 0xe8c9a0, eye: 0xff5aa0, features: ['halo'] },
-  { robe: 0x2a2233, robeHi: 0x3a2f47, cape: 0x5a4410, hood: 0x14101c, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xffd700, features: ['crown', 'pauldrons'] },
-  { robe: 0xeef2ff, robeHi: 0xffffff, cape: 0xcfe0f0, hood: 0xdfe8f5, trim: 0xffd700, skin: 0xf2c9a0, eye: 0x8fd0ff, features: ['wings', 'halo'], wing: 0xeef2ff },
-  { robe: 0x3a2a08, robeHi: 0x6a4e10, cape: 0x7a5a10, hood: 0x241a06, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xffe14d, features: ['wings', 'crown', 'halo'], wing: 0xffd700 },
-  { robe: 0x1a3a4a, robeHi: 0x2a6a8a, cape: 0x0e2a3a, hood: 0x0a1a24, trim: 0x00e0ff, skin: 0xf2c9a0, eye: 0x00e0ff, features: ['pauldrons', 'crown'] },
-  { robe: 0x3a1408, robeHi: 0x6a2810, cape: 0x7a2408, hood: 0x1a0a04, trim: 0xff6a00, skin: 0xe8c9a0, eye: 0xff8a00, features: ['horns', 'pauldrons'] },
-  { robe: 0xcfe4ff, robeHi: 0xffffff, cape: 0x8ab0d0, hood: 0xa8c8e8, trim: 0x5ad0ff, skin: 0xf2c9a0, eye: 0x9fe0ff, features: ['crown', 'wings'], wing: 0xdff4ff },
-  { robe: 0x120a1a, robeHi: 0x24142e, cape: 0x0a0610, hood: 0x08040c, trim: 0x9d5cff, skin: 0xd8c0a0, eye: 0xb794ff, features: ['horns', 'halo'] },
-  { robe: 0xfff0c0, robeHi: 0xffffff, cape: 0xffd77a, hood: 0xffe6a0, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xfff2a8, features: ['wings', 'halo'], wing: 0xfff0c0 },
-  { robe: 0x2a0a0a, robeHi: 0x5a1414, cape: 0x7a0b0b, hood: 0x180404, trim: 0xff2d2d, skin: 0xe8b090, eye: 0xff2d2d, features: ['horns', 'crown', 'pauldrons'] },
-  { robe: 0x0e3a24, robeHi: 0x1a6a44, cape: 0x0a4a2a, hood: 0x061a10, trim: 0x2ee67a, skin: 0xf2c9a0, eye: 0x8cff5a, features: ['crown', 'wings'], wing: 0xbfffdf },
-  { robe: 0x1a0f3a, robeHi: 0x2a1a6a, cape: 0x120a2a, hood: 0x0a0620, trim: 0xff5aa0, skin: 0xe0c0a0, eye: 0xff5aa0, features: ['halo', 'wings'], wing: 0xffd0e8 },
-  { robe: 0x2a2a34, robeHi: 0x4a4a5a, cape: 0x1a1a22, hood: 0x14141a, trim: 0xffd700, skin: 0xf2c9a0, eye: 0xffd700, features: ['horns', 'crown', 'pauldrons', 'halo'] },
-  { robe: 0x4a3a08, robeHi: 0x8a6a10, cape: 0xffd700, hood: 0x2a2006, trim: 0xffe14d, skin: 0xf2c9a0, eye: 0xffffff, features: ['wings', 'crown', 'halo', 'pauldrons'], wing: 0xffe14d },
-]
+const CHAMPION_SKINS: ChampionSkin[] = genChampions()
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -118,11 +161,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     CHAMPION_SKINS.forEach((skin, i) => this.bake(`hero${i}`, 64, 64, (g) => this.drawChampion(g, skin)))
     RIVAL_SKINS.forEach((skin, i) => this.bake(`rivalHero${i}`, 56, 64, (g) => this.drawWarlord(g, skin)))
-    this.bake('enemyEasy', 48, 48, (g) => this.drawTrooper(g, 48, TROOPS.easy))
-    this.bake('enemyMed', 56, 56, (g) => this.drawTrooper(g, 56, TROOPS.med))
-    this.bake('enemyHard', 56, 56, (g) => this.drawTrooper(g, 56, TROOPS.hard))
-    this.bake('enemyElite', 60, 60, (g) => this.drawTrooper(g, 60, TROOPS.elite))
-    this.bake('enemyLegend', 66, 66, (g) => this.drawTrooper(g, 66, TROOPS.legend))
+    TROOP_SKINS.forEach((skin, i) => this.bake(`troop${i}`, 60, 60, (g) => this.drawTrooper(g, 60, skin)))
     this.bake('boss', 76, 76, (g) => this.drawBoss(g))
     this.bake('heal', 30, 30, (g) => this.drawHeal(g))
     this.bake('chest', 32, 30, (g) => this.drawChest(g))
@@ -707,51 +746,78 @@ export class BootScene extends Phaser.Scene {
 
   // ---- Hero (10 evolving champion looks, box 64x64, centered x=32) ---------
 
+  /** A gallant armored knight (helmet + crest + broad pauldrons + cape). */
   private drawChampion(g: Phaser.GameObjects.Graphics, s: ChampionSkin): void {
     const has = (f: string) => s.features.includes(f)
+    const dark = 0x0c0a12
 
+    // Wings (behind everything)
     if (has('wings')) {
       g.fillStyle(s.wing ?? 0xeef2ff, 1)
-      g.fillPoints(this.pts([18, 30, 2, 22, 6, 42, 16, 46]), true)
-      g.fillPoints(this.pts([46, 30, 62, 22, 58, 42, 48, 46]), true)
+      g.fillPoints(this.pts([16, 30, 0, 20, 4, 44, 15, 48]), true)
+      g.fillPoints(this.pts([48, 30, 64, 20, 60, 44, 49, 48]), true)
+      g.fillStyle(shade(s.wing ?? 0xeef2ff, 0.8), 1)
+      g.fillPoints(this.pts([16, 34, 4, 28, 6, 44, 15, 47]), true)
+      g.fillPoints(this.pts([48, 34, 60, 28, 58, 44, 49, 47]), true)
     }
+    // Flowing cape
     g.fillStyle(s.cape, 1)
-    g.fillPoints(this.pts([20, 26, 44, 26, 50, 60, 14, 60]), true)
+    g.fillPoints(this.pts([16, 26, 48, 26, 54, 62, 10, 62]), true)
+    // Legs
+    g.fillStyle(shade(s.robe, 0.75), 1)
+    g.fillRect(23, 50, 7, 12)
+    g.fillRect(34, 50, 7, 12)
+    g.fillStyle(dark, 1)
+    g.fillRect(23, 58, 7, 4)
+    g.fillRect(34, 58, 7, 4)
+    // Broad chestplate
     g.fillStyle(s.robe, 1)
-    g.fillPoints(this.pts([22, 32, 42, 32, 48, 62, 16, 62]), true)
-    g.fillStyle(s.robeHi, 0.9)
-    g.fillPoints(this.pts([29, 34, 35, 34, 38, 62, 26, 62]), true)
-    g.fillStyle(s.trim, 1) // belt
-    g.fillRect(19, 48, 26, 4)
-    const pad = has('pauldrons') ? 7 : 5 // shoulders
+    g.fillRoundedRect(16, 28, 32, 25, 5)
+    g.fillStyle(s.robeHi, 0.95)
+    g.fillPoints(this.pts([32, 30, 42, 34, 40, 50, 24, 50, 22, 34]), true) // V-plate
+    g.fillStyle(s.trim, 1) // belt + emblem
+    g.fillRect(17, 48, 30, 4)
+    g.fillCircle(32, 40, 3)
+    // Big angular pauldrons
+    const pad = has('pauldrons') ? 10 : 8
     g.fillStyle(s.trim, 1)
-    g.fillCircle(20, 33, pad)
-    g.fillCircle(44, 33, pad)
-    g.fillStyle(s.hood, 1) // hood back
-    g.fillEllipse(32, 20, 32, 28)
+    g.fillPoints(this.pts([8, 34, 12, 26, 20, 30, 18, 38]), true)
+    g.fillPoints(this.pts([56, 34, 52, 26, 44, 30, 46, 38]), true)
+    g.fillStyle(s.robeHi, 1)
+    g.fillCircle(15, 31, pad - 4)
+    g.fillCircle(49, 31, pad - 4)
+    // Gauntlet fists
+    g.fillStyle(s.robeHi, 1)
+    g.fillCircle(12, 40, 3.5)
+    g.fillCircle(52, 40, 3.5)
+    // Helmet
+    g.fillStyle(s.hood, 1)
+    g.fillEllipse(32, 18, 28, 26)
+    g.fillStyle(s.robeHi, 1) // brow band
+    g.fillRect(19, 15, 26, 3)
+    g.fillStyle(dark, 1) // visor slit
+    g.fillRect(20, 18, 24, 6)
+    g.fillRect(31, 18, 2, 9) // nasal guard
+    g.fillStyle(s.eye, 1) // glowing eyes in the slit
+    g.fillRect(23, 19, 4, 3)
+    g.fillRect(37, 19, 4, 3)
     if (has('horns')) {
       g.fillStyle(s.trim, 1)
-      g.fillTriangle(18, 16, 11, 1, 25, 14)
-      g.fillTriangle(46, 16, 53, 1, 39, 14)
+      g.fillTriangle(16, 14, 8, 2, 22, 12)
+      g.fillTriangle(48, 14, 56, 2, 42, 12)
     }
-    g.fillStyle(s.skin, 1) // face
-    g.fillEllipse(32, 23, 20, 20)
-    g.fillStyle(s.hood, 1) // hood sides
-    g.fillEllipse(19, 19, 9, 22)
-    g.fillEllipse(45, 19, 9, 22)
-    g.fillStyle(s.eye, 1) // eyes
-    g.fillCircle(27, 24, 2)
-    g.fillCircle(37, 24, 2)
+    // Crest / plume — always, for gallantry
+    g.fillStyle(s.trim, 1)
+    g.fillPoints(this.pts([30, 8, 34, 8, 34, 0, 30, 2]), true)
+    g.fillPoints(this.pts([31, 6, 33, 6, 38, 4, 36, 10]), true)
     if (has('crown')) {
       g.fillStyle(s.trim, 1)
-      for (const x of [24, 28, 32, 36, 40]) g.fillTriangle(x - 2.5, 9, x, 2, x + 2.5, 9)
+      for (const x of [22, 27, 32, 37, 42]) g.fillTriangle(x - 2.5, 8, x, 1, x + 2.5, 8)
     }
     if (has('halo')) {
       g.lineStyle(2, s.trim, 1)
-      g.strokeEllipse(32, 7, 24, 8)
+      g.strokeEllipse(32, 5, 26, 8)
     }
-    g.fillStyle(s.trim, 1) // chest emblem
-    g.fillCircle(32, 42, 3)
   }
 
   private drawSword(g: Phaser.GameObjects.Graphics): void {

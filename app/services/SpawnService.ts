@@ -21,32 +21,33 @@ export class SpawnService {
     return SPAWN.gateIntervalMs
   }
 
-  /** Pick a tier; the "active" tier advances ~every 40s, others stay possible. */
-  private pickTier(elapsedSec: number): (typeof ENEMY_TIERS)[number] {
+  /** Pick a tier index; the "active" tier advances ~every 40s, others stay possible. */
+  private pickTierIndex(elapsedSec: number): number {
     const weights = ENEMY_TIERS.map((_, i) => Math.max(0.04, 1 - Math.abs(elapsedSec / 40 - i) * 0.7))
     const total = weights.reduce((sum, w) => sum + w, 0)
     let roll = Math.random() * total
     for (let i = 0; i < ENEMY_TIERS.length; i++) {
       roll -= weights[i] as number
-      if (roll <= 0) return ENEMY_TIERS[i] as (typeof ENEMY_TIERS)[number]
+      if (roll <= 0) return i
     }
-    return ENEMY_TIERS[0] as (typeof ENEMY_TIERS)[number]
+    return 0
   }
 
   /**
-   * Build an enemy of a time-weighted tier. HP and sword reward scale with the
-   * player's current power so encounters stay meaningful (and rewarding) as the
-   * hero levels up.
+   * Build an enemy of a time-weighted tier. Its texture is a random troop from
+   * the tier's 20-wide band (0..99). HP and reward scale with player power.
    */
   createEnemy(elapsedSec: number, playerPower: number): EnemyConfig {
-    const tier = this.pickTier(elapsedSec)
+    const idx = this.pickTierIndex(elapsedSec)
+    const tier = ENEMY_TIERS[idx] as (typeof ENEMY_TIERS)[number]
     const hpScale = 1 + playerPower * SPAWN.enemyHpPerPower
     const rewardScale = 1 + playerPower * SPAWN.enemyRewardPerPower
+    const band = idx * 20
     return {
       value: Math.max(1, Math.round(randomInt(tier.value[0], tier.value[1]) * rewardScale)),
       hp: Math.round(tier.hp * hpScale),
       speed: randomRange(tier.speed[0], tier.speed[1]),
-      textureKey: tier.texture,
+      textureKey: `troop${band + randomInt(0, 19)}`,
       scale: tier.scale,
       tier: tier.id,
     }

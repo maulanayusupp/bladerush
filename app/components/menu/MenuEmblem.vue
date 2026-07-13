@@ -8,8 +8,8 @@ const el = ref<HTMLCanvasElement | null>(null)
 const TAU = Math.PI * 2
 const RING = ['#b794ff', '#7c4dff', '#ffd24a']
 const HERO = {
-  robe: '#4a3a08', robeHi: '#8a6a10', cape: '#ffd700', hood: '#2a2006',
-  trim: '#ffe14d', skin: '#f2c9a0', eye: '#ffffff', wing: '#ffe14d',
+  robe: '#3a3020', robeHi: '#6a5a38', cape: '#7a1616', helm: '#2a2418',
+  trim: '#ffd700', dark: '#0c0a12', eye: '#ffe14d', wing: '#ffe14d',
 }
 
 let ctx: CanvasRenderingContext2D | null = null
@@ -38,18 +38,21 @@ function drawSword(g: ReturnType<typeof d>, blade: string): void {
 }
 
 function drawChampion(g: ReturnType<typeof d>): void {
-  g.fill(HERO.wing); g.poly([[18, 30], [2, 22], [6, 42], [16, 46]]); g.poly([[46, 30], [62, 22], [58, 42], [48, 46]])
-  g.fill(HERO.cape); g.poly([[20, 26], [44, 26], [50, 60], [14, 60]])
-  g.fill(HERO.robe); g.poly([[22, 32], [42, 32], [48, 62], [16, 62]])
-  g.fill(HERO.robeHi); g.poly([[29, 34], [35, 34], [38, 62], [26, 62]])
-  g.fill(HERO.trim); g.rect(19, 48, 26, 4); g.circ(20, 33, 7); g.circ(44, 33, 7)
-  g.fill(HERO.hood); g.ell(32, 20, 32, 28)
-  g.fill(HERO.skin); g.ell(32, 23, 20, 20)
-  g.fill(HERO.hood); g.ell(19, 19, 9, 22); g.ell(45, 19, 9, 22)
-  g.fill(HERO.eye); g.circ(27, 24, 2); g.circ(37, 24, 2)
-  g.fill(HERO.trim); for (const x of [24, 28, 32, 36, 40]) g.tri(x - 2.5, 9, x, 2, x + 2.5, 9)
-  g.ring(32, 7, 24, 8, HERO.trim, 2)
-  g.fill(HERO.trim); g.circ(32, 42, 3)
+  // Gallant golden knight (matches the in-game hero).
+  g.fill(HERO.wing); g.poly([[16, 30], [0, 20], [4, 44], [15, 48]]); g.poly([[48, 30], [64, 20], [60, 44], [49, 48]])
+  g.fill(HERO.cape); g.poly([[16, 26], [48, 26], [54, 62], [10, 62]])
+  g.fill(HERO.robe); g.rect(16, 28, 32, 25)
+  g.fill(HERO.robeHi); g.poly([[32, 30], [42, 34], [40, 50], [24, 50], [22, 34]])
+  g.fill(HERO.trim); g.rect(17, 48, 30, 4); g.circ(32, 40, 3)
+  g.fill(HERO.trim); g.poly([[8, 34], [12, 26], [20, 30], [18, 38]]); g.poly([[56, 34], [52, 26], [44, 30], [46, 38]])
+  g.fill(HERO.robeHi); g.circ(15, 31, 5); g.circ(49, 31, 5)
+  g.fill(HERO.helm); g.ell(32, 18, 28, 26)
+  g.fill(HERO.robeHi); g.rect(19, 15, 26, 3)
+  g.fill(HERO.dark); g.rect(20, 18, 24, 6); g.rect(31, 18, 2, 9)
+  g.fill(HERO.eye); g.rect(23, 19, 4, 3); g.rect(37, 19, 4, 3)
+  g.fill(HERO.trim); g.poly([[30, 8], [34, 8], [34, 0], [30, 2]]); g.poly([[31, 6], [33, 6], [38, 4], [36, 10]])
+  g.fill(HERO.trim); for (const x of [22, 27, 32, 37, 42]) g.tri(x - 2.5, 8, x, 1, x + 2.5, 8)
+  g.ring(32, 5, 26, 8, HERO.trim, 2)
 }
 
 function resize(): void {

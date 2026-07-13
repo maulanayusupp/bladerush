@@ -191,7 +191,7 @@ export class BattleScene extends Phaser.Scene {
     this.player = new Player(this, this.worldW / 2, this.worldH / 2)
     if (metaService.bonusMaxHp > 0) this.player.addMaxHp(metaService.bonusMaxHp)
 
-    this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'enemyA', maxSize: ENEMY.poolSize })
+    this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'troop0', maxSize: ENEMY.poolSize })
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
     this.swordPool = Array.from({ length: SWORD.poolSize }, () => new Sword(this, 0, 0))
     // Pick one of the 10 blade skins for this run.

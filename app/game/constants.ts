@@ -35,7 +35,7 @@ export const PLAYER = {
 
 /** The hero visually evolves every 1000 power through 20 champion looks. */
 export const HERO = {
-  skins: 20,
+  skins: 100,
   powerPerSkin: 1000,
 } as const
 
@@ -162,7 +162,7 @@ export const POWER_CURVE = {
  */
 export const RIVAL = {
   poolSize: 4,
-  skins: 20, // number of distinct warlord textures (rivalHero0..19)
+  skins: 100, // number of distinct warlord textures (rivalHero0..99)
   minIntervalMs: 8500,
   maxIntervalMs: 15000,
   // Rivals appear more often as you get stronger: interval *= factor.
@@ -172,8 +172,8 @@ export const RIVAL = {
   strongChance: 0.35,
   speed: 55, // homing approach speed (px/s)
   clashDist: 118, // center distance at which the two rings lock and grind
-  clashTickMs: 92, // time between clash exchanges
-  clashTicksTarget: 26, // ~ how many exchanges a duel takes (sets the step size)
+  clashTickMs: 95, // time between clash exchanges
+  clashTicksTarget: 42, // ~ how many exchanges a duel takes (sets the step size)
   loseDamage: 45,
   scoreMultiplier: 3,
 } as const
@@ -193,15 +193,14 @@ export const BOSS = {
   hitTickMs: 100,
   // HP is derived from the player's current damage output so the fight always
   // lasts about this long — and grows tankier over the run.
-  targetSeconds: 14,
-  secondsPerMin: 3,
-  minHp: 2500,
+  targetSeconds: 18,
+  secondsPerMin: 4,
+  minHp: 4000,
   // Sword ticks help sub-linearly (a bigger ring melts it faster, but not 60×).
   swordCountFactor: 0.12,
   // Cap a single tick so power spikes (×N gates) can't one-shot the boss.
-  // Lower = the fight can never end faster than ~1/frac ticks (≈ that many
-  // hundred ms). 0.02 → min ~50 ticks ≈ 5s even at absurd power.
-  maxHitFraction: 0.02,
+  // 0.012 → min ~83 ticks ≈ 8s even at absurd power.
+  maxHitFraction: 0.012,
   enrageAt: 0.35, // below this HP fraction the boss enrages
   summonMs: 4200,
   summonCount: 5,
