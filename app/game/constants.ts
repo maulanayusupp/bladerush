@@ -166,6 +166,30 @@ export const ENEMY = {
 } as const
 
 /**
+ * AI survivors — autonomous heroes that roam the world like the player: chase &
+ * shred enemies with their own sword ring, grab gates/chests/hearts, help fight
+ * the boss, grow in power, die and respawn. Purely cosmetic to the player's
+ * economy (they don't grant the player rewards) but they liven the battlefield.
+ */
+export const NPC = {
+  count: 10,
+  baseHp: 90,
+  speed: 150,
+  ringRadius: 74,
+  blades: 8,
+  hitTickMs: 160,
+  damageBase: 10,
+  damagePerPower: 0.6,
+  contactDamage: 10,
+  respawnMs: 5000,
+  seekRange: 620, // how far they look for enemies/pickups
+  colors: [
+    0x5ad0ff, 0xff5a5a, 0x6bff9a, 0xffd24a, 0xd48aff,
+    0xff8a3a, 0x00e0d0, 0xff5aa0, 0x9d5cff, 0xa0e060,
+  ],
+} as const
+
+/**
  * Elite affixes: some enemies spawn "elite" with a modifier + a telltale tint.
  * - swift: fast & small; - brute: tanky, big, high reward; - shielded: halves
  *   incoming damage; - volatile: detonates on death, chaining into nearby foes.

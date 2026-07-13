@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -19,6 +19,7 @@ import { Boss } from '../entities/Boss'
 import { Enemy } from '../entities/Enemy'
 import { Gate } from '../entities/Gate'
 import { Heal } from '../entities/Heal'
+import { NpcHero } from '../entities/NpcHero'
 import { Player } from '../entities/Player'
 import { Rival } from '../entities/Rival'
 import { Sword } from '../entities/Sword'
@@ -110,6 +111,7 @@ export class BattleScene extends Phaser.Scene {
   private bossFanAcc = 0
   private bossMeteorAcc = 0
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
+  private npcs: NpcHero[] = []
   private keys?: Record<string, Phaser.Input.Keyboard.Key>
   private paused = false
   // Floating virtual joystick (touch/drag): origin set on press, vector from drag.
@@ -323,6 +325,13 @@ export class BattleScene extends Phaser.Scene {
       vx: 0,
       vy: 0,
     }))
+    // AI survivors roaming the world.
+    this.npcs = Array.from({ length: NPC.count }, () => new NpcHero(this))
+    this.npcs.forEach((npc, i) => {
+      const x = randomRange(200, this.worldW - 200)
+      const y = randomRange(200, this.worldH - 200)
+      npc.spawn(x, y, 10 + i * 4, NPC.colors[i % NPC.colors.length] as number)
+    })
 
     // Pooled floating reward popups shown on kills.
     this.popupPool = Array.from({ length: 24 }, () =>
@@ -468,7 +477,191 @@ export class BattleScene extends Phaser.Scene {
     this.updateSwords(deltaMs)
     this.checkEvolve()
     this.updateHeroAura()
+    this.updateNpcs(deltaMs, elapsedSec)
     this.drawMinimap()
+  }
+
+  // ---- AI survivors -------------------------------------------------------
+
+  private updateNpcs(deltaMs: number, elapsedSec: number): void {
+    for (const npc of this.npcs) {
+      if (!npc.active) {
+        if (npc.respawnAt && this.elapsedMs >= npc.respawnAt) {
+          const { x, y } = this.randomEdgePoint()
+          npc.spawn(x, y, Math.max(10, Math.round(10 + elapsedSec * 3)), npc.ringColor)
+        }
+        continue
+      }
+      // Decide where to go, then move toward it.
+      const goal = this.npcPickTarget(npc)
+      const ang = angleBetween(npc.x, npc.y, goal.x, goal.y)
+      const step = NPC.speed * (deltaMs / 1000)
+      if (distance(npc.x, npc.y, goal.x, goal.y) > step) {
+        npc.x = clamp(npc.x + Math.cos(ang) * step, 0, this.worldW)
+        npc.y = clamp(npc.y + Math.sin(ang) * step, 0, this.worldH)
+      }
+      npc.spin(deltaMs)
+      npc.hitAcc += deltaMs
+      if (npc.hitAcc >= NPC.hitTickMs) {
+        npc.hitAcc -= NPC.hitTickMs
+        this.npcCombat(npc)
+      }
+      this.npcPickups(npc)
+      this.npcDuel(npc, deltaMs)
+    }
+  }
+
+  /** When an NPC and the hero's rings meet they clash: your ring shreds it (and
+   *  you ABSORB its power on the kill), while it strikes back at you. */
+  private npcDuel(npc: NpcHero, deltaMs: number): void {
+    if (distance(npc.x, npc.y, this.player.x, this.player.y) >= SWORD.orbitRadius + 30) {
+      npc.duelAcc = 0
+      return
+    }
+    npc.duelAcc += deltaMs
+    if (npc.duelAcc < BOSS.hitTickMs) return
+    npc.duelAcc -= BOSS.hitTickMs
+    npc.hp -= this.bossTickDamage() // your ring output
+    this.hitPlayer(Math.min(45, 10 + Math.log10(1 + npc.power) * 4)) // it strikes back (i-frame gated)
+    const mx = (npc.x + this.player.x) / 2
+    const my = (npc.y + this.player.y) / 2
+    this.sparks.explode(5, mx, my)
+    audioService.clash()
+    if (npc.hp <= 0) this.absorbNpc(npc)
+  }
+
+  /** Beat an NPC → absorb its power (big power + score gain), it respawns weaker. */
+  private absorbNpc(npc: NpcHero): void {
+    const gained = Math.max(1, Math.round(npc.power))
+    this.power.addEnemyValue(gained)
+    this.emitPower()
+    this.scorer.add(Math.round(gained * RIVAL.scoreMultiplier))
+    this.emitScore()
+    this.spawnPopup(npc.x, npc.y, `+${formatCompact(gained)}`)
+    this.playClashFx(npc.x, npc.y, 0x8ce99a)
+    this.cameras.main.flash(200, 120, 255, 150)
+    audioService.win()
+    this.npcDie(npc)
+  }
+
+  /** Choose a goal: boss > nearby gate > chest > heal(if hurt) > enemy > wander. */
+  private npcPickTarget(npc: NpcHero): { x: number; y: number } {
+    if (this.bossActive && this.boss.active && distance(npc.x, npc.y, this.boss.x, this.boss.y) < 900) {
+      return { x: this.boss.x, y: this.boss.y }
+    }
+    const gate = this.nearestActive(npc, this.gatePool, (g) => g.active && !g.consumed)
+    if (gate) return { x: gate.x, y: gate.y }
+    const chest = this.nearestActive(npc, this.chestPool, (c) => c.active)
+    if (chest) return { x: chest.x, y: chest.y }
+    if (npc.hp < npc.maxHp * 0.55) {
+      const heal = this.nearestActive(npc, this.healPool, (h) => h.active && !h.consumed)
+      if (heal) return { x: heal.x, y: heal.y }
+    }
+    const enemy = this.nearestEnemy(npc)
+    if (enemy) return { x: enemy.x, y: enemy.y }
+    // Wander: pick a new roaming point occasionally.
+    if (this.elapsedMs >= npc.wanderUntil) {
+      npc.wanderUntil = this.elapsedMs + 2600
+      npc.targetX = clamp(npc.x + randomRange(-400, 400), 100, this.worldW - 100)
+      npc.targetY = clamp(npc.y + randomRange(-400, 400), 100, this.worldH - 100)
+    }
+    return { x: npc.targetX, y: npc.targetY }
+  }
+
+  private nearestActive<T extends { x: number; y: number }>(
+    npc: NpcHero,
+    pool: T[],
+    ok: (t: T) => boolean,
+  ): T | null {
+    let best: T | null = null
+    let bestD: number = NPC.seekRange
+    for (const item of pool) {
+      if (!ok(item)) continue
+      const d = distance(npc.x, npc.y, item.x, item.y)
+      if (d < bestD) {
+        bestD = d
+        best = item
+      }
+    }
+    return best
+  }
+
+  private nearestEnemy(npc: NpcHero): Enemy | null {
+    let best: Enemy | null = null
+    let bestD: number = NPC.seekRange
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active) continue
+      const d = distance(npc.x, npc.y, e.x, e.y)
+      if (d < bestD) {
+        bestD = d
+        best = e
+      }
+    }
+    return best
+  }
+
+  /** Ring damage to enemies/boss around an NPC, plus contact damage taken. */
+  private npcCombat(npc: NpcHero): void {
+    const dmg = NPC.damageBase + npc.power * NPC.damagePerPower
+    const reach = NPC.ringRadius + 14
+    let grew = false
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active) continue
+      const d = distance(npc.x, npc.y, e.x, e.y)
+      if (d < 22) npc.hp -= NPC.contactDamage // walked into a foe
+      if (d <= reach && e.takeDamage(dmg)) {
+        this.killFx(e.x, e.y)
+        e.deactivate()
+        npc.power += e.value
+        grew = true
+      }
+    }
+    // Help fight the boss.
+    if (this.bossActive && this.boss.active) {
+      if (distance(npc.x, npc.y, this.boss.x, this.boss.y) < reach + this.boss.displayWidth * 0.5) {
+        const capped = Math.min(dmg, Math.ceil(this.boss.maxHp * BOSS.maxHitFraction))
+        if (this.boss.takeDamage(capped)) this.bossDefeat()
+      }
+    }
+    if (grew) npc.refresh()
+    if (npc.hp <= 0) this.npcDie(npc)
+  }
+
+  private npcDie(npc: NpcHero): void {
+    this.killFx(npc.x, npc.y)
+    npc.respawnAt = this.elapsedMs + NPC.respawnMs
+    npc.deactivate()
+  }
+
+  /** NPCs also grab gates / chests / hearts they reach (competing with you). */
+  private npcPickups(npc: NpcHero): void {
+    for (const gate of this.gatePool) {
+      if (!gate.active || gate.consumed) continue
+      if (distance(npc.x, npc.y, gate.x, gate.y) < GATE.width / 2 + 18) {
+        gate.consumed = true
+        npc.power = gate.config.op === 'mul' ? npc.power * gate.config.value : npc.power + gate.config.value
+        gate.deactivate()
+        npc.refresh()
+      }
+    }
+    for (const chest of this.chestPool) {
+      if (!chest.active) continue
+      if (distance(npc.x, npc.y, chest.x, chest.y) < 28) {
+        chest.deactivate()
+        npc.power += CHEST.basePower * 3
+        npc.refresh()
+      }
+    }
+    for (const heal of this.healPool) {
+      if (!heal.active || heal.consumed) continue
+      if (distance(npc.x, npc.y, heal.x, heal.y) < 26) {
+        heal.consumed = true
+        npc.hp = Math.min(npc.maxHp, npc.hp + HEAL.amount)
+        heal.deactivate()
+      }
+    }
   }
 
   /**
@@ -513,6 +706,7 @@ export class BattleScene extends Phaser.Scene {
       if (e.active) blip(c.enemy, e.x, e.y, 1.4)
     }
     for (const rival of this.rivalPool) if (rival.active) blip(c.rival, rival.x, rival.y, 2.4)
+    for (const npc of this.npcs) if (npc.active) blip(npc.ringColor, npc.x, npc.y, 2)
     if (this.bossActive && this.boss.active) {
       const pulse = 4 + Math.sin(this.elapsedMs / 140) * 1.4
       blip(c.boss, this.boss.x, this.boss.y, pulse)
