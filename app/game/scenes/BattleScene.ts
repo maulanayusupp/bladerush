@@ -514,27 +514,47 @@ export class BattleScene extends Phaser.Scene {
   /** When an NPC and the hero's rings meet they clash: your ring shreds it (and
    *  you ABSORB its power on the kill), while it strikes back at you. */
   private npcDuel(npc: NpcHero, deltaMs: number): void {
-    if (distance(npc.x, npc.y, this.player.x, this.player.y) >= SWORD.orbitRadius + 30) {
+    // Trigger when the two sword RINGS actually overlap.
+    if (distance(npc.x, npc.y, this.player.x, this.player.y) >= SWORD.orbitRadius + NPC.ringRadius) {
       npc.duelAcc = 0
       return
     }
     npc.duelAcc += deltaMs
     if (npc.duelAcc < BOSS.hitTickMs) return
     npc.duelAcc -= BOSS.hitTickMs
-    const mx = (npc.x + this.player.x) / 2
-    const my = (npc.y + this.player.y) / 2
-    this.sparks.explode(4, mx, my)
+    // Clash spectacle at the point where the rings meet, colored by who's winning
+    // (gold = you can beat it, red = it's stronger).
+    const ang = angleBetween(this.player.x, this.player.y, npc.x, npc.y)
+    const cx = this.player.x + Math.cos(ang) * SWORD.orbitRadius
+    const cy = this.player.y + Math.sin(ang) * SWORD.orbitRadius
+    const canWin = this.power.power >= npc.power
+    this.clashBurst(cx, cy, canWin ? 0xffe08a : 0xff4040)
     audioService.clash()
-    // Outcome is decided by POWER: you only wear an NPC down when you're at
-    // least as strong as it. A stronger NPC is unkillable by you and hits hard —
-    // you must out-grow it (or flee).
-    if (this.power.power >= npc.power) {
+    if (canWin) {
       npc.hp -= this.bossTickDamage()
       this.hitPlayer(Math.min(18, 6 + Math.log10(1 + npc.power) * 2)) // light chip
       if (npc.hp <= 0) this.absorbNpc(npc)
     } else {
       this.hitPlayer(Math.min(60, 16 + Math.log10(1 + npc.power) * 5)) // it overwhelms you
     }
+  }
+
+  /** A sword-clash burst: sparks + an expanding shock ring at (x, y). */
+  private clashBurst(x: number, y: number, color: number): void {
+    this.sparks.explode(6, x, y)
+    const ring = this.add
+      .image(x, y, 'shock')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(color)
+      .setScale(0.15)
+      .setDepth(6)
+    this.tweens.add({
+      targets: ring,
+      scale: 0.7,
+      alpha: { from: 0.85, to: 0 },
+      duration: 220,
+      onComplete: () => ring.destroy(),
+    })
   }
 
   /** Beat an NPC → absorb its power (big power + score gain), it respawns weaker. */
@@ -598,13 +618,12 @@ export class BattleScene extends Phaser.Scene {
     return best
   }
 
-  /** Nearest weaker NPC within seek range (its prey). */
+  /** Nearest other NPC within seek range — they all seek fights (aggressive). */
   private nearestNpc(npc: NpcHero): NpcHero | null {
     let best: NpcHero | null = null
     let bestD: number = NPC.seekRange
     for (const other of this.npcs) {
       if (other === npc || !other.active) continue
-      if (other.power >= npc.power * 0.9) continue // only chase clearly weaker ones
       const d = distance(npc.x, npc.y, other.x, other.y)
       if (d < bestD) {
         bestD = d
@@ -661,7 +680,7 @@ export class BattleScene extends Phaser.Scene {
       if (npc.power < other.power) continue // only the stronger deals damage
       if (distance(npc.x, npc.y, other.x, other.y) > brawlReach) continue
       other.hp -= dmg
-      this.sparks.explode(2, (npc.x + other.x) / 2, (npc.y + other.y) / 2)
+      if (Math.random() < 0.3) this.clashBurst((npc.x + other.x) / 2, (npc.y + other.y) / 2, npc.ringColor)
       if (other.hp <= 0) {
         npc.power += other.power
         grew = true
