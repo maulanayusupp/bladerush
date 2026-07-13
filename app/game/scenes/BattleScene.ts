@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE, WORLD } from '../constants'
+import { AURA, BOSS, COMBO, DECOR_COUNT, ENEMY, GATE, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, PLAYER, POWER_LAYERS, RIVAL, SKILLS, SWORD, UPGRADE_TUNE, WORLD } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -38,6 +38,7 @@ export class BattleScene extends Phaser.Scene {
   private bg!: Phaser.GameObjects.TileSprite
   private vignette!: Phaser.GameObjects.Image
   private ambient?: Phaser.GameObjects.Particles.ParticleEmitter
+  private minimap!: Phaser.GameObjects.Graphics
   private decor: { img: Phaser.GameObjects.Image; nx: number; ny: number }[] = []
   private auraLayers: Phaser.GameObjects.Image[] = []
   private sparks!: Phaser.GameObjects.Particles.ParticleEmitter
@@ -224,6 +225,8 @@ export class BattleScene extends Phaser.Scene {
     // Open-world camera: bound to the world, smoothly following the hero.
     this.cameras.main.setBounds(0, 0, this.worldW, this.worldH)
     this.cameras.main.startFollow(this.player, true, WORLD.cameraLerp, WORLD.cameraLerp)
+    // Screen-pinned minimap, redrawn each frame in drawMinimap().
+    this.minimap = this.add.graphics().setScrollFactor(0).setDepth(24)
 
     this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'troop0', maxSize: ENEMY.poolSize })
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
@@ -359,6 +362,60 @@ export class BattleScene extends Phaser.Scene {
     this.updateChests()
     this.updateSwords(deltaMs)
     this.checkEvolve()
+    this.drawMinimap()
+  }
+
+  /**
+   * Redraw the screen-pinned minimap: a scaled-down view of the whole world with
+   * a blip for every live threat/pickup, the camera viewport rectangle, and the
+   * hero on top. Pure canvas drawing — no Vue, no event traffic.
+   */
+  private drawMinimap(): void {
+    const m = this.minimap
+    const c = MINIMAP.colors
+    const s = MINIMAP.size
+    const x0 = this.viewW - s - MINIMAP.margin
+    const y0 = MINIMAP.margin + 52 // clear the HUD's top-right mute button
+    const sx = s / this.worldW
+    const sy = s / this.worldH
+    const px = (wx: number) => x0 + wx * sx
+    const py = (wy: number) => y0 + wy * sy
+
+    m.clear()
+    // Panel + border.
+    m.fillStyle(c.panel, 0.55)
+    m.fillRoundedRect(x0, y0, s, s, 8)
+    m.lineStyle(2, c.border, 0.85)
+    m.strokeRoundedRect(x0, y0, s, s, 8)
+
+    const blip = (color: number, wx: number, wy: number, r: number): void => {
+      m.fillStyle(color, 1)
+      m.fillCircle(px(wx), py(wy), r)
+    }
+
+    // Pickups first (under threats).
+    for (const gate of this.gatePool) if (gate.active && !gate.consumed) blip(c.gate, gate.x, gate.y, 1.8)
+    for (const heal of this.healPool) if (heal.active && !heal.consumed) blip(c.heal, heal.x, heal.y, 1.8)
+    // Foes.
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (e.active) blip(c.enemy, e.x, e.y, 1.4)
+    }
+    for (const rival of this.rivalPool) if (rival.active) blip(c.rival, rival.x, rival.y, 2.4)
+    if (this.bossActive && this.boss.active) {
+      const pulse = 4 + Math.sin(this.elapsedMs / 140) * 1.4
+      blip(c.boss, this.boss.x, this.boss.y, pulse)
+    }
+
+    // Current camera viewport rectangle.
+    const cam = this.cameras.main
+    m.lineStyle(1, c.view, 0.7)
+    m.strokeRect(px(cam.scrollX), py(cam.scrollY), this.viewW * sx, this.viewH * sy)
+
+    // Hero on top.
+    blip(c.player, this.player.x, this.player.y, 3)
+    m.lineStyle(1.5, 0xffffff, 0.9)
+    m.strokeCircle(px(this.player.x), py(this.player.y), 4.5)
   }
 
   /** Swap the hero to the next champion look every 1000 power. */

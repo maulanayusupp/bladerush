@@ -22,6 +22,27 @@ export const WORLD = {
 } as const
 
 /**
+ * Screen-pinned minimap (top-right) so the hero can orient in the open world:
+ * blips for foes, boss, rivals, gates & heals, plus the current camera view.
+ * Rendered in Phaser (Graphics, scrollFactor 0) — never per-frame Vue.
+ */
+export const MINIMAP = {
+  size: 148, // box side in px
+  margin: 14,
+  colors: {
+    panel: 0x0a0a12,
+    border: 0x6a5a38,
+    view: 0xffffff,
+    player: 0x8ce8ff,
+    enemy: 0xff5a5a,
+    rival: 0xff8a3a,
+    boss: 0xff2020,
+    gate: 0xffd700,
+    heal: 0x6bff9a,
+  },
+} as const
+
+/**
  * Arena themes: a SUBTLE tiling ground (fine grain only, so no obvious loop)
  * plus scattered decoration props (trees/rocks/etc.) placed at random world
  * positions for a natural, non-repeating look. Each theme also has an `ambient`
