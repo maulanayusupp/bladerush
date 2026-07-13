@@ -37,6 +37,7 @@
     "troop": "Monsters",
     "boss": "Bosses",
     "weapon": "Weapons",
+    "discovered": "Discovered",
     "hint": "Drag or scroll to browse"
   },
   "pause": {

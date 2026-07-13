@@ -37,6 +37,7 @@
     "troop": "Monster",
     "boss": "Bos",
     "weapon": "Senjata",
+    "discovered": "Ditemukan",
     "hint": "Geser atau scroll untuk menjelajah"
   },
   "pause": {

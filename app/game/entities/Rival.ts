@@ -21,6 +21,8 @@ export class Rival extends Phaser.GameObjects.Container {
   private readonly ring: Phaser.GameObjects.Image
   private readonly hero: Phaser.GameObjects.Image
   private readonly label: Phaser.GameObjects.Text
+  /** Which warlord texture (rivalHero{skinIndex}) this rival is using. */
+  skinIndex = 0
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y)
@@ -42,7 +44,8 @@ export class Rival extends Phaser.GameObjects.Container {
     this.clashAcc = 0
     this.clashStep = 1
     this.setPosition(x, y)
-    this.hero.setTexture('rivalHero' + Math.floor(Math.random() * RIVAL.skins))
+    this.skinIndex = Math.floor(Math.random() * RIVAL.skins)
+    this.hero.setTexture('rivalHero' + this.skinIndex)
     this.setCount(count)
     this.setActive(true).setVisible(true)
   }

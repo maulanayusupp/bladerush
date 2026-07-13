@@ -27,6 +27,7 @@ import { ScoreService } from '~/services/ScoreService'
 import { SpawnService } from '~/services/SpawnService'
 import { gameEventBus } from '~/services/EventBus'
 import { audioService } from '~/services/AudioService'
+import { codexService } from '~/services/CodexService'
 import { angleBetween, clamp, distance, pickOne, randomInt, randomRange } from '~/helpers/math.helper'
 import { formatCompact } from '~/helpers/format.helper'
 
@@ -87,6 +88,7 @@ export class BattleScene extends Phaser.Scene {
   private nextBossMs: number = BOSS.firstMs
   private bossActive = false
   private bossCount = 0
+  private bossSkinIdx = 0
   private bossFanAcc = 0
   private bossMeteorAcc = 0
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
@@ -253,6 +255,9 @@ export class BattleScene extends Phaser.Scene {
     // Pick one of the 10 blade skins for this run.
     const swordSkin = Math.floor(Math.random() * SWORD_SHAPES.length)
     this.swordPool.forEach((sword) => sword.setTexture(`sword${swordSkin}`))
+    codexService.load()
+    codexService.mark('weapon', swordSkin)
+    codexService.mark('hero', 0)
     this.rivalPool = Array.from({ length: RIVAL.poolSize }, () => new Rival(this, 0, 0))
     this.healPool = Array.from({ length: 6 }, () => new Heal(this, 0, 0))
     this.chestPool = Array.from({ length: CHEST.poolSize }, () => new Chest(this, 0, 0))
@@ -473,6 +478,7 @@ export class BattleScene extends Phaser.Scene {
     if (tier === this.playerSkin) return
     this.playerSkin = tier
     this.player.setTexture(`hero${tier}`)
+    codexService.mark('hero', tier)
     // Shield gear grants defense (reduced incoming damage).
     this.playerDefenseMul = gearOf(tier) === 3 ? GEAR.shieldDefenseMul : 1
     this.cameras.main.flash(220, 180, 150, 255)
@@ -598,6 +604,7 @@ export class BattleScene extends Phaser.Scene {
     const floorRank = clamp(Math.floor(elapsedSec / 60) * 12, 0, 80)
     const offset = (this.bossCount * 13) % 20
     const idx = clamp(floorRank + offset, 0, BOSS.skins - 1)
+    this.bossSkinIdx = idx
     this.boss.spawn(x, y, hp, BOSS.speed, 1.5, `boss${idx}`)
     this.bossActive = true
     this.bossSummonAcc = 0
@@ -875,6 +882,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private bossDefeat(): void {
+    codexService.mark('boss', this.bossSkinIdx)
     const reward = Math.round(this.boss.maxHp * 0.06)
     const x = this.boss.x
     const y = this.boss.y
@@ -1255,6 +1263,7 @@ export class BattleScene extends Phaser.Scene {
 
   /** Rival ground down: it drops its swords back (net-zero) + score + flourish. */
   private winDuel(rival: Rival, x: number, y: number): void {
+    codexService.mark('rival', rival.skinIndex)
     const loot = rival.initialCount
     rival.engaged = false
     rival.deactivate()
@@ -1374,6 +1383,7 @@ export class BattleScene extends Phaser.Scene {
     const ey = enemy.y
     const reward = enemy.value
     const volatile = enemy.affix === 'volatile'
+    codexService.markKey('troop', enemy.texture.key, 'troop')
     this.killFx(ex, ey)
     audioService.death()
     enemy.deactivate()

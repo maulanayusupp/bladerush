@@ -6,6 +6,7 @@
 import Phaser from 'phaser'
 import { SWORD_SHAPES } from '../constants'
 import { clamp } from '~/helpers/math.helper'
+import { codexService, type CodexCategory } from '~/services/CodexService'
 
 interface Category {
   prefix: string
@@ -68,6 +69,8 @@ export class CodexScene extends Phaser.Scene {
     this.items = []
     const cat = CATEGORIES[category] ?? CATEGORIES.hero
     if (!cat) return
+    codexService.load()
+    const catKey = category as CodexCategory
 
     const viewW = this.scale.width
     const cell = cat.cell
@@ -83,18 +86,20 @@ export class CodexScene extends Phaser.Scene {
       const cx = startX + col * cell
       const cy = TOP_PAD + row * cell + cell / 2
 
+      const discovered = codexService.has(catKey, i)
       const sprite = this.add.image(cx, cy - 6, key)
       // Fit into the cell.
       const maxDim = Math.max(sprite.width, sprite.height)
       sprite.setScale(Math.min(1.15, (cell - 22) / maxDim))
-      if (cat.tint) sprite.setTint(cat.tint)
+      if (!discovered) sprite.setTint(0x0b0b0d).setAlpha(0.9) // locked silhouette
+      else if (cat.tint) sprite.setTint(cat.tint)
       this.items.push(sprite)
 
       const label = this.add
-        .text(cx, cy + cell / 2 - 9, String(i), {
+        .text(cx, cy + cell / 2 - 9, discovered ? String(i) : '?', {
           fontFamily: 'Segoe UI, sans-serif',
           fontSize: '11px',
-          color: '#c8c2b4',
+          color: discovered ? '#c8c2b4' : '#55504a',
         })
         .setOrigin(0.5)
       this.items.push(label)
