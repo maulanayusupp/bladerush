@@ -138,6 +138,7 @@ function genChampions(): ChampionSkin[] {
       glow: rank >= 0.75 ? accent : rank > 0.5 ? accent : 0, // winged/strong tiers radiate
       pattern: i % 3,
       visor: i % 2,
+      helmType: i % 5, // greathelm / barbute / hood / spiked / crowned-open
     })
   }
   return out
@@ -186,6 +187,8 @@ function genTroops(): TrooperSkin[] {
       weapon: WEAPONS[i % WEAPONS.length] as string,
       rank,
       glow: band >= 3 ? p.accent : 0,
+      head: i % 5, // orc / skull / cyclops / beast / imp
+      body: Math.floor(i / 5) % 4, // standard / hulking / goblin / tall
     })
   }
   return out
@@ -219,6 +222,7 @@ function genBosses(): BossSkin[] {
       crown: rank >= 0.4,
       plates: rank >= 0.6,
       crest: rank >= 0.25,
+      head: i % 5, // demon / dragon / skull / beast / horror
     })
   }
   return out
@@ -252,6 +256,8 @@ interface TrooperSkin {
   weapon: string
   rank: number
   glow: number // 0 = none
+  body: number // 0..3 silhouette archetype
+  head: number // 0..4 head archetype
 }
 
 /** Humanoid enemy troops (orcs/soldiers) by tier — drawn front-facing. */
@@ -271,6 +277,7 @@ interface ChampionSkin {
   glow: number // 0 = none
   pattern: number // 0..2 chestplate decoration
   visor: number // 0..1 helmet visor style
+  helmType: number // 0..4 helmet archetype
 }
 
 /** 500 unique hero looks that escalate in grandeur (evolve every 1000 power). */
@@ -290,6 +297,7 @@ interface BossSkin {
   crown: boolean
   plates: boolean
   crest: boolean
+  head: number // 0..4 head archetype
 }
 
 /** 100 elemental boss demons; menace escalates with rank. */
@@ -463,57 +471,159 @@ export class BootScene extends Phaser.Scene {
 
   /** BOSS — a huge horned demon-dragon head (box 76, centered 38). */
   /** A front-facing humanoid troop (orc/soldier) scaled to box size S. */
+  /**
+   * A front-facing troop. `body` sets the silhouette (standard / hulking /
+   * goblin / tall) and `head` the face archetype (orc / skull / cyclops / beast
+   * / imp) — so troops differ in SHAPE, not just color.
+   */
   private drawTrooper(g: Phaser.GameObjects.Graphics, S: number, p: TrooperSkin): void {
     g.scaleCanvas(S / 56, S / 56)
     if (p.glow) this.bakedGlow(g, 28, 32, p.glow, 26)
-    // legs + boots
-    g.fillStyle(p.armor2, 1)
-    g.fillRect(20, 45, 6, 10)
-    g.fillRect(30, 45, 6, 10)
-    g.fillStyle(0x2a2620, 1)
-    g.fillRect(20, 52, 6, 3)
-    g.fillRect(30, 52, 6, 3)
-    // weapon (behind the arm)
-    this.drawTrooperWeapon(g, p.weapon)
-    // torso
-    g.fillStyle(p.armor, 1)
-    g.fillRoundedRect(15, 27, 26, 21, 5)
-    g.fillStyle(p.armor2, 1)
-    g.fillRect(25, 27, 6, 21)
-    g.fillCircle(16, 29, 5)
-    g.fillCircle(40, 29, 5)
-    // arms (fists)
-    g.fillStyle(p.skin, 1)
-    g.fillCircle(13, 34, 3.5)
-    g.fillCircle(43, 34, 3.5)
-    // head + pointy ears
-    g.fillStyle(p.skin, 1)
-    g.fillEllipse(28, 16, 22, 20)
-    g.fillTriangle(9, 16, 18, 11, 18, 21)
-    g.fillTriangle(47, 16, 38, 11, 38, 21)
-    // angry brow
-    g.fillStyle(0x203818, 1)
-    g.fillTriangle(19, 12, 27, 17, 27, 12)
-    g.fillTriangle(37, 12, 29, 17, 29, 12)
-    // eyes
-    g.fillStyle(p.eye, 1)
-    g.fillEllipse(23, 16, 5, 4)
-    g.fillEllipse(33, 16, 5, 4)
-    // tusks
-    g.fillStyle(0xf4f0e0, 1)
-    const th = p.tuskBig ? 6 : 4
-    g.fillTriangle(24, 22, 27, 22, 25.5, 22 - th)
-    g.fillTriangle(29, 22, 32, 22, 30.5, 22 - th)
-    // helmet + horns
-    if (p.helm) {
-      g.fillStyle(p.helm, 1)
-      g.fillEllipse(28, 9, 26, 12)
-      g.fillRect(15, 8, 26, 3)
+
+    // Body archetype: torso box + head anchor + limb rows.
+    let tx = 15
+    let ty = 27
+    let tw = 26
+    let thh = 21
+    let hy = 16
+    let hr = 11
+    let armY = 34
+    let legY = 45
+    let legH = 10
+    const hx = 28
+    switch (p.body) {
+      case 1: // hulking
+        tx = 8; ty = 26; tw = 40; thh = 24; hy = 15; hr = 9; armY = 35; legY = 50; legH = 6
+        break
+      case 2: // goblin (small body, big head)
+        tx = 19; ty = 32; tw = 18; thh = 15; hy = 18; hr = 13; armY = 38; legY = 47; legH = 8
+        break
+      case 3: // tall / slim
+        tx = 20; ty = 21; tw = 16; thh = 29; hy = 12; hr = 10; armY = 32; legY = 50; legH = 6
+        break
+      default:
+        break
     }
-    if (p.horns) {
+    const shoulder = p.body === 1 ? 7 : 5
+
+    // Legs + boots.
+    const lw = p.body === 1 ? 7 : 5
+    g.fillStyle(p.armor2, 1)
+    g.fillRect(hx - 8, legY, lw, legH)
+    g.fillRect(hx + 3, legY, lw, legH)
+    g.fillStyle(0x2a2620, 1)
+    g.fillRect(hx - 8, legY + legH - 3, lw, 3)
+    g.fillRect(hx + 3, legY + legH - 3, lw, 3)
+    // Weapon behind the arm.
+    this.drawTrooperWeapon(g, p.weapon)
+    // Torso.
+    g.fillStyle(p.armor, 1)
+    g.fillRoundedRect(tx, ty, tw, thh, 5)
+    g.fillStyle(p.armor2, 1)
+    g.fillRect(hx - 3, ty, 6, thh)
+    g.fillCircle(tx + 1, ty + 2, shoulder)
+    g.fillCircle(tx + tw - 1, ty + 2, shoulder)
+    // Arms / fists.
+    g.fillStyle(p.skin, 1)
+    g.fillCircle(tx - 2, armY, 3.5)
+    g.fillCircle(tx + tw + 2, armY, 3.5)
+    // Head archetype.
+    this.drawTrooperHead(g, p, hx, hy, hr)
+    // Helmet (not on bare skulls) + optional horns.
+    if (p.helm && p.head !== 1) {
+      g.fillStyle(p.helm, 1)
+      g.fillEllipse(hx, hy - hr + 1, hr * 2 + 4, 12)
+      g.fillRect(hx - hr - 1, hy - hr, hr * 2 + 2, 3)
+    }
+    if (p.horns && p.head !== 4) {
       g.fillStyle(0xe8e2d0, 1)
-      g.fillTriangle(14, 8, 5, 0, 20, 7)
-      g.fillTriangle(42, 8, 51, 0, 36, 7)
+      g.fillTriangle(hx - hr - 1, hy - hr + 3, hx - hr - 9, hy - hr - 7, hx - hr + 5, hy - hr + 1)
+      g.fillTriangle(hx + hr + 1, hy - hr + 3, hx + hr + 9, hy - hr - 7, hx + hr - 5, hy - hr + 1)
+    }
+  }
+
+  private drawTrooperHead(g: Phaser.GameObjects.Graphics, p: TrooperSkin, cx: number, cy: number, r: number): void {
+    const dark = 0x141a10
+    switch (p.head) {
+      case 1: // skull / undead
+        g.fillStyle(0xe6e0cf, 1)
+        g.fillEllipse(cx, cy, r * 2, r * 1.9)
+        g.fillStyle(0xcfc7b0, 1)
+        g.fillEllipse(cx, cy + r * 0.55, r * 1.1, r * 0.8)
+        g.fillStyle(0x120d08, 1)
+        g.fillEllipse(cx - r * 0.45, cy - 1, r * 0.7, r * 0.8)
+        g.fillEllipse(cx + r * 0.45, cy - 1, r * 0.7, r * 0.8)
+        g.fillStyle(p.eye, 1)
+        g.fillCircle(cx - r * 0.45, cy, 2)
+        g.fillCircle(cx + r * 0.45, cy, 2)
+        g.fillStyle(0x120d08, 1)
+        g.fillTriangle(cx, cy + 1, cx - 2, cy + r * 0.5, cx + 2, cy + r * 0.5)
+        g.fillStyle(0xffffff, 1)
+        for (let i = 0; i < 5; i++) g.fillRect(cx - r * 0.5 + i * r * 0.25, cy + r * 0.7, r * 0.16, 3)
+        break
+      case 2: // cyclops
+        g.fillStyle(p.skin, 1)
+        g.fillEllipse(cx, cy, r * 2, r * 1.9)
+        g.fillTriangle(cx - r, cy, cx - r - 6, cy - 4, cx - r + 3, cy + 4)
+        g.fillTriangle(cx + r, cy, cx + r + 6, cy - 4, cx + r - 3, cy + 4)
+        g.fillStyle(0xffffff, 1)
+        g.fillCircle(cx, cy - 1, r * 0.6)
+        g.fillStyle(p.eye, 1)
+        g.fillCircle(cx, cy - 1, r * 0.34)
+        g.fillStyle(0x120400, 1)
+        g.fillCircle(cx, cy - 1, r * 0.16)
+        g.fillStyle(dark, 1)
+        g.fillRect(cx - r * 0.5, cy + r * 0.7, r, 2)
+        break
+      case 3: // beast (snout)
+        g.fillStyle(p.skin, 1)
+        g.fillEllipse(cx, cy - 1, r * 1.9, r * 1.7)
+        g.fillStyle(shade(p.skin, 0.85), 1)
+        g.fillEllipse(cx, cy + r * 0.6, r * 1.3, r * 0.95)
+        g.fillStyle(0x120400, 1)
+        g.fillCircle(cx - 2, cy + r * 0.45, 1.4)
+        g.fillCircle(cx + 2, cy + r * 0.45, 1.4)
+        g.fillStyle(p.eye, 1)
+        g.fillEllipse(cx - r * 0.5, cy - 2, 4, 3)
+        g.fillEllipse(cx + r * 0.5, cy - 2, 4, 3)
+        g.fillStyle(0xf4f0e0, 1)
+        g.fillTriangle(cx - 3, cy + r * 0.9, cx - 1, cy + r * 0.9, cx - 2, cy + r * 0.45)
+        g.fillTriangle(cx + 1, cy + r * 0.9, cx + 3, cy + r * 0.9, cx + 2, cy + r * 0.45)
+        break
+      case 4: // imp / demon
+        g.fillStyle(0x1a0f14, 1)
+        g.fillTriangle(cx - r + 1, cy - r + 2, cx - r - 6, cy - r - 9, cx - r + 6, cy - r + 2)
+        g.fillTriangle(cx + r - 1, cy - r + 2, cx + r + 6, cy - r - 9, cx + r - 6, cy - r + 2)
+        g.fillStyle(p.skin, 1)
+        g.fillEllipse(cx, cy, r * 1.8, r * 1.7)
+        g.fillTriangle(cx - r, cy, cx - r - 6, cy - 6, cx - r + 2, cy + 3)
+        g.fillTriangle(cx + r, cy, cx + r + 6, cy - 6, cx + r - 2, cy + 3)
+        g.fillStyle(p.eye, 1)
+        g.fillEllipse(cx - r * 0.45, cy - 1, 5, 3)
+        g.fillEllipse(cx + r * 0.45, cy - 1, 5, 3)
+        g.fillStyle(dark, 1)
+        g.fillTriangle(cx - r * 0.5, cy + r * 0.5, cx + r * 0.5, cy + r * 0.5, cx, cy + r * 0.95)
+        g.fillStyle(0xffffff, 1)
+        g.fillRect(cx - 2, cy + r * 0.5, 1.5, 2)
+        g.fillRect(cx + 1, cy + r * 0.5, 1.5, 2)
+        break
+      default: // orc
+        g.fillStyle(p.skin, 1)
+        g.fillEllipse(cx, cy, r * 2, r * 1.8)
+        g.fillTriangle(cx - r, cy, cx - r - 8, cy - 3, cx - r + 2, cy + 4)
+        g.fillTriangle(cx + r, cy, cx + r + 8, cy - 3, cx + r - 2, cy + 4)
+        g.fillStyle(0x203818, 1)
+        g.fillTriangle(cx - r + 2, cy - 4, cx - 1, cy + 1, cx - 1, cy - 4)
+        g.fillTriangle(cx + r - 2, cy - 4, cx + 1, cy + 1, cx + 1, cy - 4)
+        g.fillStyle(p.eye, 1)
+        g.fillEllipse(cx - r * 0.45, cy, 5, 4)
+        g.fillEllipse(cx + r * 0.45, cy, 5, 4)
+        g.fillStyle(0xf4f0e0, 1)
+        {
+          const th = p.tuskBig ? 6 : 4
+          g.fillTriangle(cx - 3, cy + r * 0.7, cx, cy + r * 0.7, cx - 1.5, cy + r * 0.7 - th)
+          g.fillTriangle(cx + 1, cy + r * 0.7, cx + 4, cy + r * 0.7, cx + 2.5, cy + r * 0.7 - th)
+        }
     }
   }
 
@@ -587,12 +697,8 @@ export class BootScene extends Phaser.Scene {
       g.fillStyle(s.accent, 1) // crown spikes
       for (const x of [24, 32, 38, 44, 52]) g.fillTriangle(x - 4, 18, x, 4 - s.rank * 2, x + 4, 18)
     }
-    g.fillStyle(dark, 1) // head outline
-    g.fillEllipse(38, 40, 60, 56)
-    g.fillStyle(s.hide, 1) // hide
-    g.fillEllipse(38, 40, 56, 52)
-    g.fillStyle(s.hideHi, 0.45) // forehead sheen
-    g.fillEllipse(38, 33, 44, 24)
+    // Head SHAPE by archetype.
+    this.drawBossHead(g, s, dark)
     if (s.plates) {
       g.fillStyle(s.accent, 1) // armored cheek plates
       g.fillPoints(this.pts([12, 40, 20, 34, 22, 48, 14, 52]), true)
@@ -602,39 +708,132 @@ export class BootScene extends Phaser.Scene {
       g.fillStyle(s.horn, 1) // forehead crest ridge
       for (const cy of [20, 26, 32]) g.fillTriangle(35, cy + 4, 38, cy - 3, 41, cy + 4)
     }
-    g.fillStyle(s.snout, 1) // snout / jaw
-    g.fillEllipse(38, 54, 34, 24)
-    g.fillStyle(dark, 1) // brows
-    g.fillTriangle(16, 32, 36, 42, 36, 27)
-    g.fillTriangle(60, 32, 40, 42, 40, 27)
-    // Eyes — 2, 3 or 4 by rank.
-    const eyePos: number[][] =
-      s.eyeCount >= 4
-        ? [[27, 37], [49, 37], [31, 28], [45, 28]]
-        : s.eyeCount === 3
-          ? [[27, 36], [49, 36], [38, 27]]
-          : [[27, 36], [49, 36]]
-    eyePos.forEach((p, idx) => {
-      const es = idx < 2 ? 1 + s.rank * 0.15 : 0.65
-      const px = p[0] as number
-      const py = p[1] as number
-      g.fillStyle(s.eye, 1)
-      g.fillEllipse(px, py, 12 * es, 9 * es)
-      g.fillStyle(0x140300, 1)
-      g.fillCircle(px, py + 1, 3 * es)
-      g.fillStyle(0xffe0b0, 0.9)
-      g.fillCircle(px - 1, py - 1, 1.4 * es)
-    })
-    g.fillStyle(dark, 1) // nostrils
-    g.fillCircle(33, 50, 2)
-    g.fillCircle(43, 50, 2)
-    // Fangs — more and longer with rank.
-    const fangs = 6 + Math.round(s.rank * 3)
-    g.fillStyle(0xffffff, 1)
-    const gap = 24 / fangs
-    for (let i = 0; i < fangs; i++) {
-      const x = 26 + i * gap
-      g.fillTriangle(x, 62, x + 2.4, 62, x + 1.2, 70 + s.rank * 2)
+  }
+
+  /** A glowing boss eye with pupil + specular. */
+  private bossEye(g: Phaser.GameObjects.Graphics, color: number, x: number, y: number, w: number, h: number): void {
+    g.fillStyle(color, 1)
+    g.fillEllipse(x, y, w, h)
+    g.fillStyle(0x140300, 1)
+    g.fillCircle(x, y + 1, Math.min(w, h) * 0.3)
+    g.fillStyle(0xffe0b0, 0.9)
+    g.fillCircle(x - 1, y - 1, 1.3)
+  }
+
+  /** Boss head silhouette by archetype: demon / dragon / skull / beast / horror. */
+  private drawBossHead(g: Phaser.GameObjects.Graphics, s: BossSkin, dark: number): void {
+    const es = 1 + s.rank * 0.15
+    const fang = (x: number, up: boolean, len: number): void => {
+      if (up) g.fillTriangle(x, 64, x + 2.4, 64, x + 1.2, 64 - len)
+      else g.fillTriangle(x, 60, x + 2.4, 60, x + 1.2, 60 + len)
+    }
+    switch (s.head) {
+      case 1: { // dragon — long snout
+        g.fillStyle(dark, 1)
+        g.fillEllipse(38, 32, 52, 46)
+        g.fillStyle(s.hide, 1)
+        g.fillEllipse(38, 32, 48, 42)
+        g.fillStyle(s.hideHi, 0.4)
+        g.fillEllipse(38, 26, 36, 18)
+        g.fillStyle(s.snout, 1) // tapered snout downward
+        g.fillPoints(this.pts([25, 40, 51, 40, 46, 68, 30, 68]), true)
+        this.bossEye(g, s.eye, 28, 30, 11 * es, 5)
+        this.bossEye(g, s.eye, 48, 30, 11 * es, 5)
+        g.fillStyle(dark, 1)
+        g.fillCircle(34, 63, 2)
+        g.fillCircle(42, 63, 2)
+        g.fillStyle(0xffffff, 1)
+        for (let i = 0; i < 4; i++) {
+          g.fillTriangle(30 + i * 4, 68, 32 + i * 4, 68, 31 + i * 4, 73)
+        }
+        break
+      }
+      case 2: { // skull
+        g.fillStyle(0xe6e0cf, 1)
+        g.fillEllipse(38, 36, 54, 50)
+        g.fillStyle(0xcac2ab, 1)
+        g.fillEllipse(38, 57, 34, 22)
+        g.fillStyle(0x0c0806, 1)
+        g.fillEllipse(28, 36, 16, 17)
+        g.fillEllipse(48, 36, 16, 17)
+        g.fillStyle(s.eye, 1)
+        g.fillCircle(28, 37, 3.6)
+        g.fillCircle(48, 37, 3.6)
+        g.fillStyle(0xffe0b0, 0.9)
+        g.fillCircle(27, 36, 1.3)
+        g.fillCircle(47, 36, 1.3)
+        g.fillStyle(0x0c0806, 1)
+        g.fillTriangle(38, 42, 34, 52, 42, 52)
+        g.fillStyle(0xffffff, 1)
+        for (let i = 0; i < 6; i++) g.fillRect(23 + i * 5, 60, 3, 9)
+        break
+      }
+      case 3: { // beast — big gaping maw
+        g.fillStyle(dark, 1)
+        g.fillEllipse(38, 38, 60, 56)
+        g.fillStyle(s.hide, 1)
+        g.fillEllipse(38, 38, 56, 52)
+        g.fillStyle(s.hideHi, 0.4)
+        g.fillEllipse(38, 30, 44, 22)
+        this.bossEye(g, s.eye, 26, 34, 11, 8)
+        this.bossEye(g, s.eye, 50, 34, 11, 8)
+        g.fillStyle(dark, 1)
+        g.fillCircle(34, 46, 1.8)
+        g.fillCircle(42, 46, 1.8)
+        g.fillStyle(0x1a0808, 1) // maw
+        g.fillEllipse(38, 56, 38, 20)
+        g.fillStyle(0xffffff, 1)
+        for (let i = 0; i < 7; i++) {
+          fang(22 + i * 5, false, 6 + s.rank * 3)
+          g.fillTriangle(24 + i * 5, 64, 26 + i * 5, 64, 25 + i * 5, 58)
+        }
+        break
+      }
+      case 4: { // eldritch horror — cluster of eyes
+        g.fillStyle(dark, 1)
+        g.fillEllipse(38, 40, 62, 58)
+        g.fillStyle(s.hide, 1)
+        g.fillEllipse(38, 40, 58, 54)
+        g.fillStyle(s.hideHi, 0.35)
+        g.fillEllipse(38, 32, 44, 22)
+        const cluster = [[26, 30], [38, 25], [50, 30], [30, 41], [46, 41], [38, 40], [32, 52], [44, 52]]
+        for (const p of cluster) this.bossEye(g, s.eye, p[0] as number, p[1] as number, 7, 6)
+        g.fillStyle(0x1a0808, 1) // maw
+        g.fillEllipse(38, 60, 30, 14)
+        g.fillStyle(0xffffff, 1)
+        for (let i = 0; i < 6; i++) fang(25 + i * 5, false, 5)
+        break
+      }
+      default: { // demon (classic)
+        g.fillStyle(dark, 1)
+        g.fillEllipse(38, 40, 60, 56)
+        g.fillStyle(s.hide, 1)
+        g.fillEllipse(38, 40, 56, 52)
+        g.fillStyle(s.hideHi, 0.45)
+        g.fillEllipse(38, 33, 44, 24)
+        g.fillStyle(s.snout, 1)
+        g.fillEllipse(38, 54, 34, 24)
+        g.fillStyle(dark, 1)
+        g.fillTriangle(16, 32, 36, 42, 36, 27)
+        g.fillTriangle(60, 32, 40, 42, 40, 27)
+        const eyePos: number[][] =
+          s.eyeCount >= 4
+            ? [[27, 37], [49, 37], [31, 28], [45, 28]]
+            : s.eyeCount === 3
+              ? [[27, 36], [49, 36], [38, 27]]
+              : [[27, 36], [49, 36]]
+        eyePos.forEach((p, idx) => {
+          const scl = idx < 2 ? es : 0.65
+          this.bossEye(g, s.eye, p[0] as number, p[1] as number, 12 * scl, 9 * scl)
+        })
+        g.fillStyle(dark, 1)
+        g.fillCircle(33, 50, 2)
+        g.fillCircle(43, 50, 2)
+        const fangs = 6 + Math.round(s.rank * 3)
+        g.fillStyle(0xffffff, 1)
+        const gap = 24 / fangs
+        for (let i = 0; i < fangs; i++) g.fillTriangle(26 + i * gap, 62, 28.4 + i * gap, 62, 27.2 + i * gap, 70 + s.rank * 2)
+      }
     }
   }
 
@@ -1020,6 +1219,76 @@ export class BootScene extends Phaser.Scene {
     }
   }
 
+  /** Hero helmet silhouette by archetype: greathelm / barbute / hood / spiked / crowned-open. */
+  private drawHeroHelm(g: Phaser.GameObjects.Graphics, s: ChampionSkin, dark: number): void {
+    const hw = 24 + Math.round(6 * s.rank)
+    const eyeSlit = (): void => {
+      g.fillStyle(s.eye, 1)
+      g.fillRect(25, 19, 4, 3)
+      g.fillRect(35, 19, 4, 3)
+    }
+    switch (s.helmType) {
+      case 1: // barbute (tall, pointed, T-opening)
+        g.fillStyle(dark, 1)
+        g.fillEllipse(32, 18, hw + 1, 31)
+        g.fillStyle(s.hood, 1)
+        g.fillEllipse(32, 18, hw - 2, 28)
+        g.fillTriangle(32 - hw / 2 + 2, 9, 32 + hw / 2 - 2, 9, 32, 1)
+        g.fillStyle(dark, 1)
+        g.fillRect(31, 12, 2, 14)
+        g.fillRect(32 - hw / 2 + 3, 18, hw - 6, 5)
+        eyeSlit()
+        break
+      case 2: // cloth hood (shadowed face)
+        g.fillStyle(shade(s.cape, 0.8), 1)
+        g.fillEllipse(32, 17, hw + 4, 30)
+        g.fillTriangle(32 - hw / 2 - 1, 12, 30, 0, 34, 12)
+        g.fillStyle(dark, 1)
+        g.fillEllipse(32, 20, hw - 5, 23)
+        eyeSlit()
+        break
+      case 3: // spiked helm
+        g.fillStyle(dark, 1)
+        g.fillEllipse(32, 18, hw + 3, 29)
+        g.fillStyle(s.hood, 1)
+        g.fillEllipse(32, 18, hw, 26)
+        g.fillStyle(s.trim, 1)
+        for (const x of [24, 29, 32, 35, 40]) g.fillTriangle(x - 2, 8, x, 1, x + 2, 8)
+        g.fillStyle(dark, 1)
+        g.fillRect(32 - hw / 2 + 3, 18, hw - 6, 6)
+        g.fillRect(31, 18, 2, 9)
+        eyeSlit()
+        break
+      case 4: // crowned open face
+        g.fillStyle(dark, 1)
+        g.fillEllipse(32, 20, hw, 26)
+        g.fillStyle(s.trim, 1)
+        g.fillRect(32 - hw / 2 + 1, 12, hw - 2, 3)
+        for (const x of [26, 32, 38]) g.fillTriangle(x - 2, 12, x, 6, x + 2, 12)
+        g.fillStyle(s.eye, 1)
+        g.fillEllipse(27, 20, 5, 4)
+        g.fillEllipse(37, 20, 5, 4)
+        break
+      default: // greathelm (dome + visor)
+        g.fillStyle(dark, 1)
+        g.fillEllipse(32, 18, hw + 3, 29)
+        g.fillStyle(s.hood, 1)
+        g.fillEllipse(32, 18, hw, 26)
+        g.fillStyle(s.robeHi, 1)
+        g.fillRect(32 - hw / 2 + 2, 15, hw - 4, 3)
+        g.fillStyle(dark, 1)
+        if (s.visor === 0) {
+          g.fillRect(32 - hw / 2 + 3, 18, hw - 6, 6)
+          g.fillRect(31, 18, 2, 9)
+        } else {
+          g.fillPoints(this.pts([32 - hw / 2 + 3, 17, 30, 22, 32 - hw / 2 + 3, 23]), true)
+          g.fillPoints(this.pts([32 + hw / 2 - 3, 17, 34, 22, 32 + hw / 2 - 3, 23]), true)
+          g.fillRect(31, 16, 2, 11)
+        }
+        eyeSlit()
+    }
+  }
+
   /**
    * A knight hero. `rank` drives everything: low rank is a lean, plain footman
    * (dull plate, bare head), high rank is a broad, glowing, winged champion —
@@ -1089,26 +1358,8 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(s.robeHi, 1)
     g.fillCircle(x0 - 4, 40, 3.5)
     g.fillCircle(x0 + w + 4, 40, 3.5)
-    // Helmet (dark outline + dome). Smaller/plainer at low rank.
-    const hw = 24 + Math.round(6 * s.rank)
-    g.fillStyle(dark, 1)
-    g.fillEllipse(32, 18, hw + 3, 29)
-    g.fillStyle(s.hood, 1)
-    g.fillEllipse(32, 18, hw, 26)
-    g.fillStyle(s.robeHi, 1) // brow band
-    g.fillRect(32 - hw / 2 + 2, 15, hw - 4, 3)
-    g.fillStyle(dark, 1) // visor + nasal guard (style varies by `visor`)
-    if (s.visor === 0) {
-      g.fillRect(32 - hw / 2 + 3, 18, hw - 6, 6) // single horizontal slit
-      g.fillRect(31, 18, 2, 9)
-    } else {
-      g.fillPoints(this.pts([32 - hw / 2 + 3, 17, 30, 22, 32 - hw / 2 + 3, 23]), true) // twin angled slits
-      g.fillPoints(this.pts([32 + hw / 2 - 3, 17, 34, 22, 32 + hw / 2 - 3, 23]), true)
-      g.fillRect(31, 16, 2, 11)
-    }
-    g.fillStyle(s.eye, 1) // glowing eyes in the slit
-    g.fillRect(25, 19, 4, 3)
-    g.fillRect(35, 19, 4, 3)
+    // Helmet SHAPE by archetype (smaller/plainer at low rank).
+    this.drawHeroHelm(g, s, dark)
     if (has('horns')) {
       g.fillStyle(s.trim, 1)
       g.fillTriangle(16, 14, 8, 2, 22, 12)
