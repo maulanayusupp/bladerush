@@ -85,6 +85,8 @@ export class BattleScene extends Phaser.Scene {
   private swordDamageMul = 1
   private playerSkin = -1
   private heroScale: number = HERO.minScale
+  private heroAura!: Phaser.GameObjects.Image
+  private heroAuraColor = 0
   private healAcc = 0
   private bossAcc = 0
   private nextBossMs: number = BOSS.firstMs
@@ -250,6 +252,12 @@ export class BattleScene extends Phaser.Scene {
     this.minimap = this.add.graphics().setScrollFactor(0).setDepth(24)
     // Screen-pinned arrow pointing to an off-screen boss.
     this.bossArrow = this.add.graphics().setScrollFactor(0).setDepth(23)
+    // Radiant aura under the hero; color + size grow with tier (see checkEvolve).
+    this.heroAura = this.add
+      .image(this.player.x, this.player.y, 'aura')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(-2)
+      .setVisible(false)
 
     this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'troop0', maxSize: ENEMY.poolSize })
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
@@ -420,6 +428,7 @@ export class BattleScene extends Phaser.Scene {
     this.updateChests()
     this.updateSwords(deltaMs)
     this.checkEvolve()
+    this.updateHeroAura()
     this.drawMinimap()
   }
 
@@ -497,7 +506,26 @@ export class BattleScene extends Phaser.Scene {
     codexService.mark('hero', tier)
     // Shield gear grants defense (reduced incoming damage).
     this.playerDefenseMul = gearOf(tier) === 3 ? GEAR.shieldDefenseMul : 1
+    // Aura color tracks the prestige theme; brighter/hotter as tier climbs.
+    const rk = tier / (HERO.skins - 1)
+    this.heroAuraColor =
+      rk >= 0.85 ? 0xffe14d : rk >= 0.72 ? 0xff2d2d : rk >= 0.6 ? 0xff6a2a : rk >= 0.45 ? 0xd48aff : rk >= 0.3 ? 0x5ad0ff : 0
     if (!first) this.evolveFx()
+  }
+
+  /** Pulsing radiant aura under the hero, scaled to its size + tier. */
+  private updateHeroAura(): void {
+    if (!this.heroAuraColor) {
+      this.heroAura.setVisible(false)
+      return
+    }
+    const t = this.elapsedMs
+    this.heroAura
+      .setVisible(true)
+      .setPosition(this.player.x, this.player.y)
+      .setTint(this.heroAuraColor)
+      .setScale(this.heroScale * (0.72 + 0.06 * Math.sin(t / 240)))
+      .setAlpha(0.26 + 0.1 * Math.sin(t / 300))
   }
 
   /** Big "power-up" transformation moment: shockwave, burst, flash + a pop. */

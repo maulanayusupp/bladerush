@@ -103,28 +103,27 @@ const CHAMPION_COUNT = 500
 function genChampions(): ChampionSkin[] {
   const out: ChampionSkin[] = []
   const last = CHAMPION_COUNT - 1
+  // Ordered PRESTIGE themes: armor material climbs from rustic iron to divine
+  // gold as rank rises, so the roster reads as a clear power ramp (not random
+  // rainbow). Within a theme, minor shade + eye-hue variation keeps them distinct.
+  const THEMES = [
+    { base: 0x4a4a52, trim: 0xb08d57, cape: 0x3a2a1a, glow: 0 }, // iron / bronze
+    { base: 0x39465a, trim: 0xc7ccd8, cape: 0x232f3e, glow: 0 }, // steel / silver
+    { base: 0x2f5a3a, trim: 0xffd24a, cape: 0x1c3a24, glow: 0x6bff9a }, // emerald + gold
+    { base: 0x264a6e, trim: 0x5ad0ff, cape: 0x18304c, glow: 0x5ad0ff }, // sapphire
+    { base: 0x472a5e, trim: 0xff8ad0, cape: 0x2b183a, glow: 0xd48aff }, // amethyst
+    { base: 0x6a1e24, trim: 0xffd24a, cape: 0x3a0c12, glow: 0xff5a3a }, // crimson blood-knight
+    { base: 0x1a1622, trim: 0xff3b3b, cape: 0x2a0810, glow: 0xff2d2d }, // obsidian / infernal
+    { base: 0x2a2414, trim: 0xffd700, cape: 0x8a1020, glow: 0xffe14d }, // golden divine
+  ]
   for (let i = 0; i < CHAMPION_COUNT; i++) {
     const rank = i / last
-    const hue = (i * 137.508) % 360
-    const capeHue = (i * 57.31 + 40) % 360
-    const eyeHue = (i * 93.7 + 200) % 360
-    let base = hsl(hue, 0.2 + 0.5 * rank, 0.24 + 0.12 * rank)
-    let accent = hsl((hue + 46) % 360, 0.55 + 0.4 * rank, 0.5 + 0.18 * rank)
-    let cape = hsl(capeHue, 0.4 + 0.32 * rank, 0.32 + 0.12 * rank)
-    let glow = rank > 0.5 ? accent : 0
-    if (rank >= 0.85) {
-      // Top tiers: golden regal + infernal cape + fierce red glow (luxurious & menacing).
-      accent = 0xffd700
-      base = i % 2 ? 0x241f14 : 0x1c1622
-      cape = i % 2 ? 0x8a1020 : 0x3a0c4a
-      glow = i % 2 ? 0xff2d2d : 0xffd24a
-    } else if (rank >= 0.6) {
-      // Royal tier: gilded trim over a deeper armor, warm glow.
-      accent = 0xffca3a
-      base = shade(base, 0.8)
-      cape = shade(cape, 0.85)
-      glow = 0xff6a2a
-    }
+    const t = THEMES[Math.min(THEMES.length - 1, Math.floor(rank * THEMES.length))] as (typeof THEMES)[number]
+    const shadeVar = 0.88 + (i % 4) * 0.06 // subtle per-index variation
+    const base = shade(t.base, shadeVar)
+    const accent = t.trim
+    const cape = t.cape
+    const glow = rank >= 0.85 ? t.glow : rank >= 0.5 ? t.glow : 0
     const features: string[] = []
     unlock(features, 0.12, rank, 'cape')
     unlock(features, 0.2, rank, 'crest')
@@ -140,7 +139,7 @@ function genChampions(): ChampionSkin[] {
       hood: shade(base, 0.6), // helmet
       trim: accent,
       skin: 0x0c0a12,
-      eye: hsl(eyeHue, 0.85, 0.62),
+      eye: hsl((i * 57) % 360, 0.85, 0.62),
       features,
       wing: shade(accent, 1.1),
       rank,
