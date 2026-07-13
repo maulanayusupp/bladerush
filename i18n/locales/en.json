@@ -28,6 +28,17 @@
   "levelup": {
     "title": "Level Up! Choose an upgrade"
   },
+  "codex": {
+    "title": "Codex",
+    "open": "Codex",
+    "back": "Back",
+    "hero": "Heroes",
+    "rival": "Rivals",
+    "troop": "Monsters",
+    "boss": "Bosses",
+    "weapon": "Weapons",
+    "hint": "Drag or scroll to browse"
+  },
   "pause": {
     "title": "Paused",
     "resume": "Resume",

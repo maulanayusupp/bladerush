@@ -66,6 +66,9 @@ const features = computed(() => [
         <button type="button" class="btn btn--block" @click="openShop">
           🛒 {{ $t('shop.open') }} · 💰 {{ formatCompact(coins) }}
         </button>
+        <NuxtLink to="/codex" class="btn btn--block">
+          📖 {{ $t('codex.open') }}
+        </NuxtLink>
         <span v-if="store.highScore" class="menu__best">
           🏆 {{ $t('menu.best', { score: formatCompact(store.highScore) }) }}
         </span>

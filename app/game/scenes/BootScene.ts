@@ -334,7 +334,10 @@ export class BootScene extends Phaser.Scene {
     this.bake('aura', AURA.textureRadius * 2, AURA.textureRadius * 2, (g) => this.drawAura(g))
     this.bake('spark', 10, 10, (g) => this.drawSpark(g))
     this.bake('shock', 64, 64, (g) => this.drawShock(g))
-    this.scene.start('BattleScene')
+    // Which scene to enter after baking (BattleScene by default; CodexScene for
+    // the collection gallery). Both reuse these exact baked textures.
+    const next = (this.game.registry.get('nextScene') as string) || 'BattleScene'
+    this.scene.start(next)
   }
 
   /** A small white sparkle for clash/death particle bursts. */

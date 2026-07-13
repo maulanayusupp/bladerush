@@ -28,6 +28,17 @@
   "levelup": {
     "title": "Naik Level! Pilih upgrade"
   },
+  "codex": {
+    "title": "Codex",
+    "open": "Codex",
+    "back": "Kembali",
+    "hero": "Hero",
+    "rival": "Rival",
+    "troop": "Monster",
+    "boss": "Bos",
+    "weapon": "Senjata",
+    "hint": "Geser atau scroll untuk menjelajah"
+  },
   "pause": {
     "title": "Jeda",
     "resume": "Lanjut",
