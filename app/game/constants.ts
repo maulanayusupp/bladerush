@@ -79,6 +79,8 @@ export const SWORD_SHAPES = [
   'leaf', 'straight', 'curved', 'broad', 'rapier', 'shard', 'cleaver', 'saber', 'glaive', 'fork',
   'katana', 'scimitar', 'greatsword', 'dagger', 'kris', 'trident', 'scythe', 'twin', 'nodachi', 'khopesh',
   'flamberge', 'claymore', 'cutlass', 'estoc', 'crystal', 'bone', 'machete', 'falchion',
+  // Distinctive shapes + baked effects (glow / energy / runes / saw / barbs).
+  'energy', 'holy', 'chakram', 'sawblade', 'demon', 'runic', 'warscythe',
 ] as const
 
 /**

@@ -125,6 +125,7 @@ export class BattleScene extends Phaser.Scene {
   private statBestRank = 99
   private keys?: Record<string, Phaser.Input.Keyboard.Key>
   private paused = false
+  private swordTintable = true
   // Floating virtual joystick (touch/drag): origin set on press, vector from drag.
   private joyActive = false
   private joyOriginX = 0
@@ -315,6 +316,9 @@ export class BattleScene extends Phaser.Scene {
     // Pick one of the 10 blade skins for this run.
     const swordSkin = Math.floor(Math.random() * SWORD_SHAPES.length)
     this.swordPool.forEach((sword) => sword.setTexture(`sword${swordSkin}`))
+    // Effect weapons keep their baked colors; plain blades take the power gradient.
+    const SPECIAL_BLADES = ['energy', 'holy', 'chakram', 'sawblade', 'demon', 'runic', 'warscythe']
+    this.swordTintable = !SPECIAL_BLADES.includes(SWORD_SHAPES[swordSkin] as string)
     codexService.load()
     codexService.mark('weapon', swordSkin)
     codexService.mark('hero', 0)
@@ -1685,7 +1689,7 @@ export class BattleScene extends Phaser.Scene {
         const angle = phase + (k / onRing) * TAU
         sword.place(px + Math.cos(angle) * rr, py + Math.sin(angle) * rr, angle + Math.PI / 2 + 0.5)
         sword.setScale(baseScale + 0.06 * Math.sin(this.elapsedMs / 150 + placed * 0.6))
-        sword.setTint(fury ? 0xffffff : this.ringColorAt(colors, placed, count))
+        sword.setTint(fury || !this.swordTintable ? 0xffffff : this.ringColorAt(colors, placed, count))
         placed++
       }
       ring++

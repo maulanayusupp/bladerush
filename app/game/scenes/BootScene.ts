@@ -1647,7 +1647,120 @@ export class BootScene extends Phaser.Scene {
 
   /** One of 10 player blade silhouettes. Guard/grip/pommel are shared; the
    *  blade shape varies. Tier tint recolors the whole blade in-game. */
+  /** Shared gold cross-guard + grip + pommel. */
+  private drawWeaponGuard(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xffce5a, 1)
+    g.fillPoints(this.pts([0, 29, 16, 29, 13.5, 33, 2.5, 33]), true)
+    g.fillStyle(0x5c3b22, 1)
+    g.fillRect(6.3, 33, 3.4, 9)
+    g.fillStyle(0xffce5a, 1)
+    g.fillCircle(8, 43, 2.3)
+  }
+
+  /**
+   * Weapons with a distinctive SHAPE + baked EFFECT (glow, energy core, runes,
+   * saw teeth, barbs). Returns true if it fully handled the draw.
+   */
+  private drawSpecialWeapon(g: Phaser.GameObjects.Graphics, shape: string): boolean {
+    switch (shape) {
+      case 'energy': { // plasma blade with a white-hot core + soft glow
+        g.fillStyle(0xffffff, 0.22)
+        g.fillPoints(this.pts([8, -1, 12, 10, 11, 29, 5, 29, 4, 10]), true) // glow halo
+        g.fillStyle(0x9be7ff, 0.95)
+        g.fillPoints(this.pts([8, 1, 10.4, 10, 10, 28, 6, 28, 5.6, 10]), true)
+        g.fillStyle(0xffffff, 1)
+        g.fillRect(7.3, 3, 1.4, 24) // core
+        this.drawWeaponGuard(g)
+        return true
+      }
+      case 'holy': { // radiant broad blade + winged guard
+        g.fillStyle(0xfff4c0, 0.25)
+        g.fillPoints(this.pts([8, -1, 13, 10, 12.5, 30, 3.5, 30, 3, 10]), true) // aura
+        g.fillStyle(0xf2f5ff, 1)
+        g.fillPoints(this.pts([8, 0, 12, 10, 11.5, 29, 4.5, 29, 4, 10]), true)
+        g.fillStyle(0xffffff, 1)
+        g.fillRect(7.2, 3, 1.6, 24)
+        g.fillStyle(0xffd700, 1) // winged crossguard
+        g.fillPoints(this.pts([8, 28, 0, 26, 3, 33, 8, 33]), true)
+        g.fillPoints(this.pts([8, 28, 16, 26, 13, 33, 8, 33]), true)
+        g.fillStyle(0x5c3b22, 1)
+        g.fillRect(6.3, 33, 3.4, 9)
+        g.fillStyle(0x9be7ff, 1)
+        g.fillCircle(8, 43, 2.6) // gem pommel
+        return true
+      }
+      case 'chakram': { // serrated ring blade
+        const cx = 8
+        const cy = 15
+        g.fillStyle(0xcdd3e0, 1)
+        g.fillCircle(cx, cy, 8)
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2
+          g.fillTriangle(cx + Math.cos(a) * 8, cy + Math.sin(a) * 8, cx + Math.cos(a) * 12, cy + Math.sin(a) * 12, cx + Math.cos(a + 0.4) * 8, cy + Math.sin(a + 0.4) * 8)
+        }
+        g.fillStyle(0x2a2f38, 1)
+        g.fillCircle(cx, cy, 4) // hollow center
+        g.fillStyle(0x5c3b22, 1)
+        g.fillRect(6.5, 30, 3, 12) // grip
+        return true
+      }
+      case 'sawblade': { // spinning circular saw
+        const cx = 8
+        const cy = 14
+        g.fillStyle(0x9198a6, 1)
+        for (let i = 0; i < 10; i++) {
+          const a = (i / 10) * Math.PI * 2
+          g.fillTriangle(cx + Math.cos(a) * 7, cy + Math.sin(a) * 7, cx + Math.cos(a) * 12, cy + Math.sin(a - 0.2) * 12, cx + Math.cos(a + 0.5) * 7, cy + Math.sin(a + 0.5) * 7)
+        }
+        g.fillStyle(0xcdd3e0, 1)
+        g.fillCircle(cx, cy, 7)
+        g.fillStyle(0x6f7787, 1)
+        g.fillCircle(cx, cy, 3)
+        g.fillStyle(0x3a2f22, 1)
+        g.fillRect(6.6, 30, 2.8, 12)
+        return true
+      }
+      case 'demon': { // barbed jagged blade
+        g.fillStyle(0x9198a6, 1)
+        g.fillPoints(this.pts([8, 0, 11, 8, 13, 12, 10.5, 14, 11, 28, 5, 28, 5.5, 14, 3, 12, 5, 8]), true)
+        g.fillStyle(0xb0103a, 0.5)
+        g.fillRect(7.4, 4, 1.2, 22) // infernal fuller
+        g.lineStyle(1.4, 0x14171f, 1)
+        g.strokePoints(this.pts([8, 0, 11, 8, 13, 12, 10.5, 14, 11, 28, 5, 28, 5.5, 14, 3, 12, 5, 8]), true)
+        this.drawWeaponGuard(g)
+        return true
+      }
+      case 'runic': { // straight blade etched with glowing runes
+        g.fillStyle(0xcdd3e0, 1)
+        g.fillPoints(this.pts([8, 1, 11, 8, 11, 28, 5, 28, 5, 8]), true)
+        g.fillStyle(0x00e0ff, 1)
+        for (const ry of [8, 15, 22]) {
+          g.fillCircle(8, ry, 1.4)
+          g.fillRect(7.4, ry - 3, 1.2, 6)
+        }
+        g.lineStyle(1.4, 0x14171f, 1)
+        g.strokePoints(this.pts([8, 1, 11, 8, 11, 28, 5, 28, 5, 8]), true)
+        this.drawWeaponGuard(g)
+        return true
+      }
+      case 'warscythe': { // long shaft + big curved reaper blade
+        g.fillStyle(0x3a2418, 1)
+        g.fillRect(7, 8, 2, 34)
+        g.fillStyle(0x9198a6, 1)
+        g.fillPoints(this.pts([8, 8, 15, 0, 16, 8, 12, 12, 9, 12]), true)
+        g.fillStyle(0xc7ccd8, 1)
+        g.fillPoints(this.pts([9, 8, 14, 3, 14.5, 7]), true)
+        g.lineStyle(1.4, 0x14171f, 1)
+        g.strokePoints(this.pts([8, 8, 15, 0, 16, 8, 12, 12, 9, 12]), true)
+        return true
+      }
+      default:
+        return false
+    }
+  }
+
   private drawSwordSkin(g: Phaser.GameObjects.Graphics, shape: string): void {
+    if (this.drawSpecialWeapon(g, shape)) return
     const shapes: Record<string, number[]> = {
       straight: [8, 1, 11, 7, 11, 28, 5, 28, 5, 7],
       curved: [8, 1, 13, 10, 12, 22, 9, 28, 7, 28, 6, 14],
