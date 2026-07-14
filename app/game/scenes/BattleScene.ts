@@ -2241,38 +2241,56 @@ export class BattleScene extends Phaser.Scene {
 
   /** Nova: a shockwave that damages every enemy on screen. */
   private castNova(): void {
-    const ring = this.add
-      .image(this.player.x, this.player.y, 'shock')
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setTint(0x9d74ff)
-      .setScale(0.4)
-    this.tweens.add({
-      targets: ring,
-      scale: 6,
-      alpha: { from: 0.9, to: 0 },
-      duration: 440,
-      ease: 'Cubic.Out',
-      onComplete: () => ring.destroy(),
-    })
-    this.cameras.main.shake(220, 0.01)
-    audioService.nova()
-
-    // Scale with the hero's sword damage so it stays lethal as enemy HP grows.
     const dmg = Math.max(
       SKILLS.nova.damage,
       Math.round(this.power.stats.damage * this.swordDamageMul * SKILLS.nova.damageMul),
     )
-    for (const obj of this.enemies.getChildren()) {
-      const enemy = obj as Enemy
-      if (!enemy.active) continue
-      this.damageNumber(enemy.x, enemy.y - 14, dmg, '#c9a0ff')
-      if (enemy.takeDamage(dmg)) this.killEnemy(enemy)
+    this.skillStrike(560, dmg, 0x9d74ff, '#c9a0ff', SKILLS.nova.bossTicks)
+  }
+
+  /** Impact on a single enemy from a skill: number, spark, white flash, or kill. */
+  private skillHitEnemy(e: Enemy, dmg: number, numColor: string): void {
+    this.damageNumber(e.x, e.y - 14, dmg, numColor)
+    this.sparks.explode(4, e.x, e.y)
+    if (e.takeDamage(dmg)) {
+      this.killEnemy(e)
+      return
     }
-    // Also chunk the boss (a few ticks' worth, respecting the per-hit cap).
-    if (this.bossActive && this.boss.active) {
-      const bossDmg = Math.min(this.bossTickDamage(), Math.ceil(this.boss.maxHp * BOSS.maxHitFraction)) * SKILLS.nova.bossTicks
-      this.damageNumber(this.boss.x, this.boss.y - this.boss.displayHeight * 0.3, bossDmg, '#c9a0ff')
-      if (this.boss.takeDamage(bossDmg)) this.bossDefeat()
+    e.setTint(0xffffff)
+    e.setTintFill()
+    this.time.delayedCall(70, () => {
+      if (e.active) e.restoreTint()
+    })
+  }
+
+  /**
+   * An expanding shockwave that damages every enemy within `radius` (each with a
+   * visible impact) and chunks the boss. The ring grows to actually cover the
+   * radius, so the wave is SEEN reaching the enemies it hits.
+   */
+  private skillStrike(radius: number, dmg: number, ringColor: number, numColor: string, bossTicks: number): void {
+    const px = this.player.x
+    const py = this.player.y
+    const ring = this.add
+      .image(px, py, 'shock')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(ringColor)
+      .setScale(0.3)
+      .setDepth(6)
+    this.tweens.add({ targets: ring, scale: (radius * 2) / 64, alpha: { from: 0.95, to: 0 }, duration: 500, ease: 'Cubic.Out', onComplete: () => ring.destroy() })
+    this.cameras.main.shake(240, 0.011)
+    audioService.nova()
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active) continue
+      if (distance(e.x, e.y, px, py) > radius) continue
+      this.skillHitEnemy(e, dmg, numColor)
+    }
+    if (this.bossActive && this.boss.active && distance(this.boss.x, this.boss.y, px, py) < radius + this.boss.displayWidth) {
+      const bd = Math.min(this.bossTickDamage(), Math.ceil(this.boss.maxHp * BOSS.maxHitFraction)) * bossTicks
+      this.damageNumber(this.boss.x, this.boss.y - this.boss.displayHeight * 0.3, bd, numColor)
+      this.sparks.explode(12, this.boss.x, this.boss.y)
+      if (this.boss.takeDamage(bd)) this.bossDefeat()
     }
   }
 
@@ -2288,30 +2306,11 @@ export class BattleScene extends Phaser.Scene {
     this.castDivineSkill(idx)
   }
 
-  /** Damage every enemy on the field (and chunk the boss) with a shockwave. */
-  private divineDamageAll(mult: number, ringColor: number, ringScale: number, numColor: string): void {
-    const ring = this.add
-      .image(this.player.x, this.player.y, 'shock')
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setTint(ringColor)
-      .setScale(0.4)
-      .setDepth(6)
-    this.tweens.add({ targets: ring, scale: ringScale, alpha: { from: 0.95, to: 0 }, duration: 520, ease: 'Cubic.Out', onComplete: () => ring.destroy() })
-    this.cameras.main.shake(260, 0.012)
+  /** Big divine shockwave over a wide radius (each enemy shows an impact). */
+  private divineDamageAll(mult: number, ringColor: number, radius: number, numColor: string): void {
     this.cameras.main.flash(200, (ringColor >> 16) & 255, (ringColor >> 8) & 255, ringColor & 255)
-    audioService.nova()
     const dmg = Math.max(1, Math.round(this.power.stats.damage * this.swordDamageMul * mult))
-    for (const obj of this.enemies.getChildren()) {
-      const e = obj as Enemy
-      if (!e.active) continue
-      this.damageNumber(e.x, e.y - 14, dmg, numColor)
-      if (e.takeDamage(dmg)) this.killEnemy(e)
-    }
-    if (this.bossActive && this.boss.active) {
-      const bd = Math.min(this.bossTickDamage(), Math.ceil(this.boss.maxHp * BOSS.maxHitFraction)) * 12
-      this.damageNumber(this.boss.x, this.boss.y - this.boss.displayHeight * 0.3, bd, numColor)
-      if (this.boss.takeDamage(bd)) this.bossDefeat()
-    }
+    this.skillStrike(radius, dmg, ringColor, numColor, 12)
   }
 
   /** Fire the current Divine hero's unique ultimate. */
@@ -2322,7 +2321,7 @@ export class BattleScene extends Phaser.Scene {
         this.emitHp()
         this.playerInvulnUntil = this.elapsedMs + 2500
         this.sparks.explode(30, this.player.x, this.player.y)
-        this.divineDamageAll(18, 0xfff2b0, 7, '#fff2b0')
+        this.divineDamageAll(18, 0xfff2b0, 560, '#fff2b0')
         break
       case 1: { // Void Sovereign — Black Hole: pull every enemy inward, then implode
         for (const obj of this.enemies.getChildren()) {
@@ -2333,7 +2332,7 @@ export class BattleScene extends Phaser.Scene {
           const pull = Math.min(d, 260)
           e.setPosition(e.x + Math.cos(a) * pull, e.y + Math.sin(a) * pull)
         }
-        this.divineDamageAll(16, 0x9d3cff, 5, '#c9a0ff')
+        this.divineDamageAll(16, 0x9d3cff, 460, '#c9a0ff')
         break
       }
       case 2: { // Inferno Lord — Meteor Storm: meteors rain across the view
@@ -2349,7 +2348,7 @@ export class BattleScene extends Phaser.Scene {
             const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 6)
             for (const obj of this.enemies.getChildren()) {
               const e = obj as Enemy
-              if (e.active && distance(e.x, e.y, tx, ty) < 150 && e.takeDamage(dmg)) this.killEnemy(e)
+              if (e.active && distance(e.x, e.y, tx, ty) < 150) this.skillHitEnemy(e, dmg, '#ffb060')
             }
           })
         }
@@ -2359,10 +2358,10 @@ export class BattleScene extends Phaser.Scene {
       }
       case 3: // God-Emperor — Cataclysm: screen-wide gold shockwave + hit-stop
         this.hitStopUntil = this.frameTime + 120
-        this.divineDamageAll(30, 0xffe14d, 9, '#ffe14d')
+        this.divineDamageAll(30, 0xffe14d, 820, '#ffe14d')
         break
       case 4: { // Dragon Ascendant — Dragon Breath: ignite everything
-        this.divineDamageAll(8, 0xff7a2a, 6, '#ffb060')
+        this.divineDamageAll(8, 0xff7a2a, 560, '#ffb060')
         const burnDps = this.power.stats.damage * this.swordDamageMul * 3
         for (const obj of this.enemies.getChildren()) {
           const e = obj as Enemy
@@ -2375,7 +2374,7 @@ export class BattleScene extends Phaser.Scene {
       case 5: // Death Reaper — Soul Harvest: reap the field + heal per kill
         this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(this.player.maxHp * 0.5))
         this.emitHp()
-        this.divineDamageAll(22, 0x6bff9a, 7, '#6bff9a')
+        this.divineDamageAll(22, 0x6bff9a, 620, '#6bff9a')
         break
       case 6: { // Storm Titan — Thunderstorm: repeated chain-lightning strikes
         for (let k = 0; k < 6; k++) {
@@ -2390,7 +2389,7 @@ export class BattleScene extends Phaser.Scene {
             const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 10)
             for (const obj of this.enemies.getChildren()) {
               const e = obj as Enemy
-              if (e.active && distance(e.x, e.y, t.x, t.y) < 130 && e.takeDamage(dmg)) this.killEnemy(e)
+              if (e.active && distance(e.x, e.y, t.x, t.y) < 130) this.skillHitEnemy(e, dmg, '#8adfff')
             }
           })
         }
@@ -2405,12 +2404,12 @@ export class BattleScene extends Phaser.Scene {
           e.chillUntil = this.elapsedMs + 4000
           e.chillMul = 0.2
         }
-        this.divineDamageAll(20, 0x9be7ff, 8, '#dff4ff')
+        this.divineDamageAll(20, 0x9be7ff, 680, '#dff4ff')
         break
       }
       case 8: { // Blood Warlord — Bloodbath: massive damage + huge lifesteal
         const before = this.countEnemies()
-        this.divineDamageAll(26, 0xff2020, 8, '#ff5a5a')
+        this.divineDamageAll(26, 0xff2020, 700, '#ff5a5a')
         const healed = Math.max(1, (before - this.countEnemies())) * 4
         this.player.hp = Math.min(this.player.maxHp, this.player.hp + healed)
         this.emitHp()
@@ -2418,8 +2417,8 @@ export class BattleScene extends Phaser.Scene {
       }
       default: // Cosmic Overlord — Big Bang: the ultimate screen-clearing nuke
         this.hitStopUntil = this.frameTime + 140
-        this.divineDamageAll(45, 0x9d5cff, 11, '#c9a0ff')
-        this.divineDamageAll(45, 0x00ffd0, 8, '#8affff')
+        this.divineDamageAll(45, 0x9d5cff, 900, '#c9a0ff')
+        this.divineDamageAll(45, 0x00ffd0, 700, '#8affff')
         this.cameras.main.shake(400, 0.02)
     }
   }
