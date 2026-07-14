@@ -66,6 +66,13 @@
     "discovered": "Ditemukan",
     "hint": "Geser atau scroll untuk menjelajah"
   },
+  "rarity": {
+    "common": "Biasa",
+    "rare": "Langka",
+    "epic": "Epik",
+    "legendary": "Legendaris",
+    "mythic": "Mitos"
+  },
   "pause": {
     "title": "Jeda",
     "resume": "Lanjut",

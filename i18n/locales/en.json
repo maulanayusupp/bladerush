@@ -66,6 +66,13 @@
     "discovered": "Discovered",
     "hint": "Drag or scroll to browse"
   },
+  "rarity": {
+    "common": "Common",
+    "rare": "Rare",
+    "epic": "Epic",
+    "legendary": "Legendary",
+    "mythic": "Mythic"
+  },
   "pause": {
     "title": "Paused",
     "resume": "Resume",

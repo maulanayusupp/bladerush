@@ -100,6 +100,27 @@ export const HERO = {
 } as const
 
 /**
+ * Hero rarity tiers by rank (index / skins). Purely a classification for the
+ * Codex + evolve flourish — the actual look already escalates continuously.
+ */
+export const HERO_RARITIES = [
+  { id: 'common', min: 0, color: 0x9aa0ac },
+  { id: 'rare', min: 0.35, color: 0x4aa3ff },
+  { id: 'epic', min: 0.6, color: 0xb06bff },
+  { id: 'legendary', min: 0.8, color: 0xffb020 },
+  { id: 'mythic', min: 0.93, color: 0xff3b6b },
+] as const
+
+/** Rarity tier index (0..4) for a hero rank (0..1). */
+export function heroRarity(rank: number): number {
+  let idx = 0
+  for (let i = 0; i < HERO_RARITIES.length; i++) {
+    if (rank >= (HERO_RARITIES[i] as { min: number }).min) idx = i
+  }
+  return idx
+}
+
+/**
  * Hero equipment held in-hand (by skin index): a sword, dual swords, a spear,
  * or a shield. Carrying a shield reduces incoming damage.
  */

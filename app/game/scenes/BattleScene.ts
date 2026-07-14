@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -101,6 +101,7 @@ export class BattleScene extends Phaser.Scene {
   private furyUntil = 0
   private swordDamageMul = 1
   private playerSkin = -1
+  private heroRarityIdx = -1
   private heroScale: number = HERO.minScale
   private heroAura!: Phaser.GameObjects.Image
   private heroAuraColor = 0
@@ -174,6 +175,7 @@ export class BattleScene extends Phaser.Scene {
     this.furyUntil = 0
     this.swordDamageMul = 1
     this.playerSkin = -1
+    this.heroRarityIdx = -1
     this.healAcc = 0
     this.bossAcc = 0
     this.nextBossMs = BOSS.firstMs
@@ -884,6 +886,37 @@ export class BattleScene extends Phaser.Scene {
     this.heroAuraColor =
       rk >= 0.85 ? 0xffe14d : rk >= 0.72 ? 0xff2d2d : rk >= 0.6 ? 0xff6a2a : rk >= 0.45 ? 0xd48aff : rk >= 0.3 ? 0x5ad0ff : 0
     if (!first) this.evolveFx()
+    // Announce crossing into a new rarity tier (Common → … → Mythic).
+    const rarity = heroRarity(tier / (HERO.skins - 1))
+    if (rarity > this.heroRarityIdx) {
+      if (!first) this.announceRarity(rarity)
+      this.heroRarityIdx = rarity
+    }
+  }
+
+  /** Big colored "LEGENDARY!" flourish when the hero reaches a new rarity tier. */
+  private announceRarity(rarity: number): void {
+    const info = HERO_RARITIES[rarity] as { id: string; color: number }
+    const color = `#${info.color.toString(16).padStart(6, '0')}`
+    const text = this.add
+      .text(this.player.x, this.player.y - 60, info.id.toUpperCase(), {
+        fontFamily: 'Segoe UI, sans-serif',
+        fontSize: '34px',
+        fontStyle: 'bold',
+        color,
+      })
+      .setOrigin(0.5)
+      .setDepth(21)
+    text.setStroke('#000000', 6)
+    this.tweens.add({
+      targets: text,
+      y: text.y - 40,
+      scale: { from: 0.6, to: 1.3 },
+      alpha: { from: 1, to: 0 },
+      duration: 1100,
+      ease: 'Cubic.Out',
+      onComplete: () => text.destroy(),
+    })
   }
 
   /** Pulsing radiant aura under the hero, scaled to its size + tier. */

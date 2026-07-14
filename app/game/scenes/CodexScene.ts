@@ -4,7 +4,7 @@
 // category comes from the game registry ('codexCategory'), driven by Vue tabs.
 // =============================================================================
 import Phaser from 'phaser'
-import { SWORD_SHAPES, TROOP } from '../constants'
+import { HERO_RARITIES, SWORD_SHAPES, TROOP, heroRarity } from '../constants'
 import { clamp } from '~/helpers/math.helper'
 import { codexService, type CodexCategory } from '~/services/CodexService'
 
@@ -78,6 +78,10 @@ export class CodexScene extends Phaser.Scene {
     const gridW = cols * cell
     const startX = (viewW - gridW) / 2 + cell / 2
 
+    // Heroes get a rarity-colored frame around each cell (Codex categorization).
+    const frames = category === 'hero' ? this.add.graphics().setDepth(-1) : null
+    if (frames) this.items.push(frames)
+
     for (let i = 0; i < cat.count; i++) {
       const key = `${cat.prefix}${i}`
       if (!this.textures.exists(key)) continue
@@ -87,6 +91,13 @@ export class CodexScene extends Phaser.Scene {
       const cy = TOP_PAD + row * cell + cell / 2
 
       const discovered = codexService.has(catKey, i)
+      if (frames) {
+        const color = (HERO_RARITIES[heroRarity(i / (cat.count - 1))] as { color: number }).color
+        frames.fillStyle(color, discovered ? 0.14 : 0.05)
+        frames.fillRoundedRect(cx - cell / 2 + 3, cy - cell / 2 + 3, cell - 6, cell - 6, 6)
+        frames.lineStyle(2, color, discovered ? 0.85 : 0.25)
+        frames.strokeRoundedRect(cx - cell / 2 + 3, cy - cell / 2 + 3, cell - 6, cell - 6, 6)
+      }
       const sprite = this.add.image(cx, cy - 6, key)
       // Fit into the cell.
       const maxDim = Math.max(sprite.width, sprite.height)

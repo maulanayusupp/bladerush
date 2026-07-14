@@ -62,6 +62,30 @@
     }
   }
 
+  &__legend {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-3;
+  }
+
+  &__rarity {
+    display: flex;
+    align-items: center;
+    gap: $space-1;
+    font-size: $font-size-sm;
+    color: var(--c);
+    font-weight: $font-weight-bold;
+
+    &::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background-color: var(--c);
+    }
+  }
+
   &__stage {
     position: relative;
     flex: 1;
