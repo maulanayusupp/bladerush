@@ -120,8 +120,10 @@ export class CodexScene extends Phaser.Scene {
         sprite.setInteractive({ useHandCursor: true })
         sprite.on('pointerup', () => {
           if (this.dragDist < 12) {
-            loadoutService.setHero(i)
-            this.game.registry.set('selectedHero', i)
+            // Tap the already-selected hero again to release it back to Auto.
+            const next = loadoutService.selectedHero === i ? -1 : i
+            loadoutService.setHero(next)
+            this.game.registry.set('selectedHero', next)
             this.build(category)
           }
         })

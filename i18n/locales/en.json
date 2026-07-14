@@ -67,7 +67,7 @@
     "weapon": "Weapons",
     "discovered": "Discovered",
     "hint": "Drag or scroll to browse",
-    "selectHint": "Tap a hero to play as it"
+    "selectHint": "Tap a hero to play as it · tap again for Auto"
   },
   "dskill": {
     "seraph": "Divine Judgment",
