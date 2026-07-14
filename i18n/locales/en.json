@@ -2,6 +2,7 @@
   "menu": {
     "badge": "Sword-ring survivor",
     "subtitle": "Grow a ring of spinning blades, crush the horde, out-duel rival heroes.",
+    "nav": "Menu",
     "play": "Play",
     "best": "Best {score}",
     "controls": "Move to aim — your blades strike automatically",
@@ -15,6 +16,7 @@
     "level": "Lvl",
     "power": "Power",
     "score": "Score",
+    "rank": "Rank",
     "mute": "Mute sound",
     "unmute": "Unmute sound",
     "boss": "Boss",
@@ -27,6 +29,30 @@
   },
   "levelup": {
     "title": "Level Up! Choose an upgrade"
+  },
+  "summary": {
+    "kills": "Kills",
+    "bosses": "Bosses",
+    "combo": "Best combo",
+    "absorbed": "NPCs absorbed",
+    "rank": "Best rank",
+    "time": "Survived",
+    "unlocked": "Achievements unlocked"
+  },
+  "ach": {
+    "kills100": "First Blood (100 kills)",
+    "kills1000": "Reaper (1,000 kills)",
+    "kills10000": "Annihilator (10,000 kills)",
+    "boss1": "Boss Slayer",
+    "boss10": "Boss Hunter (10 bosses)",
+    "combo50": "Combo Adept (×50)",
+    "combo200": "Combo Master (×200)",
+    "absorb3": "Predator (absorb 3 NPCs)",
+    "absorb10": "Apex (absorb 10 NPCs)",
+    "survive300": "Survivor (5 minutes)",
+    "power1m": "Millionaire (1M power)",
+    "power1t": "Titan (1T power)",
+    "champion": "Champion (rank #1)"
   },
   "codex": {
     "title": "Codex",

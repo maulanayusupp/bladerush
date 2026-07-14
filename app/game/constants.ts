@@ -441,6 +441,26 @@ export const META = {
   magnet: { baseCost: 120, per: 40, max: 12, icon: '🧲' }, // +pull range for gates/hearts
   revive: { baseCost: 1000, per: 1, max: 3, icon: '🕊️' }, // survive death N times
 } as const
+/**
+ * One-time achievements evaluated at the end of a run. Unlocking one grants
+ * coins (once ever). `metric` maps to a RunStats field (or final power / rank).
+ */
+export const ACHIEVEMENTS = [
+  { id: 'kills100', metric: 'kills', value: 100, reward: 100, icon: '⚔️' },
+  { id: 'kills1000', metric: 'kills', value: 1000, reward: 500, icon: '⚔️' },
+  { id: 'kills10000', metric: 'kills', value: 10000, reward: 2500, icon: '⚔️' },
+  { id: 'boss1', metric: 'bosses', value: 1, reward: 150, icon: '💀' },
+  { id: 'boss10', metric: 'bosses', value: 10, reward: 1200, icon: '💀' },
+  { id: 'combo50', metric: 'topCombo', value: 50, reward: 300, icon: '🔥' },
+  { id: 'combo200', metric: 'topCombo', value: 200, reward: 1500, icon: '🔥' },
+  { id: 'absorb3', metric: 'npcsAbsorbed', value: 3, reward: 400, icon: '🩸' },
+  { id: 'absorb10', metric: 'npcsAbsorbed', value: 10, reward: 1800, icon: '🩸' },
+  { id: 'survive300', metric: 'timeSec', value: 300, reward: 500, icon: '⏱️' },
+  { id: 'power1m', metric: 'power', value: 1e6, reward: 800, icon: '💪' },
+  { id: 'power1t', metric: 'power', value: 1e12, reward: 3500, icon: '💪' },
+  { id: 'champion', metric: 'rank1', value: 1, reward: 2500, icon: '👑' },
+] as const
+
 export const META_IDS = [
   'startPower', 'maxHp', 'damage', 'coin', 'moveSpeed', 'orbitSpeed', 'crit', 'xp',
   'lifesteal', 'defense', 'bossDmg', 'luck', 'heal', 'status', 'regen', 'magnet', 'revive',

@@ -47,12 +47,23 @@ export interface PlayerHealth {
  * Contract for every event that crosses the Phaser <-> Vue boundary.
  * `undefined` marks a payload-less event.
  */
+/** End-of-run summary shown on the game-over screen. */
+export interface RunStats {
+  kills: number
+  bosses: number
+  topCombo: number
+  npcsAbsorbed: number
+  timeSec: number
+  bestRank: number
+  totalRanked: number
+}
+
 export interface GameEventMap {
   'game:ready': undefined
   'power:changed': { power: number }
   'player:hp': PlayerHealth
   'score:changed': { score: number }
-  'game:over': { score: number; power: number; coins: number }
+  'game:over': { score: number; power: number; coins: number; stats: RunStats; unlocked: string[] }
   'game:restart': undefined
   'game:pause': undefined
   'game:resume': undefined
@@ -63,6 +74,7 @@ export interface GameEventMap {
   'boss:hp': { current: number; max: number }
   'boss:end': undefined
   'combo:changed': { count: number; mult: number }
+  'rank:changed': { rank: number; total: number }
   'xp:changed': { level: number; xp: number; next: number }
   'levelup:offer': { ids: string[] }
   'levelup:pick': { id: string }

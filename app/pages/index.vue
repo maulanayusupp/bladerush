@@ -60,6 +60,18 @@ function startGame(): void {
       <span class="menu__bar menu__bar--bottom" />
     </div>
 
+    <nav class="menu__nav" :aria-label="$t('menu.nav')">
+      <button type="button" class="navbtn" @click="openShop">
+        <span class="navbtn__icon" aria-hidden="true">🛒</span>
+        <span class="navbtn__label">{{ $t('shop.open') }}</span>
+        <b class="navbtn__meta">💰 {{ formatCompact(coins) }}</b>
+      </button>
+      <NuxtLink to="/codex" class="navbtn">
+        <span class="navbtn__icon" aria-hidden="true">📖</span>
+        <span class="navbtn__label">{{ $t('codex.open') }}</span>
+      </NuxtLink>
+    </nav>
+
     <LanguageSwitcher />
 
     <div class="menu__content" :style="parallax">
@@ -76,15 +88,6 @@ function startGame(): void {
           <span class="cta__icon" aria-hidden="true">▶</span>
           <span class="cta__label">{{ $t('menu.play') }}</span>
         </NuxtLink>
-
-        <div class="menu__links">
-          <button type="button" class="menu__link" @click="openShop">
-            🛒 {{ $t('shop.open') }}
-            <b class="menu__link-meta">{{ formatCompact(coins) }}</b>
-          </button>
-          <span class="menu__link-sep" aria-hidden="true">·</span>
-          <NuxtLink to="/codex" class="menu__link">📖 {{ $t('codex.open') }}</NuxtLink>
-        </div>
 
         <span v-if="store.highScore" class="menu__best">
           🏆 {{ $t('menu.best', { score: formatCompact(store.highScore) }) }}

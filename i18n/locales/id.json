@@ -2,6 +2,7 @@
   "menu": {
     "badge": "Survivor ring pedang",
     "subtitle": "Perbanyak pedang berputar, hancurkan gerombolan, kalahkan hero rival.",
+    "nav": "Menu",
     "play": "Main",
     "best": "Terbaik {score}",
     "controls": "Gerakkan untuk mengarah — pedang menyerang otomatis",
@@ -15,6 +16,7 @@
     "level": "Lvl",
     "power": "Power",
     "score": "Skor",
+    "rank": "Peringkat",
     "mute": "Bisukan suara",
     "unmute": "Nyalakan suara",
     "boss": "Bos",
@@ -27,6 +29,30 @@
   },
   "levelup": {
     "title": "Naik Level! Pilih upgrade"
+  },
+  "summary": {
+    "kills": "Bunuh",
+    "bosses": "Bos",
+    "combo": "Kombo terbaik",
+    "absorbed": "NPC diserap",
+    "rank": "Peringkat terbaik",
+    "time": "Bertahan",
+    "unlocked": "Achievement terbuka"
+  },
+  "ach": {
+    "kills100": "Darah Pertama (100 bunuh)",
+    "kills1000": "Pencabut (1.000 bunuh)",
+    "kills10000": "Pemusnah (10.000 bunuh)",
+    "boss1": "Pembasmi Bos",
+    "boss10": "Pemburu Bos (10 bos)",
+    "combo50": "Ahli Kombo (×50)",
+    "combo200": "Master Kombo (×200)",
+    "absorb3": "Predator (serap 3 NPC)",
+    "absorb10": "Puncak (serap 10 NPC)",
+    "survive300": "Penyintas (5 menit)",
+    "power1m": "Jutawan (power 1J)",
+    "power1t": "Titan (power 1T)",
+    "champion": "Juara (peringkat #1)"
   },
   "codex": {
     "title": "Codex",

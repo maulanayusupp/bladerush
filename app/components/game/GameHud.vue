@@ -6,8 +6,20 @@ import { gameEventBus } from '~/services/EventBus'
 import { audioService } from '~/services/AudioService'
 import { formatCompact } from '~/helpers/format.helper'
 import { useGameStore } from '~/stores/useGameStore'
+import { ACHIEVEMENTS } from '~/game/constants'
+import type { RunStats } from '~/types/game'
 
 const store = useGameStore()
+
+/** Icon for an unlocked achievement id (fallback trophy). */
+function achIcon(id: string): string {
+  return ACHIEVEMENTS.find((a) => a.id === id)?.icon ?? '🏆'
+}
+function fmtTime(sec: number): string {
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
 
 const power = ref(0)
 const score = ref(0)
@@ -23,6 +35,10 @@ const bossHp = ref(0)
 const bossMax = ref(1)
 const bossRatio = computed(() => (bossMax.value > 0 ? bossHp.value / bossMax.value : 0))
 const comboCount = ref(0)
+const rank = ref(1)
+const rankTotal = ref(1)
+const runStats = ref<RunStats | null>(null)
+const unlockedAch = ref<string[]>([])
 const comboMult = ref(1)
 const level = ref(1)
 const xp = ref(0)
@@ -102,12 +118,18 @@ onMounted(() => {
       hp.value = current
       maxHp.value = max
     }),
-    gameEventBus.on('game:over', ({ score: value, coins }) => {
+    gameEventBus.on('game:over', ({ score: value, coins, stats, unlocked }) => {
       isOver.value = true
       finalScore.value = value
       coinsEarned.value = coins
+      runStats.value = stats
+      unlockedAch.value = unlocked
       bossActive.value = false
       store.recordScore(value)
+    }),
+    gameEventBus.on('rank:changed', ({ rank: r, total }) => {
+      rank.value = r
+      rankTotal.value = total
     }),
     gameEventBus.on('boss:spawn', ({ maxHp }) => {
       bossActive.value = true
@@ -166,6 +188,10 @@ function restart(): void {
         <div class="hud__chip">
           <span class="hud__chip-label">{{ $t('hud.score') }}</span>
           <b class="hud__chip-value hud__chip-value--score">{{ formatCompact(score) }}</b>
+        </div>
+        <div class="hud__chip" :class="{ 'hud__chip--rank1': rank === 1 }">
+          <span class="hud__chip-label">{{ $t('hud.rank') }}</span>
+          <b class="hud__chip-value">#{{ rank }}/{{ rankTotal }}</b>
         </div>
       </div>
 
@@ -275,7 +301,21 @@ function restart(): void {
             <p class="overlay__stat-value">{{ formatCompact(store.highScore) }}</p>
           </div>
         </div>
+        <ul v-if="runStats" class="overlay__summary">
+          <li><span>⚔️ {{ $t('summary.kills') }}</span><b>{{ formatCompact(runStats.kills) }}</b></li>
+          <li><span>💀 {{ $t('summary.bosses') }}</span><b>{{ runStats.bosses }}</b></li>
+          <li><span>🔥 {{ $t('summary.combo') }}</span><b>×{{ runStats.topCombo }}</b></li>
+          <li><span>🩸 {{ $t('summary.absorbed') }}</span><b>{{ runStats.npcsAbsorbed }}</b></li>
+          <li><span>🏆 {{ $t('summary.rank') }}</span><b>#{{ runStats.bestRank }}/{{ runStats.totalRanked }}</b></li>
+          <li><span>⏱️ {{ $t('summary.time') }}</span><b>{{ fmtTime(runStats.timeSec) }}</b></li>
+        </ul>
         <p class="overlay__coins">💰 +{{ formatCompact(coinsEarned) }} {{ $t('shop.coins') }}</p>
+        <div v-if="unlockedAch.length" class="overlay__ach">
+          <p class="overlay__ach-title">🎖️ {{ $t('summary.unlocked') }}</p>
+          <span v-for="id in unlockedAch" :key="id" class="overlay__ach-item">
+            {{ achIcon(id) }} {{ $t('ach.' + id) }}
+          </span>
+        </div>
         <BaseButton variant="primary" block @click="restart">{{ $t('gameOver.playAgain') }}</BaseButton>
         <NuxtLink to="/" class="btn btn--block">{{ $t('gameOver.menu') }}</NuxtLink>
       </div>

@@ -107,6 +107,11 @@
     backdrop-filter: blur(4px);
     min-width: 62px;
 
+    &--rank1 {
+      background-color: rgba($color-warning, 0.28);
+      box-shadow: inset 0 0 0 1px rgba($color-warning, 0.6);
+    }
+
     &--level {
       background-color: rgba($color-primary, 0.3);
     }

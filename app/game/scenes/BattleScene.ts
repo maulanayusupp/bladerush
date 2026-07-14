@@ -29,6 +29,8 @@ import { SpawnService } from '~/services/SpawnService'
 import { gameEventBus } from '~/services/EventBus'
 import { audioService } from '~/services/AudioService'
 import { codexService } from '~/services/CodexService'
+import { achievementService } from '~/services/AchievementService'
+import type { RunStats } from '~/types/game'
 import { angleBetween, clamp, distance, pickOne, randomInt, randomRange } from '~/helpers/math.helper'
 import { formatCompact } from '~/helpers/format.helper'
 
@@ -112,6 +114,15 @@ export class BattleScene extends Phaser.Scene {
   private bossMeteorAcc = 0
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   private npcs: NpcHero[] = []
+  // Live ranking + run stats.
+  private rankAcc = 0
+  private curRank = 1
+  private curTotal = 1
+  private statKills = 0
+  private statBosses = 0
+  private statTopCombo = 0
+  private statNpcAbsorbed = 0
+  private statBestRank = 99
   private keys?: Record<string, Phaser.Input.Keyboard.Key>
   private paused = false
   // Floating virtual joystick (touch/drag): origin set on press, vector from drag.
@@ -167,6 +178,14 @@ export class BattleScene extends Phaser.Scene {
     this.nextBossMs = BOSS.firstMs
     this.bossActive = false
     this.bossCount = 0
+    this.rankAcc = 0
+    this.curRank = 1
+    this.curTotal = 1
+    this.statKills = 0
+    this.statBosses = 0
+    this.statTopCombo = 0
+    this.statNpcAbsorbed = 0
+    this.statBestRank = 99
     this.bossSummonAcc = 0
     this.bossGateAcc = 0
     this.comboCount = 0
@@ -484,7 +503,29 @@ export class BattleScene extends Phaser.Scene {
     this.checkEvolve()
     this.updateHeroAura()
     this.updateNpcs(deltaMs, elapsedSec)
+    this.updateRanking(deltaMs)
     this.drawMinimap()
+  }
+
+  /** Live .io-style ranking: you vs the surviving NPCs, by power. */
+  private updateRanking(deltaMs: number): void {
+    this.rankAcc += deltaMs
+    if (this.rankAcc < 350) return
+    this.rankAcc = 0
+    let above = 0
+    let total = 1
+    for (const npc of this.npcs) {
+      if (!npc.active) continue
+      total++
+      if (npc.power > this.power.power) above++
+    }
+    const rank = above + 1
+    this.statBestRank = Math.min(this.statBestRank, rank)
+    if (rank !== this.curRank || total !== this.curTotal) {
+      this.curRank = rank
+      this.curTotal = total
+      gameEventBus.emit('rank:changed', { rank, total })
+    }
   }
 
   // ---- AI survivors -------------------------------------------------------
@@ -587,6 +628,7 @@ export class BattleScene extends Phaser.Scene {
 
   /** Beat an NPC → absorb its power (big power + score gain), it respawns weaker. */
   private absorbNpc(npc: NpcHero): void {
+    this.statNpcAbsorbed++
     const gained = Math.max(1, Math.round(npc.power))
     this.power.addEnemyValue(gained)
     this.emitPower()
@@ -1289,6 +1331,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private bossDefeat(): void {
+    this.statBosses++
     codexService.mark('boss', this.bossSkinIdx)
     const reward = Math.round(this.boss.maxHp * 0.06)
     const x = this.boss.x
@@ -1372,7 +1415,9 @@ export class BattleScene extends Phaser.Scene {
    *  lifesteal, and a floating popup. */
   private registerKill(reward: number, x = -1, y = -1): void {
     const gained = Math.max(1, Math.round(reward * this.upgrades.rewardMul))
+    this.statKills++
     this.comboCount++
+    this.statTopCombo = Math.max(this.statTopCombo, this.comboCount)
     this.comboUntil = this.elapsedMs + COMBO.windowMs
     this.power.addEnemyValue(gained)
     this.scorer.add(Math.round(gained * this.comboMult()))
@@ -2176,7 +2221,18 @@ export class BattleScene extends Phaser.Scene {
     this.physics.pause()
     const coins = Math.floor(this.scorer.score * COINS_PER_SCORE * metaService.coinMul)
     metaService.addCoins(coins)
-    gameEventBus.emit('game:over', { score: this.scorer.score, power: this.power.power, coins })
+    const stats: RunStats = {
+      kills: this.statKills,
+      bosses: this.statBosses,
+      topCombo: this.statTopCombo,
+      npcsAbsorbed: this.statNpcAbsorbed,
+      timeSec: Math.round(this.elapsedMs / 1000),
+      bestRank: this.statBestRank,
+      totalRanked: this.curTotal,
+    }
+    // Award milestone achievements (coins already added inside evaluate()).
+    const unlocked = achievementService.evaluate({ ...stats, power: this.power.power })
+    gameEventBus.emit('game:over', { score: this.scorer.score, power: this.power.power, coins, stats, unlocked })
   }
 
   // ---- Event emitters ------------------------------------------------------

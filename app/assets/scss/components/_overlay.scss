@@ -43,4 +43,50 @@
     font-weight: $font-weight-bold;
     color: $color-warning;
   }
+
+  &__summary {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $space-1 $space-3;
+    width: 100%;
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $space-2;
+      font-size: $font-size-sm;
+      color: $color-text-muted;
+
+      b {
+        color: $color-text;
+        font-variant-numeric: tabular-nums;
+      }
+    }
+  }
+
+  &__ach {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    width: 100%;
+    padding: $space-2 $space-3;
+    border-radius: $radius-md;
+    background-color: rgba($color-primary, 0.14);
+  }
+
+  &__ach-title {
+    margin: 0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: $color-primary;
+  }
+
+  &__ach-item {
+    font-size: $font-size-sm;
+    color: $color-text;
+  }
 }
