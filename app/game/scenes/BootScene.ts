@@ -333,6 +333,11 @@ export class BootScene extends Phaser.Scene {
     this.bake('wMace', 28, 56, (g) => this.drawMace(g))
     this.bake('wAxe', 28, 56, (g) => this.drawAxe(g))
     this.bake('wSpear', 28, 56, (g) => this.drawSpear(g))
+    this.bake('wScythe', 28, 56, (g) => this.drawScythe(g))
+    this.bake('wHammer', 28, 56, (g) => this.drawHammer(g))
+    this.bake('wTrident', 28, 56, (g) => this.drawTrident(g))
+    this.bake('wGreatsword', 28, 56, (g) => this.drawGreatsword(g))
+    this.bake('wHalberd', 28, 56, (g) => this.drawHalberd(g))
     this.bake('map0', MAP_TILE, MAP_TILE, (g) => this.drawMeadow(g))
     this.bake('map1', MAP_TILE, MAP_TILE, (g) => this.drawDesert(g))
     this.bake('map2', MAP_TILE, MAP_TILE, (g) => this.drawTundra(g))
@@ -961,6 +966,76 @@ export class BootScene extends Phaser.Scene {
     g.fillPoints(this.pts([14, 0, 18, 14, 14, 12, 10, 14]), true)
     g.lineStyle(1.4, 0x14171f, 1)
     g.strokePoints(this.pts([14, 0, 18, 14, 14, 12, 10, 14]), true)
+  }
+
+  private drawScythe(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x3a2418, 1)
+    g.fillRect(12.5, 6, 3, 48) // shaft
+    g.fillStyle(0x9198a6, 1) // curved blade hooking off the top
+    g.fillPoints(this.pts([14, 6, 2, 2, 0, 10, 8, 14, 14, 12]), true)
+    g.fillStyle(0xc7ccd8, 1)
+    g.fillPoints(this.pts([14, 7, 4, 4, 3, 8]), true)
+    g.lineStyle(1.4, 0x14171f, 1)
+    g.strokePoints(this.pts([14, 6, 2, 2, 0, 10, 8, 14, 14, 12]), true)
+  }
+
+  private drawHammer(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x3a2418, 1)
+    g.fillRect(12.5, 10, 3, 44) // shaft
+    g.fillStyle(0x9198a6, 1) // big blocky head
+    g.fillRoundedRect(3, 4, 22, 14, 3)
+    g.fillStyle(0x6f7787, 1)
+    g.fillRect(3, 11, 22, 3) // seam
+    g.fillStyle(0xc7ccd8, 1)
+    g.fillRect(5, 6, 6, 4) // highlight
+    g.fillStyle(0x9198a6, 1) // top spike
+    g.fillTriangle(11, 4, 17, 4, 14, -2)
+    g.lineStyle(1.4, 0x14171f, 1)
+    g.strokeRoundedRect(3, 4, 22, 14, 3)
+  }
+
+  private drawTrident(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x3a2418, 1)
+    g.fillRect(12.5, 16, 3, 38) // shaft
+    g.fillStyle(0xffce5a, 1)
+    g.fillRect(6, 16, 16, 3) // crossbar
+    g.fillStyle(0xcdd3e0, 1) // three prongs
+    for (const px of [7, 14, 21]) {
+      g.fillRect(px - 1, 6, 2, 12)
+      g.fillTriangle(px, 0, px - 2.4, 7, px + 2.4, 7)
+    }
+    g.lineStyle(1.2, 0x14171f, 1)
+    g.strokeRect(6, 16, 16, 3)
+  }
+
+  private drawGreatsword(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xcdd3e0, 1) // broad blade
+    g.fillPoints(this.pts([14, 0, 19, 8, 19, 38, 9, 38, 9, 8]), true)
+    g.fillStyle(0xeef2ff, 1)
+    g.fillRect(13, 6, 2, 30) // fuller
+    g.fillStyle(0xffce5a, 1) // crossguard
+    g.fillRect(4, 38, 20, 4)
+    g.fillStyle(0x5c3b22, 1)
+    g.fillRect(12, 42, 4, 12) // grip
+    g.fillStyle(0xffce5a, 1)
+    g.fillCircle(14, 55, 2.4) // pommel
+    g.lineStyle(1.4, 0x14171f, 1)
+    g.strokePoints(this.pts([14, 0, 19, 8, 19, 38, 9, 38, 9, 8]), true)
+  }
+
+  private drawHalberd(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x3a2418, 1)
+    g.fillRect(12.5, 4, 3, 50) // shaft
+    g.fillStyle(0x9198a6, 1) // axe blade
+    g.fillPoints(this.pts([15, 8, 27, 10, 25, 22, 15, 20]), true)
+    g.fillStyle(0xc7ccd8, 1)
+    g.fillPoints(this.pts([15, 9, 24, 11, 24, 14, 15, 12]), true)
+    g.fillStyle(0xcdd3e0, 1) // top spike
+    g.fillPoints(this.pts([14, -2, 17, 8, 11, 8]), true)
+    g.fillStyle(0x9198a6, 1) // rear hook
+    g.fillTriangle(12, 10, 4, 12, 12, 16)
+    g.lineStyle(1.4, 0x14171f, 1)
+    g.strokePoints(this.pts([15, 8, 27, 10, 25, 22, 15, 20]), true)
   }
 
   // ---- Arena backgrounds (tileable 128x128) -------------------------------

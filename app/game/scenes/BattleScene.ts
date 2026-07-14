@@ -1019,7 +1019,9 @@ export class BattleScene extends Phaser.Scene {
     this.bossFanAcc = 0
     this.bossMeteorAcc = 0
     this.boss.clearTint()
-    const weaponKey = pickOne(['wMace', 'wAxe', 'wSpear'])
+    // Each boss skin has a signature weapon (deterministic variety across the 8).
+    const weapons = ['wMace', 'wAxe', 'wSpear', 'wScythe', 'wHammer', 'wTrident', 'wGreatsword', 'wHalberd']
+    const weaponKey = weapons[idx % weapons.length] as string
     this.bossWeapons.forEach((wpn) => wpn.setTexture(weaponKey).setScale(1.7).setVisible(true))
     this.bossLabel.setVisible(true)
     this.bossAura.setVisible(true)
