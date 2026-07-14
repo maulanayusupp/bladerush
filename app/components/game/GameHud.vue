@@ -6,7 +6,7 @@ import { gameEventBus } from '~/services/EventBus'
 import { audioService } from '~/services/AudioService'
 import { formatCompact } from '~/helpers/format.helper'
 import { useGameStore } from '~/stores/useGameStore'
-import { ACHIEVEMENTS, DIVINE_SKILLS } from '~/game/constants'
+import { ACHIEVEMENTS, DIVINE_SKILLS, HERO, HERO_RARITIES, heroName, heroRarity } from '~/game/constants'
 import type { RunStats } from '~/types/game'
 
 const store = useGameStore()
@@ -39,6 +39,12 @@ const rank = ref(1)
 const rankTotal = ref(1)
 const divineIndex = ref(-1)
 const divineSkill = computed(() => (divineIndex.value >= 0 ? DIVINE_SKILLS[divineIndex.value] ?? null : null))
+const heroIndex = ref(0)
+const heroLabel = computed(() => heroName(heroIndex.value))
+const heroColor = computed(() => {
+  const r = HERO_RARITIES[heroRarity(heroIndex.value / (HERO.skins - 1))]
+  return `#${(r?.color ?? 0xffffff).toString(16).padStart(6, '0')}`
+})
 const runStats = ref<RunStats | null>(null)
 const unlockedAch = ref<string[]>([])
 const comboMult = ref(1)
@@ -134,6 +140,7 @@ onMounted(() => {
       rankTotal.value = total
     }),
     gameEventBus.on('skill:divine', ({ index }) => (divineIndex.value = index)),
+    gameEventBus.on('hero:changed', ({ index }) => (heroIndex.value = index)),
     gameEventBus.on('boss:spawn', ({ maxHp }) => {
       bossActive.value = true
       bossMax.value = maxHp
@@ -173,6 +180,7 @@ function restart(): void {
   power.value = 0
   score.value = 0
   divineIndex.value = -1
+  heroIndex.value = 0
   gameEventBus.emit('game:restart', undefined)
 }
 </script>
@@ -238,6 +246,8 @@ function restart(): void {
       <span class="hud__combo-mult">×{{ comboMult }}</span>
       <span class="hud__combo-label">{{ comboCount }} {{ $t('hud.combo') }}</span>
     </div>
+
+    <div class="hud__hero" :style="{ '--rarity': heroColor }">{{ heroLabel }}</div>
 
     <div class="hud__health">
       <span class="hud__health-icon" aria-hidden="true">❤️</span>

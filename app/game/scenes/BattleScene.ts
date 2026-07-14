@@ -885,6 +885,7 @@ export class BattleScene extends Phaser.Scene {
     const reachedTarget = tier >= target
     this.playerSkin = tier
     this.player.setTexture(`hero${tier}`)
+    gameEventBus.emit('hero:changed', { index: tier })
     // Physically grow from scrawny to towering across the tiers.
     this.heroScale = HERO.minScale + (HERO.maxScale - HERO.minScale) * (tier / (HERO.skins - 1))
     this.player.setScale(this.heroScale)

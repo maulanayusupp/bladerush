@@ -76,6 +76,7 @@ export interface GameEventMap {
   'combo:changed': { count: number; mult: number }
   'rank:changed': { rank: number; total: number }
   'skill:divine': { index: number }
+  'hero:changed': { index: number }
   'xp:changed': { level: number; xp: number; next: number }
   'levelup:offer': { ids: string[] }
   'levelup:pick': { id: string }

@@ -116,13 +116,34 @@ export const HERO_RARITIES = [
   { id: 'divine', min: 0.91, color: 0x00ffd0 }, // the 10 bespoke top champions (index 100-109)
 ] as const
 
-/** Rarity tier index (0..4) for a hero rank (0..1). */
+/** Rarity tier index (0..5) for a hero rank (0..1). */
 export function heroRarity(rank: number): number {
   let idx = 0
   for (let i = 0; i < HERO_RARITIES.length; i++) {
     if (rank >= (HERO_RARITIES[i] as { min: number }).min) idx = i
   }
   return idx
+}
+
+/** The 10 bespoke Divine champions' names (index 100..109). */
+export const DIVINE_NAMES = [
+  'Seraph of War', 'Void Sovereign', 'Inferno Lord', 'God-Emperor', 'Dragon Ascendant',
+  'Death Reaper', 'Storm Titan', 'Frost Monarch', 'Blood Warlord', 'Cosmic Overlord',
+]
+const HERO_PREFIX = ['Iron', 'Bronze', 'Steel', 'Silver', 'Emerald', 'Sapphire', 'Amethyst', 'Crimson', 'Obsidian', 'Golden']
+const HERO_TITLE = [
+  'Footman', 'Squire', 'Knight', 'Warden', 'Sentinel', 'Champion', 'Vanguard', 'Templar',
+  'Paladin', 'Warlord', 'Crusader', 'Myrmidon', 'Dragoon', 'Conqueror', 'Sovereign', 'Highlord',
+]
+
+/** A display name for a hero skin (bespoke for Divine, generated otherwise). */
+export function heroName(index: number): string {
+  const divStart = HERO.skins - HERO.divineCount
+  if (index >= divStart) return DIVINE_NAMES[index - divStart] ?? 'Divine Champion'
+  const rank = index / (HERO.skins - 1)
+  const prefix = HERO_PREFIX[Math.min(HERO_PREFIX.length - 1, Math.floor(rank * HERO_PREFIX.length))]
+  const title = HERO_TITLE[index % HERO_TITLE.length]
+  return `${prefix} ${title}`
 }
 
 /**
@@ -328,9 +349,9 @@ export const POWER_CURVE = {
   baseDamage: 6,
   damagePerPower: 0.6,
 
-  baseOrbitSpeed: 1.4, // rad/s with a single sword
-  orbitSpeedPerSword: 0.02, // very gentle acceleration as the ring grows
-  maxOrbitSpeed: 2.4, // rad/s cap — a calm, readable spin (not a blur)
+  baseOrbitSpeed: 1.7, // rad/s with a single sword
+  orbitSpeedPerSword: 0.025, // gentle acceleration as the ring grows
+  maxOrbitSpeed: 3, // rad/s cap — a touch livelier but still readable
 } as const
 
 /**

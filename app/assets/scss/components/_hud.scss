@@ -291,6 +291,14 @@
     color: $color-text-muted;
   }
 
+  &__hero {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: var(--rarity, #fff);
+    text-shadow: 0 1px 3px rgba(#000, 0.8);
+    margin-bottom: 2px;
+  }
+
   &__health {
     display: flex;
     align-items: center;

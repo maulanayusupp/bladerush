@@ -4,7 +4,7 @@
 // category comes from the game registry ('codexCategory'), driven by Vue tabs.
 // =============================================================================
 import Phaser from 'phaser'
-import { HERO, HERO_RARITIES, SWORD_SHAPES, TROOP, heroRarity } from '../constants'
+import { HERO, HERO_RARITIES, SWORD_SHAPES, TROOP, heroName, heroRarity } from '../constants'
 import { clamp } from '~/helpers/math.helper'
 import { codexService, type CodexCategory } from '~/services/CodexService'
 
@@ -106,13 +106,17 @@ export class CodexScene extends Phaser.Scene {
       else if (cat.tint) sprite.setTint(cat.tint)
       this.items.push(sprite)
 
+      // Heroes show their NAME; other categories show the index number.
+      const labelText = discovered ? (category === 'hero' ? heroName(i) : String(i)) : '?'
       const label = this.add
-        .text(cx, cy + cell / 2 - 9, discovered ? String(i) : '?', {
+        .text(cx, cy + cell / 2 - 11, labelText, {
           fontFamily: 'Segoe UI, sans-serif',
-          fontSize: '11px',
-          color: discovered ? '#c8c2b4' : '#55504a',
+          fontSize: category === 'hero' ? '9px' : '11px',
+          color: discovered ? '#d8d2c4' : '#55504a',
+          align: 'center',
+          wordWrap: { width: cell - 8 },
         })
-        .setOrigin(0.5)
+        .setOrigin(0.5, 0)
       this.items.push(label)
     }
 
