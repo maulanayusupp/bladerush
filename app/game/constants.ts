@@ -146,6 +146,37 @@ export function heroName(index: number): string {
   return `${prefix} ${title}`
 }
 
+const VILLAIN_ADJ = ['Grim', 'Savage', 'Vile', 'Cursed', 'Bloody', 'Dread', 'Wicked', 'Feral', 'Dark', 'Brutal']
+const RIVAL_TITLE = ['Marauder', 'Reaver', 'Warlord', 'Berserker', 'Raider', 'Slayer', 'Butcher', 'Tyrant', 'Warbringer', 'Destroyer']
+const TROOP_TIER = ['Feral', 'Savage', 'Vile', 'Cursed', 'Dread']
+const TROOP_CREATURE = ['Orc', 'Undead', 'Cyclops', 'Beast', 'Imp', 'Mantis', 'Wraith']
+const BOSS_HEAD_NAME = ['Demon', 'Dragon', 'Skull', 'Beast', 'Horror']
+const BOSS_TITLE = ['Fiend', 'Lord', 'Overlord', 'Tyrant', 'Godfiend']
+
+/** Name for a rival warlord (index 0..RIVAL.skins-1). */
+export function rivalName(index: number): string {
+  return `${VILLAIN_ADJ[index % VILLAIN_ADJ.length]} ${RIVAL_TITLE[(index * 3) % RIVAL_TITLE.length]}`
+}
+
+/** Name for an enemy troop (index 0..TROOP.count-1). */
+export function troopName(index: number): string {
+  const band = Math.min(TROOP_TIER.length - 1, Math.floor(index / TROOP.perTier))
+  return `${TROOP_TIER[band]} ${TROOP_CREATURE[index % TROOP_CREATURE.length]}`
+}
+
+/** Name for a boss (index 0..BOSS.skins-1). */
+export function bossName(index: number): string {
+  const rank = index / (BOSS.skins - 1)
+  const title = BOSS_TITLE[Math.min(BOSS_TITLE.length - 1, Math.floor(rank * BOSS_TITLE.length))]
+  return `${title} ${BOSS_HEAD_NAME[index % BOSS_HEAD_NAME.length]}`
+}
+
+/** Name for a weapon skin — the shape, title-cased. */
+export function weaponName(index: number): string {
+  const s = SWORD_SHAPES[index] ?? 'blade'
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 /**
  * Hero equipment held in-hand (by skin index): a sword, dual swords, a spear,
  * or a shield. Carrying a shield reduces incoming damage.

@@ -4,7 +4,7 @@
 // category comes from the game registry ('codexCategory'), driven by Vue tabs.
 // =============================================================================
 import Phaser from 'phaser'
-import { HERO, HERO_RARITIES, SWORD_SHAPES, TROOP, heroName, heroRarity } from '../constants'
+import { HERO, HERO_RARITIES, SWORD_SHAPES, TROOP, bossName, heroName, heroRarity, rivalName, troopName, weaponName } from '../constants'
 import { clamp } from '~/helpers/math.helper'
 import { codexService, type CodexCategory } from '~/services/CodexService'
 
@@ -74,10 +74,10 @@ export class CodexScene extends Phaser.Scene {
 
     const viewW = this.scale.width
     const cell = cat.cell
-    // Heroes carry a (sometimes 2-line) name → taller rows so labels never
-    // overlap the row below.
+    // Every entry now carries a name → taller rows so the (up to 2-line) labels
+    // never overlap the row below.
     const isHero = category === 'hero'
-    const rowH = cell + (isHero ? 22 : 0)
+    const rowH = cell + 24
     const cols = Math.max(1, Math.floor((viewW - 16) / cell))
     const gridW = cols * cell
     const startX = (viewW - gridW) / 2 + cell / 2
@@ -110,16 +110,21 @@ export class CodexScene extends Phaser.Scene {
       else if (cat.tint) sprite.setTint(cat.tint)
       this.items.push(sprite)
 
-      // Heroes show their NAME (below the frame); others show the index number.
-      const labelText = discovered ? (isHero ? heroName(i) : String(i)) : '?'
+      // Every category shows a name below its cell (wrapped inside the cell so
+      // long names never bleed into neighbors).
+      const nm = category === 'rival' ? rivalName(i)
+        : category === 'troop' ? troopName(i)
+          : category === 'boss' ? bossName(i)
+            : category === 'weapon' ? weaponName(i)
+              : heroName(i)
       const label = this.add
-        .text(cx, cy + cell / 2 - 2, labelText, {
+        .text(cx, cy + cell / 2 - 2, discovered ? nm : '?', {
           fontFamily: 'Segoe UI, sans-serif',
-          fontSize: isHero ? '9px' : '11px',
+          fontSize: '9px',
           fontStyle: 'bold',
           color: discovered ? '#e6e0d0' : '#55504a',
           align: 'center',
-          wordWrap: { width: cell + 12 },
+          wordWrap: { width: cell - 8 },
         })
         .setOrigin(0.5, 0)
       this.items.push(label)
