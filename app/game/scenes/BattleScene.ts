@@ -538,10 +538,17 @@ export class BattleScene extends Phaser.Scene {
     audioService.clash()
     if (canWin) {
       npc.hp -= this.bossTickDamage()
-      this.hitPlayer(Math.min(18, 6 + Math.log10(1 + npc.power) * 2)) // light chip
+      this.hitPlayer(Math.min(10, 4 + Math.log10(1 + npc.power))) // light chip
       if (npc.hp <= 0) this.absorbNpc(npc)
     } else {
-      this.hitPlayer(Math.min(60, 16 + Math.log10(1 + npc.power) * 5)) // it overwhelms you
+      // A stronger NPC hurts you but does NOT instantly kill: modest damage
+      // (i-frame gated) + a knockback that breaks contact so you can flee.
+      this.hitPlayer(Math.min(16, 8 + Math.log10(1 + npc.power)))
+      const push = 120
+      this.player.setPosition(
+        clamp(this.player.x - Math.cos(ang) * push, 0, this.worldW),
+        clamp(this.player.y - Math.sin(ang) * push, 0, this.worldH),
+      )
     }
   }
 
