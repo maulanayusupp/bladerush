@@ -89,8 +89,8 @@ export const SWORD_SHAPES = [
  * astronomical survivor scores.
  */
 export const HERO = {
-  skins: 105, // 100 procedural + 5 bespoke "Divine" champions at the very top
-  divineCount: 5,
+  skins: 110, // 100 procedural + 10 bespoke "Divine" champions at the very top
+  divineCount: 10,
   // Look/size evolve with SCORE (monotonic — never flips backwards). tier =
   // floor(tierPerLog10 * log10(1 + score)); ~1.85 reaches the golden top tier
   // around score 1e54 (survivor scores climb astronomically).
@@ -98,6 +98,9 @@ export const HERO = {
   // The hero physically grows from scrawny "culun" to a towering champion.
   minScale: 0.6,
   maxScale: 1.85,
+  // Evolution climbs ONE tier at a time on this cadence, so even a big score
+  // jump plays as a visible step-by-step transformation montage.
+  evolveStepMs: 260,
 } as const
 
 /**
@@ -109,8 +112,8 @@ export const HERO_RARITIES = [
   { id: 'rare', min: 0.35, color: 0x4aa3ff },
   { id: 'epic', min: 0.6, color: 0xb06bff },
   { id: 'legendary', min: 0.8, color: 0xffb020 },
-  { id: 'mythic', min: 0.9, color: 0xff3b6b },
-  { id: 'divine', min: 0.96, color: 0x00ffd0 }, // the 5 bespoke top champions (index 100-104)
+  { id: 'mythic', min: 0.85, color: 0xff3b6b },
+  { id: 'divine', min: 0.91, color: 0x00ffd0 }, // the 10 bespoke top champions (index 100-109)
 ] as const
 
 /** Rarity tier index (0..4) for a hero rank (0..1). */
@@ -280,6 +283,11 @@ export const DIVINE_SKILLS = [
   { id: 'inferno', icon: '☄️', cooldownMs: 18000 }, // Meteor Storm
   { id: 'emperor', icon: '👑', cooldownMs: 20000 }, // Cataclysm: screen-wide gold shockwave
   { id: 'dragon', icon: '🐉', cooldownMs: 18000 }, // Dragon Breath: ignite everything
+  { id: 'reaper', icon: '💀', cooldownMs: 18000 }, // Soul Harvest: reap + heal
+  { id: 'storm', icon: '⚡', cooldownMs: 16000 }, // Thunderstorm: chain lightning
+  { id: 'frost', icon: '❄️', cooldownMs: 18000 }, // Absolute Zero: freeze + shatter
+  { id: 'blood', icon: '🩸', cooldownMs: 18000 }, // Bloodbath: massive damage + lifesteal
+  { id: 'cosmic', icon: '🌌', cooldownMs: 22000 }, // Big Bang: ultimate screen nuke
 ] as const
 
 /** Brief freeze on big moments (boss kill) for punch. */

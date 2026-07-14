@@ -71,7 +71,12 @@
     "void": "Lubang Hitam",
     "inferno": "Badai Meteor",
     "emperor": "Kiamat",
-    "dragon": "Napas Naga"
+    "dragon": "Napas Naga",
+    "reaper": "Panen Jiwa",
+    "storm": "Badai Petir",
+    "frost": "Nol Mutlak",
+    "blood": "Mandi Darah",
+    "cosmic": "Ledakan Kosmik"
   },
   "rarity": {
     "common": "Biasa",

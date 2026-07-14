@@ -102,6 +102,7 @@ export class BattleScene extends Phaser.Scene {
   private swordDamageMul = 1
   private playerSkin = -1
   private heroRarityIdx = -1
+  private lastEvolveAt = 0
   private divineSkill = -1 // active Divine ultimate index (-1 = none)
   private heroScale: number = HERO.minScale
   private heroAura!: Phaser.GameObjects.Image
@@ -177,6 +178,7 @@ export class BattleScene extends Phaser.Scene {
     this.swordDamageMul = 1
     this.playerSkin = -1
     this.heroRarityIdx = -1
+    this.lastEvolveAt = 0
     this.healAcc = 0
     this.bossAcc = 0
     this.nextBossMs = BOSS.firstMs
@@ -870,12 +872,17 @@ export class BattleScene extends Phaser.Scene {
 
   /** Swap the hero to the next champion look every 1000 power. */
   private checkEvolve(): void {
-    // Tier follows SCORE (monotonic) so the hero never flips backwards, and a
-    // log curve keeps it advancing to the golden top tiers at huge scores.
+    // Target tier follows SCORE (monotonic). We climb toward it ONE step at a
+    // time on a cadence, so even a huge score jump plays as a visible gradual
+    // transformation montage instead of snapping to the final form.
     const score = this.scorer.score
-    const tier = clamp(Math.floor(HERO.tierPerLog10 * Math.log10(1 + score)), 0, HERO.skins - 1)
-    if (tier === this.playerSkin) return
+    const target = clamp(Math.floor(HERO.tierPerLog10 * Math.log10(1 + score)), 0, HERO.skins - 1)
+    if (target <= this.playerSkin) return
     const first = this.playerSkin < 0
+    if (!first && this.elapsedMs - this.lastEvolveAt < HERO.evolveStepMs) return
+    this.lastEvolveAt = this.elapsedMs
+    const tier = this.playerSkin + 1 // advance exactly one tier
+    const reachedTarget = tier >= target
     this.playerSkin = tier
     this.player.setTexture(`hero${tier}`)
     // Physically grow from scrawny to towering across the tiers.
@@ -888,13 +895,15 @@ export class BattleScene extends Phaser.Scene {
     const rk = tier / (HERO.skins - 1)
     this.heroAuraColor =
       rk >= 0.85 ? 0xffe14d : rk >= 0.72 ? 0xff2d2d : rk >= 0.6 ? 0xff6a2a : rk >= 0.45 ? 0xd48aff : rk >= 0.3 ? 0x5ad0ff : 0
-    if (!first) this.evolveFx()
-    // Announce crossing into a new rarity tier (Common → … → Mythic).
-    const rarity = heroRarity(tier / (HERO.skins - 1))
-    if (rarity > this.heroRarityIdx) {
-      if (!first) this.announceRarity(rarity)
-      this.heroRarityIdx = rarity
-    }
+    // Announce crossing into a new rarity tier.
+    const rarity = heroRarity(rk)
+    const raritiedUp = rarity > this.heroRarityIdx
+    if (raritiedUp && !first) this.announceRarity(rarity)
+    this.heroRarityIdx = Math.max(this.heroRarityIdx, rarity)
+    // Full flourish only when catching up to the target or crossing a rarity —
+    // otherwise a light pop, so rapid catch-up isn't a flash storm.
+    if (!first && (reachedTarget || raritiedUp)) this.evolveFx()
+    else if (!first) this.tweens.add({ targets: this.player, scaleX: { from: this.heroScale * 1.2, to: this.heroScale }, scaleY: { from: this.heroScale * 1.2, to: this.heroScale }, duration: 160, ease: 'Back.Out' })
     // Divine heroes unlock a unique 4th ultimate.
     const divIdx = tier >= HERO.skins - HERO.divineCount ? tier - (HERO.skins - HERO.divineCount) : -1
     if (divIdx !== this.divineSkill) {
@@ -2339,7 +2348,7 @@ export class BattleScene extends Phaser.Scene {
         this.hitStopUntil = this.frameTime + 120
         this.divineDamageAll(30, 0xffe14d, 9, '#ffe14d')
         break
-      default: { // Dragon Ascendant — Dragon Breath: ignite everything
+      case 4: { // Dragon Ascendant — Dragon Breath: ignite everything
         this.divineDamageAll(8, 0xff7a2a, 6, '#ffb060')
         const burnDps = this.power.stats.damage * this.swordDamageMul * 3
         for (const obj of this.enemies.getChildren()) {
@@ -2348,8 +2357,64 @@ export class BattleScene extends Phaser.Scene {
           e.burnUntil = this.elapsedMs + 4000
           e.burnDps = burnDps
         }
+        break
       }
+      case 5: // Death Reaper — Soul Harvest: reap the field + heal per kill
+        this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(this.player.maxHp * 0.5))
+        this.emitHp()
+        this.divineDamageAll(22, 0x6bff9a, 7, '#6bff9a')
+        break
+      case 6: { // Storm Titan — Thunderstorm: repeated chain-lightning strikes
+        for (let k = 0; k < 6; k++) {
+          this.time.delayedCall(k * 120, () => {
+            if (this.isOver) return
+            const foes = this.enemies.getChildren().filter((o) => (o as Enemy).active)
+            const t = foes[Math.floor(Math.random() * foes.length)] as Enemy | undefined
+            if (!t) return
+            this.sparks.explode(10, t.x, t.y)
+            const r = this.add.image(t.x, t.y, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(0x8adfff).setScale(0.2).setDepth(6)
+            this.tweens.add({ targets: r, scale: 2, alpha: { from: 0.9, to: 0 }, duration: 260, onComplete: () => r.destroy() })
+            const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 10)
+            for (const obj of this.enemies.getChildren()) {
+              const e = obj as Enemy
+              if (e.active && distance(e.x, e.y, t.x, t.y) < 130 && e.takeDamage(dmg)) this.killEnemy(e)
+            }
+          })
+        }
+        this.cameras.main.shake(260, 0.008)
+        audioService.nova()
+        break
+      }
+      case 7: { // Frost Monarch — Absolute Zero: freeze all + shatter
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          e.chillUntil = this.elapsedMs + 4000
+          e.chillMul = 0.2
+        }
+        this.divineDamageAll(20, 0x9be7ff, 8, '#dff4ff')
+        break
+      }
+      case 8: { // Blood Warlord — Bloodbath: massive damage + huge lifesteal
+        const before = this.countEnemies()
+        this.divineDamageAll(26, 0xff2020, 8, '#ff5a5a')
+        const healed = Math.max(1, (before - this.countEnemies())) * 4
+        this.player.hp = Math.min(this.player.maxHp, this.player.hp + healed)
+        this.emitHp()
+        break
+      }
+      default: // Cosmic Overlord — Big Bang: the ultimate screen-clearing nuke
+        this.hitStopUntil = this.frameTime + 140
+        this.divineDamageAll(45, 0x9d5cff, 11, '#c9a0ff')
+        this.divineDamageAll(45, 0x00ffd0, 8, '#8affff')
+        this.cameras.main.shake(400, 0.02)
     }
+  }
+
+  private countEnemies(): number {
+    let n = 0
+    for (const obj of this.enemies.getChildren()) if ((obj as Enemy).active) n++
+    return n
   }
 
   private gameOver(): void {

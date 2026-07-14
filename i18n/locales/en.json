@@ -71,7 +71,12 @@
     "void": "Black Hole",
     "inferno": "Meteor Storm",
     "emperor": "Cataclysm",
-    "dragon": "Dragon Breath"
+    "dragon": "Dragon Breath",
+    "reaper": "Soul Harvest",
+    "storm": "Thunderstorm",
+    "frost": "Absolute Zero",
+    "blood": "Bloodbath",
+    "cosmic": "Big Bang"
   },
   "rarity": {
     "common": "Common",
