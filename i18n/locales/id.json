@@ -78,6 +78,18 @@
     "blood": "Mandi Darah",
     "cosmic": "Ledakan Kosmik"
   },
+  "weffect": {
+    "crit": "Kritikal",
+    "burn": "Bakar",
+    "frost": "Beku",
+    "venom": "Racun",
+    "lifesteal": "Serap Nyawa",
+    "cleave": "Tebas",
+    "chain": "Petir Rantai",
+    "pierce": "Tembus Zirah",
+    "holy": "Suci",
+    "execute": "Eksekusi"
+  },
   "rarity": {
     "common": "Biasa",
     "rare": "Langka",

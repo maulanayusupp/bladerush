@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -130,6 +130,7 @@ export class BattleScene extends Phaser.Scene {
   private keys?: Record<string, Phaser.Input.Keyboard.Key>
   private paused = false
   private swordTintable = true
+  private weaponEffect = 'crit'
   // Floating virtual joystick (touch/drag): origin set on press, vector from drag.
   private joyActive = false
   private joyOriginX = 0
@@ -327,6 +328,8 @@ export class BattleScene extends Phaser.Scene {
     // Effect weapons keep their baked colors; plain blades take the power gradient.
     const SPECIAL_BLADES = ['energy', 'holy', 'chakram', 'sawblade', 'demon', 'runic', 'warscythe']
     this.swordTintable = !SPECIAL_BLADES.includes(SWORD_SHAPES[swordSkin] as string)
+    this.weaponEffect = weaponEffect(swordSkin) // this run's signature on-hit effect
+    gameEventBus.emit('weapon:set', { name: weaponName(swordSkin), effect: this.weaponEffect })
     codexService.load()
     codexService.mark('weapon', swordSkin)
     codexService.mark('hero', 0)
@@ -1967,19 +1970,80 @@ export class BattleScene extends Phaser.Scene {
     this.playHitSound()
     this.applyStatusOnHit(enemy)
 
-    const crit = Math.random() < this.metaCrit
-    const hitDmg = Math.round(this.power.stats.damage * this.swordDamageMul * (crit ? 2 : 1))
+    const eff = this.weaponEffect
+    // Weapon crit stacks with the meta crit chance.
+    const crit = Math.random() < this.metaCrit + (eff === 'crit' ? 0.25 : 0)
+    let mul = crit ? 2 : 1
+    if (eff === 'pierce') mul *= 1.35 // armor-piercing: flat bonus damage
+    const hitDmg = Math.round(this.power.stats.damage * this.swordDamageMul * mul)
     this.damageNumber(enemy.x, enemy.y - 14, hitDmg, crit ? '#ff5a5a' : '#ffffff')
-    if (enemy.takeDamage(hitDmg)) {
+    const killed = enemy.takeDamage(hitDmg)
+    if (killed) {
       this.killEnemy(enemy)
     } else {
-      // Non-lethal hit: quick spark + white impact flash (restore elite tint after).
       this.sparks.explode(3, enemy.x, enemy.y)
       enemy.setTint(0xffffff)
       enemy.setTintFill()
       this.time.delayedCall(60, () => {
         if (enemy.active) enemy.restoreTint()
       })
+    }
+    this.applyWeaponEffect(enemy, hitDmg, killed)
+  }
+
+  /** The current weapon's signature on-hit effect. */
+  private applyWeaponEffect(enemy: Enemy, dmg: number, killed: boolean): void {
+    const base = this.power.stats.damage * this.swordDamageMul
+    switch (this.weaponEffect) {
+      case 'burn':
+        if (enemy.active) { enemy.burnUntil = this.elapsedMs + STATUS.burnMs; enemy.burnDps = base * 0.5 }
+        break
+      case 'frost':
+        if (enemy.active) { enemy.chillUntil = this.elapsedMs + STATUS.chillMs; enemy.chillMul = 0.45 }
+        break
+      case 'venom':
+        if (enemy.active) { enemy.poisonUntil = this.elapsedMs + STATUS.poisonMs; enemy.poisonDps = base * 0.4 }
+        break
+      case 'lifesteal':
+        this.player.heal(2)
+        if (Math.random() < 0.15) this.emitHp()
+        break
+      case 'cleave': { // splash to nearby foes
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (e === enemy || !e.active) continue
+          if (distance(e.x, e.y, enemy.x, enemy.y) < 48 && e.takeDamage(dmg * 0.5)) this.killEnemy(e)
+        }
+        break
+      }
+      case 'chain': { // arc lightning to one nearby foe
+        let best: Enemy | null = null
+        let bestD = 140
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (e === enemy || !e.active) continue
+          const d = distance(e.x, e.y, enemy.x, enemy.y)
+          if (d < bestD) { bestD = d; best = e }
+        }
+        if (best) {
+          this.ringBlur.lineStyle(2, 0x8adfff, 0.9)
+          this.ringBlur.lineBetween(enemy.x, enemy.y, best.x, best.y)
+          if (best.takeDamage(dmg * 0.6)) this.killEnemy(best)
+          else this.sparks.explode(3, best.x, best.y)
+        }
+        break
+      }
+      case 'execute': // chance to detonate a survivor for massive damage
+        if (!killed && enemy.active && Math.random() < 0.12) {
+          this.sparks.explode(10, enemy.x, enemy.y)
+          if (enemy.takeDamage(dmg * 5)) this.killEnemy(enemy)
+        }
+        break
+      case 'holy':
+        if (killed) { this.player.heal(3); if (Math.random() < 0.2) this.emitHp() }
+        break
+      default:
+        break
     }
   }
 

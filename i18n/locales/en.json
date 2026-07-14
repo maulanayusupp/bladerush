@@ -78,6 +78,18 @@
     "blood": "Bloodbath",
     "cosmic": "Big Bang"
   },
+  "weffect": {
+    "crit": "Critical",
+    "burn": "Ignite",
+    "frost": "Frostbite",
+    "venom": "Venom",
+    "lifesteal": "Lifesteal",
+    "cleave": "Cleave",
+    "chain": "Chain Lightning",
+    "pierce": "Armor Pierce",
+    "holy": "Holy",
+    "execute": "Execute"
+  },
   "rarity": {
     "common": "Common",
     "rare": "Rare",

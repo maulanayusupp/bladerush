@@ -41,6 +41,7 @@ const divineIndex = ref(-1)
 const divineSkill = computed(() => (divineIndex.value >= 0 ? DIVINE_SKILLS[divineIndex.value] ?? null : null))
 const heroIndex = ref(0)
 const heroLabel = computed(() => heroName(heroIndex.value))
+const weaponInfo = ref<{ name: string; effect: string } | null>(null)
 const heroColor = computed(() => {
   const r = HERO_RARITIES[heroRarity(heroIndex.value / (HERO.skins - 1))]
   return `#${(r?.color ?? 0xffffff).toString(16).padStart(6, '0')}`
@@ -141,6 +142,7 @@ onMounted(() => {
     }),
     gameEventBus.on('skill:divine', ({ index }) => (divineIndex.value = index)),
     gameEventBus.on('hero:changed', ({ index }) => (heroIndex.value = index)),
+    gameEventBus.on('weapon:set', (w) => (weaponInfo.value = w)),
     gameEventBus.on('boss:spawn', ({ maxHp }) => {
       bossActive.value = true
       bossMax.value = maxHp
@@ -248,6 +250,7 @@ function restart(): void {
     </div>
 
     <div class="hud__hero" :style="{ '--rarity': heroColor }">{{ heroLabel }}</div>
+    <div v-if="weaponInfo" class="hud__weapon">🗡️ {{ weaponInfo.name }} · {{ $t('weffect.' + weaponInfo.effect) }}</div>
 
     <div class="hud__health">
       <span class="hud__health-icon" aria-hidden="true">❤️</span>

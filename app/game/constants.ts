@@ -178,6 +178,25 @@ export function weaponName(index: number): string {
 }
 
 /**
+ * Each blade shape carries a signature on-hit EFFECT, so the weapon you roll
+ * each run plays differently. Thematic where it fits; otherwise cycled so every
+ * shape has one. Effects: burn / frost / venom / crit / lifesteal / cleave /
+ * chain / pierce / holy / execute.
+ */
+const WEAPON_EFFECT_CYCLE = ['crit', 'burn', 'frost', 'venom', 'lifesteal', 'cleave', 'chain', 'pierce']
+const WEAPON_EFFECT_OVERRIDE: Record<string, string> = {
+  flamberge: 'burn', energy: 'chain', crystal: 'frost', bone: 'venom', dagger: 'venom',
+  scythe: 'lifesteal', warscythe: 'lifesteal', runic: 'chain', holy: 'holy', demon: 'execute',
+  trident: 'pierce', fork: 'pierce', sawblade: 'cleave', chakram: 'cleave', greatsword: 'cleave',
+  claymore: 'cleave', katana: 'crit', nodachi: 'crit', rapier: 'crit', estoc: 'frost',
+}
+
+export function weaponEffect(index: number): string {
+  const s = SWORD_SHAPES[index] ?? ''
+  return WEAPON_EFFECT_OVERRIDE[s] ?? (WEAPON_EFFECT_CYCLE[index % WEAPON_EFFECT_CYCLE.length] as string)
+}
+
+/**
  * Hero equipment held in-hand (by skin index): a sword, dual swords, a spear,
  * or a shield. Carrying a shield reduces incoming damage.
  */
