@@ -7,6 +7,7 @@ import Phaser from 'phaser'
 import { HERO, HERO_RARITIES, SWORD_SHAPES, TROOP, bossName, heroName, heroRarity, rivalName, troopName, weaponName } from '../constants'
 import { clamp } from '~/helpers/math.helper'
 import { codexService, type CodexCategory } from '~/services/CodexService'
+import { loadoutService } from '~/services/LoadoutService'
 
 interface Category {
   prefix: string
@@ -30,6 +31,7 @@ export class CodexScene extends Phaser.Scene {
   private maxScroll = 0
   private dragging = false
   private lastPointerY = 0
+  private dragDist = 0
 
   constructor() {
     super('CodexScene')
@@ -43,11 +45,13 @@ export class CodexScene extends Phaser.Scene {
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       this.dragging = true
       this.lastPointerY = p.y
+      this.dragDist = 0
     })
     this.input.on('pointerup', () => (this.dragging = false))
     this.input.on('pointerupoutside', () => (this.dragging = false))
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (!this.dragging) return
+      this.dragDist += Math.abs(this.lastPointerY - p.y)
       this.scrollBy(this.lastPointerY - p.y)
       this.lastPointerY = p.y
     })
@@ -95,11 +99,12 @@ export class CodexScene extends Phaser.Scene {
       const cy = TOP_PAD + row * rowH + cell / 2
 
       const discovered = codexService.has(catKey, i)
+      const selected = isHero && discovered && loadoutService.selectedHero === i
       if (frames) {
         const color = (HERO_RARITIES[heroRarity(i / (cat.count - 1))] as { color: number }).color
         frames.fillStyle(color, discovered ? 0.14 : 0.05)
         frames.fillRoundedRect(cx - cell / 2 + 3, cy - cell / 2 + 3, cell - 6, cell - 6, 6)
-        frames.lineStyle(2, color, discovered ? 0.85 : 0.25)
+        frames.lineStyle(selected ? 3.5 : 2, selected ? 0x00ffd0 : color, discovered ? 0.85 : 0.25)
         frames.strokeRoundedRect(cx - cell / 2 + 3, cy - cell / 2 + 3, cell - 6, cell - 6, 6)
       }
       const sprite = this.add.image(cx, cy - 8, key)
@@ -109,6 +114,24 @@ export class CodexScene extends Phaser.Scene {
       if (!discovered) sprite.setTint(0x0b0b0d).setAlpha(0.9) // locked silhouette
       else if (cat.tint) sprite.setTint(cat.tint)
       this.items.push(sprite)
+
+      // Discovered heroes are selectable as your starting loadout (tap, not drag).
+      if (isHero && discovered) {
+        sprite.setInteractive({ useHandCursor: true })
+        sprite.on('pointerup', () => {
+          if (this.dragDist < 12) {
+            loadoutService.setHero(i)
+            this.game.registry.set('selectedHero', i)
+            this.build(category)
+          }
+        })
+        if (selected) {
+          const tick = this.add.text(cx + cell / 2 - 12, cy - cell / 2 + 4, '✓', {
+            fontFamily: 'Segoe UI, sans-serif', fontSize: '16px', fontStyle: 'bold', color: '#00ffd0',
+          }).setOrigin(0.5, 0)
+          this.items.push(tick)
+        }
+      }
 
       // Every category shows a name below its cell (wrapped inside the cell so
       // long names never bleed into neighbors).

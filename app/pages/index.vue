@@ -7,11 +7,16 @@ import { useGameStore } from '~/stores/useGameStore'
 import { formatCompact } from '~/helpers/format.helper'
 import { audioService } from '~/services/AudioService'
 import { metaService } from '~/services/MetaService'
+import { loadoutService } from '~/services/LoadoutService'
+import { codexService } from '~/services/CodexService'
+import { HERO, heroName } from '~/game/constants'
 
 const store = useGameStore()
 
 const shopOpen = ref(false)
 const coins = ref(0)
+// The hero chosen in the Codex (or "auto"), shown so the player knows who they play as.
+const heroChoice = ref('')
 
 // Subtle DOM parallax — kept as CSS custom properties (data, not styling).
 const parallax = ref({ '--px': '0', '--py': '0' })
@@ -27,6 +32,10 @@ onMounted(() => {
   store.loadHighScore()
   metaService.load()
   coins.value = metaService.coins
+  codexService.load()
+  loadoutService.load()
+  const chosen = loadoutService.selectedHero
+  heroChoice.value = chosen >= 0 && chosen < HERO.skins && codexService.has('hero', chosen) ? heroName(chosen) : ''
   reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (!reduced) window.addEventListener('pointermove', onPointer, { passive: true })
 })
@@ -93,6 +102,11 @@ function startGame(): void {
           🏆 {{ $t('menu.best', { score: formatCompact(store.highScore) }) }}
         </span>
       </div>
+
+      <NuxtLink to="/codex" class="menu__loadout">
+        <span class="menu__loadout-icon" aria-hidden="true">🛡️</span>
+        {{ $t('menu.playAs', { hero: heroChoice || $t('menu.autoHero') }) }}
+      </NuxtLink>
     </div>
 
     <p class="menu__hint">{{ $t('menu.controls') }}</p>

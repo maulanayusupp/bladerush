@@ -5,6 +5,8 @@
     "nav": "Menu",
     "play": "Main",
     "best": "Terbaik {score}",
+    "playAs": "Main sebagai: {hero}",
+    "autoHero": "Otomatis (evolusi ikut skor)",
     "controls": "Gerakkan untuk mengarah — pedang menyerang otomatis",
     "features": {
       "gates": { "label": "Kumpulkan pedang", "text": "Lewati gerbang — +N dan ×N menambah pedang" },
@@ -64,7 +66,8 @@
     "boss": "Bos",
     "weapon": "Senjata",
     "discovered": "Ditemukan",
-    "hint": "Geser atau scroll untuk menjelajah"
+    "hint": "Geser atau scroll untuk menjelajah",
+    "selectHint": "Ketuk hero untuk memakainya"
   },
   "dskill": {
     "seraph": "Penghakiman Suci",

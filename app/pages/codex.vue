@@ -33,7 +33,11 @@ const activeCount = computed(() => `${found.value[active.value]} / ${totals[acti
     <header class="codex__bar">
       <NuxtLink to="/" class="codex__back" :aria-label="$t('codex.back')">←</NuxtLink>
       <h1 class="codex__title">{{ $t('codex.title') }}</h1>
-      <p class="codex__hint">{{ $t('codex.discovered') }} {{ activeCount }} · {{ $t('codex.hint') }}</p>
+      <p class="codex__hint">
+        {{ $t('codex.discovered') }} {{ activeCount }}
+        <template v-if="active === 'hero'"> · {{ $t('codex.selectHint') }}</template>
+        <template v-else> · {{ $t('codex.hint') }}</template>
+      </p>
       <nav class="codex__tabs">
         <button
           v-for="t in tabs"

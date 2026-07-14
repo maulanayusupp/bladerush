@@ -30,6 +30,7 @@ import { gameEventBus } from '~/services/EventBus'
 import { audioService } from '~/services/AudioService'
 import { codexService } from '~/services/CodexService'
 import { achievementService } from '~/services/AchievementService'
+import { loadoutService } from '~/services/LoadoutService'
 import type { RunStats } from '~/types/game'
 import { angleBetween, clamp, distance, pickOne, randomInt, randomRange } from '~/helpers/math.helper'
 import { formatCompact } from '~/helpers/format.helper'
@@ -103,6 +104,7 @@ export class BattleScene extends Phaser.Scene {
   private playerSkin = -1
   private heroRarityIdx = -1
   private lastEvolveAt = 0
+  private heroFloor = 0 // chosen loadout hero — the run starts at (and never drops below) this tier
   private heroPopUntil = 0 // while a scale tween runs, skip the breathing pulse
   private divineSkill = -1 // active Divine ultimate index (-1 = none)
   private heroScale: number = HERO.minScale
@@ -214,6 +216,11 @@ export class BattleScene extends Phaser.Scene {
     this.playerDefenseMul = 1
     this.dashUntil = 0
     this.hitStopUntil = 0
+    // Chosen loadout hero (if unlocked): the run starts as it, then evolves up.
+    loadoutService.load()
+    codexService.load()
+    const chosen = loadoutService.selectedHero
+    this.heroFloor = chosen >= 0 && chosen < HERO.skins && codexService.has('hero', chosen) ? chosen : 0
     // Apply persistent meta-upgrades bought in the shop.
     metaService.load()
     this.metaDamageMul = metaService.damageMul
@@ -913,12 +920,16 @@ export class BattleScene extends Phaser.Scene {
     // time on a cadence, so even a huge score jump plays as a visible gradual
     // transformation montage instead of snapping to the final form.
     const score = this.scorer.score
-    const target = clamp(Math.floor(HERO.tierPerLog10 * Math.log10(1 + score)), 0, HERO.skins - 1)
+    const scoreTier = Math.floor(HERO.tierPerLog10 * Math.log10(1 + score))
+    // Never below the chosen loadout hero (floor); still evolve up with score.
+    const target = clamp(Math.max(scoreTier, this.heroFloor), 0, HERO.skins - 1)
     if (target <= this.playerSkin) return
     const first = this.playerSkin < 0
     if (!first && this.elapsedMs - this.lastEvolveAt < HERO.evolveStepMs) return
     this.lastEvolveAt = this.elapsedMs
-    const tier = this.playerSkin + 1 // advance exactly one tier
+    // On the first frame jump straight to the target (your chosen hero appears at
+    // once); afterwards climb one tier at a time.
+    const tier = first ? target : this.playerSkin + 1
     const reachedTarget = tier >= target
     this.playerSkin = tier
     this.player.setTexture(`hero${tier}`)
