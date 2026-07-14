@@ -23,6 +23,7 @@ export class NpcHero extends Phaser.GameObjects.Container {
   targetY = 0
   wanderUntil = 0
   ringColor = 0xffffff
+  private baseScale = 0.8
 
   private readonly heroImg: Phaser.GameObjects.Image
   private readonly blades: Phaser.GameObjects.Image[]
@@ -64,7 +65,8 @@ export class NpcHero extends Phaser.GameObjects.Container {
   refresh(): void {
     const tier = clamp(Math.floor(HERO.tierPerLog10 * Math.log10(1 + this.power)), 0, HERO.skins - 1)
     this.heroImg.setTexture(`hero${tier}`)
-    this.heroImg.setScale(0.6 + (tier / (HERO.skins - 1)) * 1.05) // grows like the player
+    this.baseScale = 0.6 + (tier / (HERO.skins - 1)) * 1.05 // grows like the player
+    this.heroImg.setScale(this.baseScale)
     this.label.setText(formatCompact(Math.round(this.power)))
     this.maxHp = NPC.baseHp + Math.min(500, Math.sqrt(this.power) * 5)
     if (this.hp > this.maxHp) this.hp = this.maxHp
@@ -73,6 +75,8 @@ export class NpcHero extends Phaser.GameObjects.Container {
   /** Spin the ring of real sword blades (more blades as power grows). */
   spin(deltaMs: number): void {
     this.spinAngle = (this.spinAngle + 1.8 * (deltaMs / 1000)) % TAU
+    // Idle breathing so NPCs aren't stiff either.
+    this.heroImg.setScale(this.baseScale * (1 + Math.sin(this.spinAngle * 2) * 0.04))
     const count = Math.min(MAX_BLADES, 5 + Math.floor(Math.log10(1 + this.power) * 1.6))
     const r = NPC.ringRadius
     for (let i = 0; i < this.blades.length; i++) {

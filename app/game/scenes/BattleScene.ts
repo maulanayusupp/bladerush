@@ -103,6 +103,7 @@ export class BattleScene extends Phaser.Scene {
   private playerSkin = -1
   private heroRarityIdx = -1
   private lastEvolveAt = 0
+  private heroPopUntil = 0 // while a scale tween runs, skip the breathing pulse
   private divineSkill = -1 // active Divine ultimate index (-1 = none)
   private heroScale: number = HERO.minScale
   private heroAura!: Phaser.GameObjects.Image
@@ -512,6 +513,12 @@ export class BattleScene extends Phaser.Scene {
     this.updateChests()
     this.updateSwords(deltaMs)
     this.checkEvolve()
+    // Idle "breathing": a subtle scale + bob pulse so the hero never looks stiff.
+    if (this.elapsedMs > this.heroPopUntil) {
+      const t = this.elapsedMs
+      const breathe = 1 + Math.sin(t / 460) * 0.04
+      this.player.setScale(this.heroScale * breathe, this.heroScale * (breathe + 0.015 * Math.sin(t / 230)))
+    }
     this.updateHeroAura()
     this.updateNpcs(deltaMs, elapsedSec)
     this.updateRanking(deltaMs)
@@ -903,8 +910,13 @@ export class BattleScene extends Phaser.Scene {
     this.heroRarityIdx = Math.max(this.heroRarityIdx, rarity)
     // Full flourish only when catching up to the target or crossing a rarity —
     // otherwise a light pop, so rapid catch-up isn't a flash storm.
-    if (!first && (reachedTarget || raritiedUp)) this.evolveFx()
-    else if (!first) this.tweens.add({ targets: this.player, scaleX: { from: this.heroScale * 1.2, to: this.heroScale }, scaleY: { from: this.heroScale * 1.2, to: this.heroScale }, duration: 160, ease: 'Back.Out' })
+    if (!first && (reachedTarget || raritiedUp)) {
+      this.evolveFx()
+      this.heroPopUntil = this.elapsedMs + 360
+    } else if (!first) {
+      this.tweens.add({ targets: this.player, scaleX: { from: this.heroScale * 1.2, to: this.heroScale }, scaleY: { from: this.heroScale * 1.2, to: this.heroScale }, duration: 160, ease: 'Back.Out' })
+      this.heroPopUntil = this.elapsedMs + 180
+    }
     // Divine heroes unlock a unique 4th ultimate.
     const divIdx = tier >= HERO.skins - HERO.divineCount ? tier - (HERO.skins - HERO.divineCount) : -1
     if (divIdx !== this.divineSkill) {
