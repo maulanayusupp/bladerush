@@ -671,7 +671,11 @@ export class BattleScene extends Phaser.Scene {
       if (!e.active) continue
       const d = distance(npc.x, npc.y, e.x, e.y)
       if (d < 22) npc.hp -= NPC.contactDamage // walked into a foe
-      if (d <= reach && e.takeDamage(dmg)) {
+      if (d > reach) continue
+      // Deal at least a fraction of the enemy's HP so NPCs can farm enemies that
+      // scale with the PLAYER's power (otherwise they'd never grow / stay tiny).
+      const edmg = Math.max(dmg, e.hp * 0.25)
+      if (e.takeDamage(edmg)) {
         this.killFx(e.x, e.y)
         e.deactivate()
         npc.power += e.value

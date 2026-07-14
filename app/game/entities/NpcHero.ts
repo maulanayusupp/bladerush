@@ -64,7 +64,7 @@ export class NpcHero extends Phaser.GameObjects.Container {
   refresh(): void {
     const tier = clamp(Math.floor(HERO.tierPerLog10 * Math.log10(1 + this.power)), 0, HERO.skins - 1)
     this.heroImg.setTexture(`hero${tier}`)
-    this.heroImg.setScale(0.62 + (tier / (HERO.skins - 1)) * 0.5)
+    this.heroImg.setScale(0.6 + (tier / (HERO.skins - 1)) * 1.05) // grows like the player
     this.label.setText(formatCompact(Math.round(this.power)))
     this.maxHp = NPC.baseHp + Math.min(500, Math.sqrt(this.power) * 5)
     if (this.hp > this.maxHp) this.hp = this.maxHp
