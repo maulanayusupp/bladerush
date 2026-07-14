@@ -89,7 +89,8 @@ function unlock(features: string[], at: number, rank: number, f: string): void {
   if (rank >= at) features.push(f)
 }
 
-const CHAMPION_COUNT = 100
+const CHAMPION_COUNT = 105 // 100 procedural + 5 bespoke Divine champions
+const DIVINE_COUNT = 5
 
 /**
  * 500 UNIQUE knight heroes. Uniqueness comes from combining several dimensions
@@ -150,6 +151,7 @@ function genChampions(): ChampionSkin[] {
       // heads): open barbute -> greathelm -> spiked -> horned-crown.
       helmType: rank < 0.25 ? 1 : rank < 0.55 ? 0 : rank < 0.8 ? 3 : 4,
       gear: gearOf(i),
+      special: i >= CHAMPION_COUNT - DIVINE_COUNT ? i - (CHAMPION_COUNT - DIVINE_COUNT) : -1,
     })
   }
   return out
@@ -294,6 +296,7 @@ interface ChampionSkin {
   visor: number // 0..1 helmet visor style
   helmType: number // 0..4 helmet archetype (ordered by rank)
   gear: number // 0 sword / 1 dual / 2 spear / 3 shield
+  special: number // -1 = normal; 0..4 = bespoke Divine champion
 }
 
 /** 500 unique hero looks that escalate in grandeur (evolve every 1000 power). */
@@ -1446,7 +1449,144 @@ export class BootScene extends Phaser.Scene {
    * mage, samurai, rogue, golem, lich, dragoon) — so heroes differ in SHAPE,
    * not just color. `rank` still layers grandeur (glow, wings, crown, halo).
    */
+  /**
+   * The 5 bespoke DIVINE champions — the top rarity. Each is a fully unique,
+   * hand-authored silhouette far grander than the procedural heroes.
+   */
+  private drawDivineHero(g: Phaser.GameObjects.Graphics, idx: number): void {
+    const dark = 0x0c0a12
+    switch (idx) {
+      case 0: { // Seraph — celestial, triple wings + halo, radiant gold-white
+        this.bakedGlow(g, 32, 32, 0xfff2b0, 40)
+        g.fillStyle(0xffffff, 0.96) // three pairs of wings
+        for (const wy of [22, 32, 42]) {
+          g.fillPoints(this.pts([18, wy, 0, wy - 8, 3, wy + 8, 16, wy + 4]), true)
+          g.fillPoints(this.pts([46, wy, 64, wy - 8, 61, wy + 8, 48, wy + 4]), true)
+        }
+        this.drawHeroLegs(g, 0xd8c98a, dark)
+        g.fillStyle(0xf6f1e0, 1) // radiant plate
+        g.fillRoundedRect(19, 27, 26, 25, 6)
+        g.fillStyle(0xffd700, 1) // gold V + belt
+        g.fillPoints(this.pts([32, 29, 42, 34, 40, 49, 24, 49, 22, 34]), true)
+        g.fillRect(19, 48, 26, 4)
+        g.fillStyle(0xffd700, 1) // pauldrons
+        g.fillCircle(20, 31, 6)
+        g.fillCircle(44, 31, 6)
+        g.fillStyle(0xf6f1e0, 1) // head
+        g.fillEllipse(32, 17, 22, 21)
+        g.fillStyle(0x8affff, 1) // glowing eyes
+        g.fillRect(26, 16, 4, 3)
+        g.fillRect(35, 16, 4, 3)
+        g.lineStyle(3, 0xffe14d, 1) // halo
+        g.strokeEllipse(32, 4, 28, 10)
+        break
+      }
+      case 1: { // Void Sovereign — cosmic black armor, violet aura, shard crown
+        this.bakedGlow(g, 32, 34, 0x9d3cff, 40)
+        g.fillStyle(0x2a1050, 1)
+        g.fillPoints(this.pts([16, 26, 48, 26, 56, 62, 8, 62]), true) // void cape
+        this.drawHeroLegs(g, 0x18122a, dark)
+        g.fillStyle(0x141024, 1) // near-black plate
+        g.fillRoundedRect(18, 27, 28, 25, 6)
+        g.fillStyle(0xffffff, 0.9) // starfield
+        for (const p of [[24, 32], [30, 38], [38, 34], [42, 45], [27, 46], [35, 30]]) g.fillCircle(p[0] as number, p[1] as number, 0.9)
+        g.fillStyle(0xb06bff, 1) // violet trim + gem
+        g.fillRect(18, 48, 28, 3)
+        g.fillCircle(32, 40, 3.5)
+        g.fillStyle(0x141024, 1) // helm
+        g.fillEllipse(32, 17, 24, 23)
+        g.fillStyle(0xd48aff, 1) // eyes
+        g.fillRect(26, 16, 4, 3)
+        g.fillRect(35, 16, 4, 3)
+        g.fillStyle(0xb06bff, 1) // floating shard crown
+        for (const x of [22, 27, 32, 37, 42]) g.fillTriangle(x - 2.5, 4, x, -4, x + 2.5, 4)
+        break
+      }
+      case 2: { // Inferno Lord — molten armor, flame crown, ember cape
+        this.bakedGlow(g, 32, 34, 0xff5a1a, 42)
+        g.fillStyle(0x7a1408, 1)
+        g.fillPoints(this.pts([16, 26, 48, 26, 54, 62, 10, 62]), true) // fiery cape
+        g.fillStyle(0xff6a1a, 0.6)
+        g.fillPoints(this.pts([22, 30, 42, 30, 46, 62, 18, 62]), true)
+        this.drawHeroLegs(g, 0x2a1410, dark)
+        g.fillStyle(0x2a1410, 1) // charcoal plate
+        g.fillRoundedRect(18, 27, 28, 25, 5)
+        g.fillStyle(0xff7a1a, 1) // molten cracks
+        g.fillRect(31, 29, 2, 20)
+        g.fillRect(24, 40, 8, 1.4)
+        g.fillRect(33, 36, 8, 1.4)
+        g.fillStyle(0x1a0d0a, 1) // horned helm
+        g.fillEllipse(32, 18, 24, 22)
+        g.fillStyle(0xff3b1a, 1) // eyes
+        g.fillRect(26, 17, 4, 3)
+        g.fillRect(35, 17, 4, 3)
+        g.fillStyle(0xffb020, 1) // flame crown
+        for (const x of [24, 30, 32, 34, 40]) g.fillTriangle(x - 3, 8, x, -2, x + 3, 8)
+        g.fillStyle(0xff5a1a, 1)
+        for (const x of [27, 32, 37]) g.fillTriangle(x - 2, 8, x, 2, x + 2, 8)
+        break
+      }
+      case 3: { // God-Emperor — massive ornate gold, huge crown, scepter
+        this.bakedGlow(g, 32, 34, 0xffe14d, 44)
+        g.fillStyle(0x8a1020, 1) // imperial cape
+        g.fillPoints(this.pts([14, 25, 50, 25, 58, 62, 6, 62]), true)
+        this.drawHeroLegs(g, 0x6a5410, dark)
+        g.fillStyle(0xffd700, 1) // grand gold plate
+        g.fillRoundedRect(16, 26, 32, 27, 6)
+        g.fillStyle(0xfff2a8, 0.9)
+        g.fillPoints(this.pts([32, 29, 44, 34, 42, 50, 22, 50, 20, 34]), true)
+        g.fillStyle(0xb8860b, 1) // spiked pauldrons
+        g.fillTriangle(6, 34, 18, 24, 20, 38)
+        g.fillTriangle(58, 34, 46, 24, 44, 38)
+        g.fillCircle(15, 31, 6)
+        g.fillCircle(49, 31, 6)
+        g.fillStyle(0xfff2a8, 1) // head
+        g.fillEllipse(32, 18, 22, 21)
+        g.fillStyle(0xff3b6b, 1) // eyes
+        g.fillRect(26, 17, 4, 3)
+        g.fillRect(35, 17, 4, 3)
+        g.fillStyle(0xffd700, 1) // huge crown
+        for (const x of [20, 25, 32, 39, 44]) g.fillTriangle(x - 3, 8, x, -3, x + 3, 8)
+        g.fillStyle(0xff3b6b, 1)
+        g.fillCircle(32, 6, 2)
+        g.fillStyle(0x8a6a10, 1) // scepter
+        g.fillRect(52, 16, 2, 34)
+        g.fillStyle(0xffe14d, 1)
+        g.fillCircle(53, 14, 4)
+        break
+      }
+      default: { // Dragon Ascendant — scaled armor, dragon horns, bat wings
+        this.bakedGlow(g, 32, 34, 0x3aff8a, 40)
+        g.fillStyle(0x1c5a2a, 1) // bat wings
+        g.fillPoints(this.pts([18, 28, 2, 18, 6, 40, 12, 34, 16, 44]), true)
+        g.fillPoints(this.pts([46, 28, 62, 18, 58, 40, 52, 34, 48, 44]), true)
+        this.drawHeroLegs(g, 0x1a3a20, dark)
+        g.fillStyle(0x2f7a3a, 1) // scaled plate
+        g.fillRoundedRect(18, 27, 28, 25, 5)
+        g.fillStyle(0x1c5a2a, 1) // scale rows
+        for (const yy of [32, 38, 44]) g.fillRect(19, yy, 26, 1.6)
+        g.fillStyle(0xffd700, 1) // gold trim + gem
+        g.fillRect(18, 48, 28, 3)
+        g.fillCircle(32, 39, 3)
+        g.fillStyle(0x24521f, 1) // helm
+        g.fillEllipse(32, 18, 24, 22)
+        g.fillStyle(0xffb020, 1) // big dragon horns
+        g.fillPoints(this.pts([20, 14, 6, 2, 12, -2, 24, 12]), true)
+        g.fillPoints(this.pts([44, 14, 58, 2, 52, -2, 40, 12]), true)
+        g.fillStyle(0xffe14d, 1) // amber eyes
+        g.fillRect(26, 17, 4, 3)
+        g.fillRect(35, 17, 4, 3)
+        g.fillStyle(0x1a0d0a, 1) // snout ridge
+        g.fillRect(30, 20, 4, 6)
+      }
+    }
+  }
+
   private drawChampion(g: Phaser.GameObjects.Graphics, s: ChampionSkin): void {
+    if (s.special >= 0) {
+      this.drawDivineHero(g, s.special)
+      return
+    }
     const has = (f: string) => s.features.includes(f)
     const dark = 0x0c0a12
 

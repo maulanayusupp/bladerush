@@ -71,7 +71,8 @@
     "rare": "Langka",
     "epic": "Epik",
     "legendary": "Legendaris",
-    "mythic": "Mitos"
+    "mythic": "Mitos",
+    "divine": "Dewa"
   },
   "pause": {
     "title": "Jeda",

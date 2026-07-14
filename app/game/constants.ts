@@ -89,7 +89,8 @@ export const SWORD_SHAPES = [
  * astronomical survivor scores.
  */
 export const HERO = {
-  skins: 100,
+  skins: 105, // 100 procedural + 5 bespoke "Divine" champions at the very top
+  divineCount: 5,
   // Look/size evolve with SCORE (monotonic — never flips backwards). tier =
   // floor(tierPerLog10 * log10(1 + score)); ~1.85 reaches the golden top tier
   // around score 1e54 (survivor scores climb astronomically).
@@ -108,7 +109,8 @@ export const HERO_RARITIES = [
   { id: 'rare', min: 0.35, color: 0x4aa3ff },
   { id: 'epic', min: 0.6, color: 0xb06bff },
   { id: 'legendary', min: 0.8, color: 0xffb020 },
-  { id: 'mythic', min: 0.93, color: 0xff3b6b },
+  { id: 'mythic', min: 0.9, color: 0xff3b6b },
+  { id: 'divine', min: 0.96, color: 0x00ffd0 }, // the 5 bespoke top champions (index 100-104)
 ] as const
 
 /** Rarity tier index (0..4) for a hero rank (0..1). */

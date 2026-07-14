@@ -71,7 +71,8 @@
     "rare": "Rare",
     "epic": "Epic",
     "legendary": "Legendary",
-    "mythic": "Mythic"
+    "mythic": "Mythic",
+    "divine": "Divine"
   },
   "pause": {
     "title": "Paused",
