@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -102,6 +102,7 @@ export class BattleScene extends Phaser.Scene {
   private swordDamageMul = 1
   private playerSkin = -1
   private heroRarityIdx = -1
+  private divineSkill = -1 // active Divine ultimate index (-1 = none)
   private heroScale: number = HERO.minScale
   private heroAura!: Phaser.GameObjects.Image
   private heroAuraColor = 0
@@ -196,6 +197,8 @@ export class BattleScene extends Phaser.Scene {
     this.skillReadyAt.fury = 0
     this.skillReadyAt.nova = 0
     this.skillReadyAt.dash = 0
+    this.skillReadyAt.divine = 0
+    this.divineSkill = -1
     this.power.reset()
     this.scorer.reset()
     this.upgrades.reset()
@@ -891,6 +894,12 @@ export class BattleScene extends Phaser.Scene {
     if (rarity > this.heroRarityIdx) {
       if (!first) this.announceRarity(rarity)
       this.heroRarityIdx = rarity
+    }
+    // Divine heroes unlock a unique 4th ultimate.
+    const divIdx = tier >= HERO.skins - HERO.divineCount ? tier - (HERO.skins - HERO.divineCount) : -1
+    if (divIdx !== this.divineSkill) {
+      this.divineSkill = divIdx
+      gameEventBus.emit('skill:divine', { index: divIdx })
     }
   }
 
@@ -2183,6 +2192,10 @@ export class BattleScene extends Phaser.Scene {
 
   private onSkill = ({ id }: { id: string }): void => {
     if (this.isOver) return
+    if (id === 'divine') {
+      this.useDivineSkill()
+      return
+    }
     if (id !== 'fury' && id !== 'nova' && id !== 'dash') return
     if (this.elapsedMs < (this.skillReadyAt[id] ?? 0)) return
     const skill = SKILLS[id]
@@ -2238,6 +2251,104 @@ export class BattleScene extends Phaser.Scene {
       const bossDmg = Math.min(this.bossTickDamage(), Math.ceil(this.boss.maxHp * BOSS.maxHitFraction)) * SKILLS.nova.bossTicks
       this.damageNumber(this.boss.x, this.boss.y - this.boss.displayHeight * 0.3, bossDmg, '#c9a0ff')
       if (this.boss.takeDamage(bossDmg)) this.bossDefeat()
+    }
+  }
+
+  // ---- Divine ultimates (one per Divine hero) -----------------------------
+
+  private useDivineSkill(): void {
+    const idx = this.divineSkill
+    if (idx < 0) return
+    if (this.elapsedMs < (this.skillReadyAt.divine ?? 0)) return
+    const cd = (DIVINE_SKILLS[idx] as { cooldownMs: number }).cooldownMs
+    this.skillReadyAt.divine = this.elapsedMs + cd
+    gameEventBus.emit('skill:started', { id: 'divine', cooldownMs: cd, durationMs: 0 })
+    this.castDivineSkill(idx)
+  }
+
+  /** Damage every enemy on the field (and chunk the boss) with a shockwave. */
+  private divineDamageAll(mult: number, ringColor: number, ringScale: number, numColor: string): void {
+    const ring = this.add
+      .image(this.player.x, this.player.y, 'shock')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(ringColor)
+      .setScale(0.4)
+      .setDepth(6)
+    this.tweens.add({ targets: ring, scale: ringScale, alpha: { from: 0.95, to: 0 }, duration: 520, ease: 'Cubic.Out', onComplete: () => ring.destroy() })
+    this.cameras.main.shake(260, 0.012)
+    this.cameras.main.flash(200, (ringColor >> 16) & 255, (ringColor >> 8) & 255, ringColor & 255)
+    audioService.nova()
+    const dmg = Math.max(1, Math.round(this.power.stats.damage * this.swordDamageMul * mult))
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active) continue
+      this.damageNumber(e.x, e.y - 14, dmg, numColor)
+      if (e.takeDamage(dmg)) this.killEnemy(e)
+    }
+    if (this.bossActive && this.boss.active) {
+      const bd = Math.min(this.bossTickDamage(), Math.ceil(this.boss.maxHp * BOSS.maxHitFraction)) * 12
+      this.damageNumber(this.boss.x, this.boss.y - this.boss.displayHeight * 0.3, bd, numColor)
+      if (this.boss.takeDamage(bd)) this.bossDefeat()
+    }
+  }
+
+  /** Fire the current Divine hero's unique ultimate. */
+  private castDivineSkill(idx: number): void {
+    switch (idx) {
+      case 0: // Seraph — Divine Judgment: heal to full, shield, radiant nova
+        this.player.hp = this.player.maxHp
+        this.emitHp()
+        this.playerInvulnUntil = this.elapsedMs + 2500
+        this.sparks.explode(30, this.player.x, this.player.y)
+        this.divineDamageAll(18, 0xfff2b0, 7, '#fff2b0')
+        break
+      case 1: { // Void Sovereign — Black Hole: pull every enemy inward, then implode
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          const a = angleBetween(e.x, e.y, this.player.x, this.player.y)
+          const d = distance(e.x, e.y, this.player.x, this.player.y)
+          const pull = Math.min(d, 260)
+          e.setPosition(e.x + Math.cos(a) * pull, e.y + Math.sin(a) * pull)
+        }
+        this.divineDamageAll(16, 0x9d3cff, 5, '#c9a0ff')
+        break
+      }
+      case 2: { // Inferno Lord — Meteor Storm: meteors rain across the view
+        const cam = this.cameras.main
+        for (let k = 0; k < 10; k++) {
+          const tx = cam.scrollX + randomRange(60, this.viewW - 60)
+          const ty = cam.scrollY + randomRange(60, this.viewH - 60)
+          this.time.delayedCall(k * 90, () => {
+            if (this.isOver) return
+            this.sparks.explode(14, tx, ty)
+            const r = this.add.image(tx, ty, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(0xff6a2a).setScale(0.2).setDepth(6)
+            this.tweens.add({ targets: r, scale: 2.4, alpha: { from: 0.9, to: 0 }, duration: 300, onComplete: () => r.destroy() })
+            const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 6)
+            for (const obj of this.enemies.getChildren()) {
+              const e = obj as Enemy
+              if (e.active && distance(e.x, e.y, tx, ty) < 150 && e.takeDamage(dmg)) this.killEnemy(e)
+            }
+          })
+        }
+        this.cameras.main.shake(300, 0.01)
+        audioService.nova()
+        break
+      }
+      case 3: // God-Emperor — Cataclysm: screen-wide gold shockwave + hit-stop
+        this.hitStopUntil = this.frameTime + 120
+        this.divineDamageAll(30, 0xffe14d, 9, '#ffe14d')
+        break
+      default: { // Dragon Ascendant — Dragon Breath: ignite everything
+        this.divineDamageAll(8, 0xff7a2a, 6, '#ffb060')
+        const burnDps = this.power.stats.damage * this.swordDamageMul * 3
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          e.burnUntil = this.elapsedMs + 4000
+          e.burnDps = burnDps
+        }
+      }
     }
   }
 

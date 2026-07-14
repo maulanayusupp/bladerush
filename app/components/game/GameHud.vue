@@ -6,7 +6,7 @@ import { gameEventBus } from '~/services/EventBus'
 import { audioService } from '~/services/AudioService'
 import { formatCompact } from '~/helpers/format.helper'
 import { useGameStore } from '~/stores/useGameStore'
-import { ACHIEVEMENTS } from '~/game/constants'
+import { ACHIEVEMENTS, DIVINE_SKILLS } from '~/game/constants'
 import type { RunStats } from '~/types/game'
 
 const store = useGameStore()
@@ -37,6 +37,8 @@ const bossRatio = computed(() => (bossMax.value > 0 ? bossHp.value / bossMax.val
 const comboCount = ref(0)
 const rank = ref(1)
 const rankTotal = ref(1)
+const divineIndex = ref(-1)
+const divineSkill = computed(() => (divineIndex.value >= 0 ? DIVINE_SKILLS[divineIndex.value] ?? null : null))
 const runStats = ref<RunStats | null>(null)
 const unlockedAch = ref<string[]>([])
 const comboMult = ref(1)
@@ -131,6 +133,7 @@ onMounted(() => {
       rank.value = r
       rankTotal.value = total
     }),
+    gameEventBus.on('skill:divine', ({ index }) => (divineIndex.value = index)),
     gameEventBus.on('boss:spawn', ({ maxHp }) => {
       bossActive.value = true
       bossMax.value = maxHp
@@ -169,6 +172,7 @@ function restart(): void {
   isOver.value = false
   power.value = 0
   score.value = 0
+  divineIndex.value = -1
   gameEventBus.emit('game:restart', undefined)
 }
 </script>
@@ -261,6 +265,19 @@ function restart(): void {
       >
         <span class="hud__skill-icon">{{ skill.icon }}</span>
         <span v-if="!skillReady(skill.id)" class="hud__skill-cd">{{ skillSeconds(skill.id) }}</span>
+      </button>
+      <button
+        v-if="divineSkill"
+        class="hud__skill hud__skill--divine"
+        :class="{ 'hud__skill--cooling': !skillReady('divine') }"
+        type="button"
+        :style="{ '--cd': skillFraction('divine') }"
+        :disabled="!skillReady('divine')"
+        :aria-label="$t('dskill.' + divineSkill.id)"
+        @click="useSkill('divine')"
+      >
+        <span class="hud__skill-icon">{{ divineSkill.icon }}</span>
+        <span v-if="!skillReady('divine')" class="hud__skill-cd">{{ skillSeconds('divine') }}</span>
       </button>
     </div>
 

@@ -188,6 +188,12 @@
       border-color: rgba(#ffffff, 0.15);
     }
 
+    // The Divine ultimate stands out with a teal glow.
+    &--divine {
+      border-color: #00ffd0;
+      box-shadow: 0 0 16px rgba(#00ffd0, 0.7), 0 6px 18px rgba(#000, 0.4);
+    }
+
     // Radial "pie" that empties as the cooldown elapses.
     &--cooling::after {
       content: '';

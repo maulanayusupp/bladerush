@@ -66,6 +66,13 @@
     "discovered": "Ditemukan",
     "hint": "Geser atau scroll untuk menjelajah"
   },
+  "dskill": {
+    "seraph": "Penghakiman Suci",
+    "void": "Lubang Hitam",
+    "inferno": "Badai Meteor",
+    "emperor": "Kiamat",
+    "dragon": "Napas Naga"
+  },
   "rarity": {
     "common": "Biasa",
     "rare": "Langka",

@@ -269,6 +269,19 @@ export const SKILLS = {
   dash: { id: 'dash', cooldownMs: 4500, durationMs: 300, speedMul: 4.5 },
 } as const
 
+/**
+ * Each Divine champion (hero index 100..104) wields a UNIQUE ultimate, shown as
+ * a 4th skill button while that hero is active. Ordered to match the 5 Divine
+ * heroes (seraph, void, inferno, emperor, dragon).
+ */
+export const DIVINE_SKILLS = [
+  { id: 'seraph', icon: '👼', cooldownMs: 18000 }, // Divine Judgment: heal + holy nova + shield
+  { id: 'void', icon: '🕳️', cooldownMs: 18000 }, // Black Hole: pull all foes in + implode
+  { id: 'inferno', icon: '☄️', cooldownMs: 18000 }, // Meteor Storm
+  { id: 'emperor', icon: '👑', cooldownMs: 20000 }, // Cataclysm: screen-wide gold shockwave
+  { id: 'dragon', icon: '🐉', cooldownMs: 18000 }, // Dragon Breath: ignite everything
+] as const
+
 /** Brief freeze on big moments (boss kill) for punch. */
 export const HITSTOP_MS = 70
 

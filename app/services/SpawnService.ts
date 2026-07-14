@@ -51,8 +51,9 @@ export class SpawnService {
     const tier = ENEMY_TIERS[idx] as (typeof ENEMY_TIERS)[number]
     const hpScale = 1 + playerPower * SPAWN.enemyHpPerPower
     const rewardScale = 1 + playerPower * SPAWN.enemyRewardPerPower
-    // Bigger the stronger you get (visible menace) — capped so it stays sane.
-    const sizeMul = 1 + Math.min(1.1, Math.log10(1 + playerPower) * 0.07)
+    // Slightly bigger the stronger you get (visible menace) — modest cap so
+    // monsters never dwarf the hero / fill the screen.
+    const sizeMul = 1 + Math.min(0.35, Math.log10(1 + playerPower) * 0.025)
     const band = idx * TROOP.perTier
     let value = Math.max(1, Math.round(randomInt(tier.value[0], tier.value[1]) * rewardScale * sizeMul))
     let hp = Math.round(tier.hp * hpScale * sizeMul)
