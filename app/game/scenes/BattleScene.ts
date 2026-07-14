@@ -520,35 +520,50 @@ export class BattleScene extends Phaser.Scene {
   /** When an NPC and the hero's rings meet they clash: your ring shreds it (and
    *  you ABSORB its power on the kill), while it strikes back at you. */
   private npcDuel(npc: NpcHero, deltaMs: number): void {
-    // Trigger when the two sword RINGS actually overlap.
-    if (distance(npc.x, npc.y, this.player.x, this.player.y) >= SWORD.orbitRadius + NPC.ringRadius) {
+    const d = distance(npc.x, npc.y, this.player.x, this.player.y)
+    // Nothing happens until at least one ring's blades reach the other's body.
+    const playerReach = SWORD.orbitRadius + 16 // your blades touch the NPC
+    const npcReach = NPC.ringRadius + 16 // its blades touch YOU
+    if (d >= Math.max(playerReach, npcReach)) {
       npc.duelAcc = 0
       return
     }
     npc.duelAcc += deltaMs
     if (npc.duelAcc < BOSS.hitTickMs) return
     npc.duelAcc -= BOSS.hitTickMs
-    // Clash spectacle at the point where the rings meet, colored by who's winning
-    // (gold = you can beat it, red = it's stronger).
     const ang = angleBetween(this.player.x, this.player.y, npc.x, npc.y)
-    const cx = this.player.x + Math.cos(ang) * SWORD.orbitRadius
-    const cy = this.player.y + Math.sin(ang) * SWORD.orbitRadius
     const canWin = this.power.power >= npc.power
-    this.clashBurst(cx, cy, canWin ? 0xffe08a : 0xff4040)
-    audioService.clash()
-    if (canWin) {
+
+    // Your ring shreds the NPC only when your blades reach its body.
+    if (d < playerReach && canWin) {
       npc.hp -= this.bossTickDamage()
-      this.hitPlayer(Math.min(10, 4 + Math.log10(1 + npc.power))) // light chip
-      if (npc.hp <= 0) this.absorbNpc(npc)
-    } else {
-      // A stronger NPC hurts you but does NOT instantly kill: modest damage
-      // (i-frame gated) + a knockback that breaks contact so you can flee.
-      this.hitPlayer(Math.min(16, 8 + Math.log10(1 + npc.power)))
-      const push = 120
-      this.player.setPosition(
-        clamp(this.player.x - Math.cos(ang) * push, 0, this.worldW),
-        clamp(this.player.y - Math.sin(ang) * push, 0, this.worldH),
-      )
+      const ex = this.player.x + Math.cos(ang) * SWORD.orbitRadius
+      const ey = this.player.y + Math.sin(ang) * SWORD.orbitRadius
+      this.clashBurst(ex, ey, 0xffe08a)
+      audioService.clash()
+      if (npc.hp <= 0) {
+        this.absorbNpc(npc)
+        return
+      }
+    }
+
+    // The NPC hits YOU only when ITS blades actually reach your character.
+    if (d < npcReach) {
+      const hx = this.player.x + Math.cos(ang) * (npcReach - 10)
+      const hy = this.player.y + Math.sin(ang) * (npcReach - 10)
+      this.clashBurst(hx, hy, canWin ? 0xffe08a : 0xff4040)
+      audioService.clash()
+      if (canWin) {
+        this.hitPlayer(Math.min(10, 4 + Math.log10(1 + npc.power)))
+      } else {
+        // A stronger NPC hurts you but doesn't instant-kill: modest i-frame-gated
+        // damage + a knockback that breaks contact so you can flee.
+        this.hitPlayer(Math.min(16, 8 + Math.log10(1 + npc.power)))
+        this.player.setPosition(
+          clamp(this.player.x - Math.cos(ang) * 120, 0, this.worldW),
+          clamp(this.player.y - Math.sin(ang) * 120, 0, this.worldH),
+        )
+      }
     }
   }
 

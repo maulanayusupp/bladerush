@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '~/components/ui/LanguageSwitcher.vue'
-import MenuBackground from '~/components/menu/MenuBackground.vue'
-import MenuEmblem from '~/components/menu/MenuEmblem.vue'
+import MenuStage from '~/components/menu/MenuStage.vue'
 import MenuFeature from '~/components/menu/MenuFeature.vue'
 import MenuShop from '~/components/menu/MenuShop.vue'
 import { useGameStore } from '~/stores/useGameStore'
@@ -17,10 +16,26 @@ const { t } = useI18n()
 const shopOpen = ref(false)
 const coins = ref(0)
 
+// Subtle DOM parallax — kept as CSS custom properties (data, not styling).
+const parallax = ref({ '--px': '0', '--py': '0' })
+let reduced = false
+
+function onPointer(e: PointerEvent): void {
+  const x = (e.clientX / window.innerWidth) * 2 - 1
+  const y = (e.clientY / window.innerHeight) * 2 - 1
+  parallax.value = { '--px': x.toFixed(3), '--py': y.toFixed(3) }
+}
+
 onMounted(() => {
   store.loadHighScore()
   metaService.load()
   coins.value = metaService.coins
+  reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (!reduced) window.addEventListener('pointermove', onPointer, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('pointermove', onPointer)
 })
 
 function openShop(): void {
@@ -45,59 +60,62 @@ const features = computed(() => [
 
 <template>
   <main class="menu">
-    <MenuBackground />
-    <div class="menu__aura" aria-hidden="true">
-      <span class="menu__orb menu__orb--a" />
-      <span class="menu__orb menu__orb--b" />
-      <span class="menu__orb menu__orb--c" />
-    </div>
-    <div class="menu__grid" aria-hidden="true" />
+    <MenuStage />
+    <div class="menu__scrim" aria-hidden="true" />
     <div class="menu__vignette" aria-hidden="true" />
+    <div class="menu__grain" aria-hidden="true" />
+    <div class="menu__bars" aria-hidden="true">
+      <span class="menu__bar menu__bar--top" />
+      <span class="menu__bar menu__bar--bottom" />
+    </div>
+
     <LanguageSwitcher />
 
-    <div class="menu__content">
-      <div class="menu__emblem-wrap">
-        <MenuEmblem class="menu__emblem" />
-      </div>
-
-      <span class="menu__badge">⚔️ {{ $t('menu.badge') }}</span>
+    <div class="menu__content" :style="parallax">
+      <span class="menu__eyebrow">{{ $t('menu.badge') }}</span>
 
       <h1 class="menu__title">
-        <span class="menu__title-word" data-text="BLADE">BLADE</span>
-        <span class="menu__title-word menu__title-word--accent" data-text="RUSH">RUSH</span>
+        <span class="menu__title-line">BLADE</span>
+        <span class="menu__title-line menu__title-line--accent">RUSH</span>
       </h1>
 
+      <div class="menu__divider" aria-hidden="true" />
       <p class="menu__tagline">{{ $t('menu.subtitle') }}</p>
 
-      <div class="menu__actions">
-        <NuxtLink to="/play" class="btn btn--primary btn--xl btn--glow btn--shine" @click="startGame">
-          <span class="btn__icon" aria-hidden="true">▶</span>{{ $t('menu.play') }}
+      <div class="menu__cta">
+        <NuxtLink to="/play" class="cta" @click="startGame">
+          <span class="cta__icon" aria-hidden="true">▶</span>
+          <span class="cta__label">{{ $t('menu.play') }}</span>
         </NuxtLink>
-        <div class="menu__actions-row">
-          <button type="button" class="btn btn--block" @click="openShop">
-            🛒 {{ $t('shop.open') }} · 💰 {{ formatCompact(coins) }}
+
+        <div class="menu__links">
+          <button type="button" class="menu__link" @click="openShop">
+            🛒 {{ $t('shop.open') }}
+            <b class="menu__link-meta">{{ formatCompact(coins) }}</b>
           </button>
-          <NuxtLink to="/codex" class="btn btn--block">
-            📖 {{ $t('codex.open') }}
-          </NuxtLink>
+          <span class="menu__link-sep" aria-hidden="true">·</span>
+          <NuxtLink to="/codex" class="menu__link">📖 {{ $t('codex.open') }}</NuxtLink>
         </div>
+
         <span v-if="store.highScore" class="menu__best">
           🏆 {{ $t('menu.best', { score: formatCompact(store.highScore) }) }}
         </span>
       </div>
-
-      <ul class="menu__features">
-        <MenuFeature
-          v-for="feature in features"
-          :key="feature.label"
-          :icon="feature.icon"
-          :label="feature.label"
-          :text="feature.text"
-        />
-      </ul>
-
-      <p class="menu__controls">{{ $t('menu.controls') }}</p>
     </div>
+
+    <ul class="menu__features" :style="parallax">
+      <MenuFeature
+        v-for="feature in features"
+        :key="feature.label"
+        :icon="feature.icon"
+        :label="feature.label"
+        :text="feature.text"
+      />
+    </ul>
+
+    <p class="menu__hint">{{ $t('menu.controls') }}</p>
+
+    <div class="menu__intro" aria-hidden="true" />
 
     <MenuShop v-if="shopOpen" @close="closeShop" />
   </main>

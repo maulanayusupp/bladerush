@@ -1,22 +1,25 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
+// =============================================================================
+// Cinematic "key-art" landing: a full-bleed backlit hero (canvas) with minimal,
+// elegant UI seated over a bottom scrim. Dark, moody, parallaxed.
+// =============================================================================
 .menu {
   position: relative;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: $space-8 $space-4;
+  justify-content: flex-end;
+  gap: $space-5;
+  padding: $space-8 $space-4 $space-6;
   overflow: hidden;
-  background:
-    radial-gradient(130% 90% at 50% -15%, rgba($color-primary, 0.28), transparent 55%),
-    radial-gradient(100% 70% at 50% 120%, rgba($color-success, 0.12), transparent 60%),
-    linear-gradient(180deg, $color-bg-alt, $color-bg 70%, #0d1710 100%);
+  background-color: #040309;
+  color: $color-text;
 }
 
-.menu-bg {
+.menu-stage {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -25,300 +28,331 @@
   pointer-events: none;
 }
 
-// --- Decorative backdrop layers -------------------------------------------
-.menu__aura {
+// --- Atmospheric overlays --------------------------------------------------
+.menu__scrim {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
-  overflow: hidden;
-  filter: blur(0.5px);
-}
-
-.menu__orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.55;
-  will-change: transform;
-
-  &--a {
-    width: 46vmax;
-    height: 46vmax;
-    top: -14vmax;
-    left: -10vmax;
-    background: radial-gradient(circle, rgba($color-primary, 0.85), transparent 68%);
-    animation: orb-drift-a 18s ease-in-out infinite;
-  }
-
-  &--b {
-    width: 38vmax;
-    height: 38vmax;
-    bottom: -12vmax;
-    right: -8vmax;
-    background: radial-gradient(circle, rgba($color-warning, 0.55), transparent 68%);
-    animation: orb-drift-b 22s ease-in-out infinite;
-  }
-
-  &--c {
-    width: 34vmax;
-    height: 34vmax;
-    top: 40%;
-    right: 12%;
-    background: radial-gradient(circle, rgba($color-success, 0.45), transparent 70%);
-    animation: orb-drift-c 26s ease-in-out infinite;
-  }
-}
-
-.menu__grid {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba($color-primary, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba($color-primary, 0.12) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(120% 90% at 50% 60%, #000 0%, transparent 72%);
-  -webkit-mask-image: radial-gradient(120% 90% at 50% 60%, #000 0%, transparent 72%);
-  opacity: 0.4;
+  background:
+    linear-gradient(180deg, rgba(#040309, 0.6) 0%, transparent 22%),
+    linear-gradient(0deg, #040309 4%, rgba(#040309, 0.72) 26%, transparent 52%);
 }
 
 .menu__vignette {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
-  background:
-    radial-gradient(80% 55% at 50% 42%, transparent 55%, rgba(#000, 0.55) 100%),
-    radial-gradient(60% 40% at 50% 4%, rgba($color-primary, 0.22), transparent 70%);
+  background: radial-gradient(72% 64% at 50% 40%, transparent 52%, rgba(#000, 0.72) 100%);
 }
 
+.menu__grain {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+// --- Cinematic letterbox frame --------------------------------------------
+.menu__bars {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.menu__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: clamp(14px, 3vh, 30px);
+  background: linear-gradient(#040309, rgba(#040309, 0.4));
+
+  &--top {
+    top: 0;
+    animation: bar-drop-top 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  &--bottom {
+    bottom: 0;
+    transform: scaleY(-1);
+    animation: bar-drop-bottom 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+// --- Fade-from-black intro -------------------------------------------------
+.menu__intro {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: #040309;
+  pointer-events: none;
+  animation: intro-fade 1.3s ease-out both;
+}
+
+// --- Hero copy block -------------------------------------------------------
 .menu__content {
   position: relative;
-  z-index: 1;
+  z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: $space-4;
   width: 100%;
-  max-width: 640px;
+  max-width: 680px;
   text-align: center;
+  transform: translate3d(calc(var(--px, 0) * -14px), calc(var(--py, 0) * -8px), 0);
 }
 
-// --- Emblem with pulsing halo ---------------------------------------------
-.menu__emblem-wrap {
-  position: relative;
-  display: grid;
-  place-items: center;
-  margin-bottom: -$space-2;
-
-  &::before {
-    content: '';
-    position: absolute;
-    width: 118%;
-    height: 118%;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba($color-primary, 0.45), transparent 62%);
-    filter: blur(26px);
-    z-index: -1;
-    animation: halo-pulse 4.5s ease-in-out infinite;
-  }
-}
-
-.menu-emblem {
-  width: clamp(170px, 42vw, 260px);
-  aspect-ratio: 1;
-  animation: emblem-float 6s ease-in-out infinite;
-
-  &__canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-}
-
-.menu__badge {
+.menu__eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: $space-2;
-  padding: $space-2 $space-4;
-  border-radius: $radius-pill;
+  gap: $space-3;
   font-size: $font-size-sm;
   font-weight: $font-weight-bold;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.42em;
   text-transform: uppercase;
-  color: $color-text;
-  background: linear-gradient(120deg, rgba($color-surface, 0.75), rgba($color-surface-2, 0.55));
-  border: 1px solid rgba($color-primary, 0.5);
-  box-shadow: 0 0 22px rgba($color-primary, 0.28), inset 0 1px 0 rgba(#fff, 0.08);
-  backdrop-filter: blur(8px);
+  color: rgba($color-warning, 0.9);
+
+  &::before,
+  &::after {
+    content: '';
+    width: clamp(20px, 6vw, 46px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba($color-warning, 0.7), transparent);
+  }
 }
 
-// --- Title with animated sheen --------------------------------------------
 .menu__title {
   margin: 0;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0 0.28em;
-  font-size: clamp(3.4rem, 15vw, 7rem);
-  line-height: 0.9;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.02em;
+  font-size: clamp(3.6rem, 15vw, 8rem);
+  line-height: 0.86;
   font-weight: 900;
-  letter-spacing: 0.01em;
-  filter: drop-shadow(0 10px 40px rgba($color-primary, 0.55));
-  animation: title-glow 5s ease-in-out infinite;
+  letter-spacing: 0.06em;
 }
 
-.menu__title-word {
-  background: linear-gradient(110deg, #ffffff 0%, #d8c7ff 34%, #ffffff 46%, #b9a3ff 60%, #ffffff 100%);
-  background-size: 250% 100%;
+.menu__title-line {
+  background: linear-gradient(180deg, #ffffff 8%, #cfc9e6 42%, #8f88ad 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: title-sheen 7s linear infinite;
+  filter: drop-shadow(0 6px 30px rgba($color-primary, 0.5));
 
   &--accent {
-    background: linear-gradient(110deg, $color-warning 0%, #ffe9a8 42%, #ff8a3d 62%, $color-warning 100%);
-    background-size: 250% 100%;
+    background: linear-gradient(180deg, #fff2c2 6%, $color-warning 46%, #ff8a3d 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: title-sheen 7s linear infinite;
-    animation-delay: -1.5s;
+    filter: drop-shadow(0 8px 34px rgba($color-warning, 0.5));
   }
+}
+
+.menu__divider {
+  width: clamp(90px, 26vw, 190px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba($color-warning, 0.85), transparent);
+  box-shadow: 0 0 14px rgba($color-warning, 0.5);
 }
 
 .menu__tagline {
   margin: 0;
   font-size: $font-size-lg;
-  color: $color-text-muted;
-  max-width: 46ch;
+  font-weight: $font-weight-regular;
+  line-height: 1.5;
+  color: rgba($color-text, 0.72);
+  max-width: 40ch;
 }
 
-.menu__actions {
+// --- Actions ---------------------------------------------------------------
+.menu__cta {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: $space-3;
-  width: 100%;
-  max-width: 400px;
+  align-items: center;
+  gap: $space-4;
+  margin-top: $space-2;
 }
 
-.menu__actions-row {
-  display: grid;
-  grid-template-columns: 1fr;
+.menu__links {
+  display: inline-flex;
+  align-items: center;
   gap: $space-3;
+  font-size: $font-size-base;
+}
 
-  @include respond-to(mobile) {
-    grid-template-columns: 1fr 1fr;
+.menu__link {
+  @include button-reset;
+  @include flex-center;
+  gap: $space-2;
+  padding: $space-1 0;
+  font-weight: $font-weight-bold;
+  color: rgba($color-text, 0.7);
+  text-decoration: none;
+  transition: color $transition-base;
+
+  &:hover {
+    color: $color-text;
+  }
+
+  &-meta {
+    color: $color-warning;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-sep {
+    color: rgba($color-text, 0.3);
   }
 }
 
 .menu__best {
-  align-self: center;
   display: inline-flex;
   align-items: center;
   gap: $space-2;
-  padding: $space-1 $space-4;
-  border-radius: $radius-pill;
   font-size: $font-size-sm;
   font-weight: $font-weight-bold;
   letter-spacing: 0.04em;
-  color: $color-warning;
-  background: rgba($color-surface, 0.6);
-  border: 1px solid rgba($color-warning, 0.4);
-  box-shadow: 0 0 18px rgba($color-warning, 0.18);
+  color: rgba($color-warning, 0.9);
 }
 
+// --- Feature strip (minimal) ----------------------------------------------
 .menu__features {
+  position: relative;
+  z-index: 4;
   list-style: none;
-  margin: $space-2 0 0;
+  margin: 0;
   padding: 0;
-  display: grid;
-  gap: $space-3;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: $space-3 $space-5;
   width: 100%;
-
-  @include respond-to(tablet) {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  max-width: 720px;
+  transform: translate3d(calc(var(--px, 0) * -22px), calc(var(--py, 0) * -12px), 0);
 }
 
-.menu__controls {
+.menu__hint {
+  position: relative;
+  z-index: 4;
   margin: 0;
   font-size: $font-size-sm;
-  color: rgba($color-text-muted, 0.85);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba($color-text, 0.4);
 }
 
-// --- Entrance & ambient motion --------------------------------------------
-@media (prefers-reduced-motion: no-preference) {
-  .menu__content > * {
-    animation: menu-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+// --- Elegant CTA -----------------------------------------------------------
+.cta {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-4 $space-8;
+  border-radius: $radius-pill;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: $color-text;
+  background: linear-gradient(135deg, rgba($color-primary, 0.25), rgba($color-primary, 0.08));
+  border: 1px solid rgba($color-warning, 0.55);
+  box-shadow: 0 0 0 rgba($color-primary, 0);
+  transition: transform $transition-base, box-shadow $transition-base,
+    border-color $transition-base, background $transition-base;
+  animation: cta-breathe 3.4s ease-in-out infinite;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -80%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(#fff, 0.35), transparent);
+    transform: skewX(-20deg);
+    pointer-events: none;
   }
 
-  @for $i from 1 through 7 {
-    .menu__content > *:nth-child(#{$i}) {
-      animation-delay: #{0.09 * $i}s;
+  &:hover {
+    transform: translateY(-2px);
+    border-color: $color-warning;
+    background: linear-gradient(135deg, $color-primary, $color-primary-dark);
+    box-shadow: 0 14px 40px rgba($color-primary, 0.5), 0 0 26px rgba($color-warning, 0.35);
+
+    &::before {
+      animation: cta-shine 0.8s ease;
     }
   }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &__icon {
+    font-size: 0.7em;
+    color: $color-warning;
+  }
+}
+
+// --- Motion ----------------------------------------------------------------
+@media (prefers-reduced-motion: no-preference) {
+  .menu__content > *,
+  .menu__features,
+  .menu__hint {
+    animation: menu-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .menu__eyebrow { animation-delay: 0.5s; }
+  .menu__title { animation-delay: 0.62s; }
+  .menu__divider { animation-delay: 0.78s; }
+  .menu__tagline { animation-delay: 0.9s; }
+  .menu__cta { animation-delay: 1.02s; }
+  .menu__features { animation-delay: 1.18s; }
+  .menu__hint { animation-delay: 1.32s; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .menu__orb,
-  .menu-emblem,
-  .menu__emblem-wrap::before,
-  .menu__title,
-  .menu__title-word,
-  .menu__title-word--accent {
+  .menu__intro,
+  .menu__bar,
+  .cta {
     animation: none;
   }
 }
 
 @keyframes menu-rise {
-  from {
-    opacity: 0;
-    transform: translateY(26px) scale(0.98);
-    filter: blur(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
+  from { opacity: 0; transform: translateY(24px); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 
-@keyframes title-sheen {
-  to { background-position: -250% 0; }
+@keyframes intro-fade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
-@keyframes title-glow {
-  0%, 100% { filter: drop-shadow(0 10px 34px rgba($color-primary, 0.45)); }
-  50% { filter: drop-shadow(0 14px 52px rgba($color-primary, 0.75)); }
+@keyframes bar-drop-top {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
 }
 
-@keyframes emblem-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+@keyframes bar-drop-bottom {
+  from { transform: scaleY(-1) translateY(-100%); }
+  to { transform: scaleY(-1) translateY(0); }
 }
 
-@keyframes halo-pulse {
-  0%, 100% { opacity: 0.45; transform: scale(0.94); }
-  50% { opacity: 0.85; transform: scale(1.06); }
+@keyframes cta-breathe {
+  0%, 100% { box-shadow: 0 8px 26px rgba($color-primary, 0.3); }
+  50% { box-shadow: 0 12px 40px rgba($color-primary, 0.55); }
 }
 
-@keyframes orb-drift-a {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(6vmax, 4vmax) scale(1.12); }
-}
-
-@keyframes orb-drift-b {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-5vmax, -4vmax) scale(1.15); }
-}
-
-@keyframes orb-drift-c {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-4vmax, 5vmax) scale(0.9); }
+@keyframes cta-shine {
+  from { left: -80%; }
+  to { left: 130%; }
 }
