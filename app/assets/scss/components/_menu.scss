@@ -35,8 +35,8 @@
   z-index: 1;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(#040309, 0.6) 0%, transparent 22%),
-    linear-gradient(0deg, #040309 8%, rgba(#040309, 0.92) 34%, rgba(#040309, 0.4) 52%, transparent 64%);
+    linear-gradient(180deg, rgba(#040309, 0.55) 0%, transparent 20%),
+    linear-gradient(0deg, #040309 10%, rgba(#040309, 0.95) 42%, rgba(#040309, 0.55) 56%, transparent 70%);
 }
 
 .menu__vignette {
@@ -106,25 +106,6 @@
   max-width: 680px;
   text-align: center;
   transform: translate3d(calc(var(--px, 0) * -14px), calc(var(--py, 0) * -8px), 0);
-}
-
-.menu__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-3;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-bold;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-  color: rgba($color-warning, 0.9);
-
-  &::before,
-  &::after {
-    content: '';
-    width: clamp(20px, 6vw, 46px);
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba($color-warning, 0.7), transparent);
-  }
 }
 
 .menu__title {
@@ -221,22 +202,6 @@
   color: rgba($color-warning, 0.9);
 }
 
-// --- Feature strip (minimal) ----------------------------------------------
-.menu__features {
-  position: relative;
-  z-index: 4;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: $space-3 $space-5;
-  width: 100%;
-  max-width: 720px;
-  transform: translate3d(calc(var(--px, 0) * -22px), calc(var(--py, 0) * -12px), 0);
-}
-
 .menu__hint {
   position: relative;
   z-index: 4;
@@ -305,25 +270,26 @@
 // --- Motion ----------------------------------------------------------------
 @media (prefers-reduced-motion: no-preference) {
   .menu__content > *,
-  .menu__features,
   .menu__hint {
     animation: menu-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  .menu__eyebrow { animation-delay: 0.5s; }
-  .menu__title { animation-delay: 0.62s; }
+  .menu__title { animation-delay: 0.55s; }
   .menu__divider { animation-delay: 0.78s; }
   .menu__tagline { animation-delay: 0.9s; }
   .menu__cta { animation-delay: 1.02s; }
-  .menu__features { animation-delay: 1.18s; }
-  .menu__hint { animation-delay: 1.32s; }
+  .menu__hint { animation-delay: 1.2s; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .menu__intro,
   .menu__bar,
   .cta {
     animation: none;
+  }
+
+  // No fade to run — hide it outright so it never covers the page.
+  .menu__intro {
+    display: none;
   }
 }
 

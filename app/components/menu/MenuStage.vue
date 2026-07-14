@@ -106,7 +106,7 @@ function render(): void {
   if (!ctx) return
   const c = ctx
   const cx = w / 2
-  const heroY = h * 0.34
+  const heroY = h * 0.32
   const bob = reduced ? 0 : Math.sin(t * 0.9) * 8
   const hx = cx + px * 26
   const hy = heroY + bob + py * 12

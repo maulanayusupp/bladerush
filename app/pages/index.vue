@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import LanguageSwitcher from '~/components/ui/LanguageSwitcher.vue'
 import MenuStage from '~/components/menu/MenuStage.vue'
-import MenuFeature from '~/components/menu/MenuFeature.vue'
 import MenuShop from '~/components/menu/MenuShop.vue'
 import { useGameStore } from '~/stores/useGameStore'
 import { formatCompact } from '~/helpers/format.helper'
@@ -11,7 +9,6 @@ import { audioService } from '~/services/AudioService'
 import { metaService } from '~/services/MetaService'
 
 const store = useGameStore()
-const { t } = useI18n()
 
 const shopOpen = ref(false)
 const coins = ref(0)
@@ -50,12 +47,6 @@ function closeShop(): void {
 function startGame(): void {
   audioService.unlock()
 }
-
-const features = computed(() => [
-  { icon: '🌀', label: t('menu.features.gates.label'), text: t('menu.features.gates.text') },
-  { icon: '⚔️', label: t('menu.features.swords.label'), text: t('menu.features.swords.text') },
-  { icon: '👹', label: t('menu.features.rivals.label'), text: t('menu.features.rivals.text') },
-])
 </script>
 
 <template>
@@ -72,8 +63,6 @@ const features = computed(() => [
     <LanguageSwitcher />
 
     <div class="menu__content" :style="parallax">
-      <span class="menu__eyebrow">{{ $t('menu.badge') }}</span>
-
       <h1 class="menu__title">
         <span class="menu__title-line">BLADE</span>
         <span class="menu__title-line menu__title-line--accent">RUSH</span>
@@ -102,16 +91,6 @@ const features = computed(() => [
         </span>
       </div>
     </div>
-
-    <ul class="menu__features" :style="parallax">
-      <MenuFeature
-        v-for="feature in features"
-        :key="feature.label"
-        :icon="feature.icon"
-        :label="feature.label"
-        :text="feature.text"
-      />
-    </ul>
 
     <p class="menu__hint">{{ $t('menu.controls') }}</p>
 
