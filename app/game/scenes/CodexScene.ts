@@ -4,7 +4,7 @@
 // category comes from the game registry ('codexCategory'), driven by Vue tabs.
 // =============================================================================
 import Phaser from 'phaser'
-import { SWORD_SHAPES } from '../constants'
+import { SWORD_SHAPES, TROOP } from '../constants'
 import { clamp } from '~/helpers/math.helper'
 import { codexService, type CodexCategory } from '~/services/CodexService'
 
@@ -18,7 +18,7 @@ interface Category {
 const CATEGORIES: Record<string, Category> = {
   hero: { prefix: 'hero', count: 500, cell: 76 },
   rival: { prefix: 'rivalHero', count: 100, cell: 76 },
-  troop: { prefix: 'troop', count: 100, cell: 76 },
+  troop: { prefix: 'troop', count: TROOP.count, cell: 76 },
   boss: { prefix: 'boss', count: 100, cell: 92 },
   weapon: { prefix: 'sword', count: SWORD_SHAPES.length, cell: 60, tint: 0xff6b6b },
 }

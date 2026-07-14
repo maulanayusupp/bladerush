@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import CodexCanvas from '~/components/game/CodexCanvas.vue'
 import { codexService, type CodexCategory } from '~/services/CodexService'
-import { BOSS, HERO, RIVAL, SWORD_SHAPES } from '~/game/constants'
+import { BOSS, HERO, RIVAL, SWORD_SHAPES, TROOP } from '~/game/constants'
 
 const tabs = ['hero', 'rival', 'troop', 'boss', 'weapon'] as const
 type Tab = (typeof tabs)[number]
@@ -11,7 +11,7 @@ const active = ref<Tab>('hero')
 const totals: Record<Tab, number> = {
   hero: HERO.skins,
   rival: RIVAL.skins,
-  troop: 100,
+  troop: TROOP.count,
   boss: BOSS.skins,
   weapon: SWORD_SHAPES.length,
 }

@@ -4,7 +4,7 @@
 // the scene calls these methods on its own timers.
 // =============================================================================
 import type { EnemyConfig, GateConfig } from '~/types/game'
-import { ELITE, ENEMY_TIERS, RIVAL, SPAWN } from '~/game/constants'
+import { ELITE, ENEMY_TIERS, RIVAL, SPAWN, TROOP } from '~/game/constants'
 import { clamp, pickOne, randomInt, randomRange } from '~/helpers/math.helper'
 
 export class SpawnService {
@@ -53,7 +53,7 @@ export class SpawnService {
     const rewardScale = 1 + playerPower * SPAWN.enemyRewardPerPower
     // Bigger the stronger you get (visible menace) — capped so it stays sane.
     const sizeMul = 1 + Math.min(1.1, Math.log10(1 + playerPower) * 0.07)
-    const band = idx * 20
+    const band = idx * TROOP.perTier
     let value = Math.max(1, Math.round(randomInt(tier.value[0], tier.value[1]) * rewardScale * sizeMul))
     let hp = Math.round(tier.hp * hpScale * sizeMul)
     let speed = randomRange(tier.speed[0], tier.speed[1])
@@ -77,7 +77,7 @@ export class SpawnService {
       value,
       hp,
       speed,
-      textureKey: `troop${band + randomInt(0, 19)}`,
+      textureKey: `troop${band + randomInt(0, TROOP.perTier - 1)}`,
       scale,
       tier: tier.id,
       affix,

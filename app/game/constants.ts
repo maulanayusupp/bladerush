@@ -166,6 +166,17 @@ export const ENEMY = {
 } as const
 
 /**
+ * Enemy troop roster: 500 procedurally-generated monsters split evenly across
+ * the 5 tiers (100 per tier). Higher tiers/indices are fiercer (horns, tusks,
+ * spikes, glow) and bigger. Kept as a constant so BootScene (baking) and
+ * SpawnService (tier→texture) agree on the counts.
+ */
+export const TROOP = {
+  count: 500,
+  perTier: 100, // count / ENEMY_TIERS.length
+} as const
+
+/**
  * AI survivors — autonomous heroes that roam the world like the player: chase &
  * shred enemies with their own sword ring, grab gates/chests/hearts, help fight
  * the boss, grow in power, die and respawn. Purely cosmetic to the player's

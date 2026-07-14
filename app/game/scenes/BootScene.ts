@@ -5,7 +5,7 @@
 // Swap these for real sprite sheets in the polish phase.
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, MAP_TILE, SWORD_SHAPES, gearOf } from '../constants'
+import { AURA, MAP_TILE, SWORD_SHAPES, TROOP, gearOf } from '../constants'
 
 type Draw = (g: Phaser.GameObjects.Graphics) => void
 
@@ -30,7 +30,7 @@ function shade(hex: number, f: number): number {
 // and retuning the whole roster means editing the tables below, nothing else.
 
 const HORN_STYLES = ['none', 'single', 'straight', 'wide', 'back', 'ram', 'antler', 'spikes', 'trident', 'crown']
-const WEAPONS = ['dagger', 'sword', 'axe', 'mace', 'spear']
+const WEAPONS = ['dagger', 'sword', 'axe', 'mace', 'spear', 'club', 'halberd', 'scimitar']
 
 /** Convert HSL (h 0..360, s/l 0..1) to a packed 0xRRGGBB color. */
 function hsl(h: number, s: number, l: number): number {
@@ -178,28 +178,31 @@ function genWarlords(): WarlordSkin[] {
   return out
 }
 
-/** 100 enemy troops in 5 menace bands of 20 (easy→legend). */
+/** 500 enemy troops across 5 tiers; fierceness (horns, tusks, spikes, glow, eyes)
+ *  rises smoothly with the overall rank so higher tiers look far more savage. */
 function genTroops(): TrooperSkin[] {
   const out: TrooperSkin[] = []
-  for (let i = 0; i < 100; i++) {
-    const band = Math.floor(i / 20)
-    const rank = band / 4 // 0..1 by band, so a band shares a menace level
+  const last = TROOP.count - 1
+  for (let i = 0; i < TROOP.count; i++) {
+    const band = Math.floor(i / TROOP.perTier) // 0..4 tier
+    const rank = i / last // 0..1 continuous menace across the whole roster
     const p = unitPalette(i, 'troop')
-    // Orc/undead flesh darkens & sickens with the band.
-    const flesh = hsl(96 - band * 12, 0.4 + 0.12 * band, 0.5 - 0.06 * band)
+    // Flesh darkens & sickens as it gets fiercer.
+    const flesh = hsl(96 - rank * 60, 0.4 + 0.14 * rank, 0.5 - 0.24 * rank)
     out.push({
       skin: flesh,
       armor: p.base,
       armor2: p.hi,
-      helm: band >= 2 ? p.dark : 0,
-      horns: band >= 3,
-      tuskBig: band >= 2,
-      eye: band >= 4 ? 0xffd700 : band >= 3 ? 0xff4d4d : hsl(90, 0.5, 0.2),
+      helm: rank >= 0.4 ? p.dark : 0,
+      horns: rank >= 0.55,
+      tuskBig: rank >= 0.4,
+      eye: rank >= 0.8 ? 0xffd700 : rank >= 0.6 ? 0xff4d4d : hsl(90, 0.5, 0.25 + rank * 0.2),
       weapon: WEAPONS[i % WEAPONS.length] as string,
       rank,
-      glow: band >= 3 ? p.accent : 0,
+      glow: rank >= 0.6 ? p.accent : 0,
       head: i % 7, // orc / skull / cyclops / beast / imp / insectoid / wraith
       body: Math.floor(i / 7) % 4, // standard / hulking / goblin / tall
+      spikes: rank >= 0.7, // back/shoulder spikes for the savage top tiers
     })
   }
   return out
@@ -268,7 +271,8 @@ interface TrooperSkin {
   rank: number
   glow: number // 0 = none
   body: number // 0..3 silhouette archetype
-  head: number // 0..4 head archetype
+  head: number // 0..6 head archetype
+  spikes: boolean // savage back/shoulder spikes (high rank)
 }
 
 /** Humanoid enemy troops (orcs/soldiers) by tier — drawn front-facing. */
@@ -543,22 +547,30 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(hx - 3, ty, 6, thh)
     g.fillCircle(tx + 1, ty + 2, shoulder)
     g.fillCircle(tx + tw - 1, ty + 2, shoulder)
+    // Savage shoulder + back spikes for high-rank monsters.
+    if (p.spikes) {
+      g.fillStyle(shade(p.armor2, 1.2), 1)
+      g.fillTriangle(tx - 1, ty + 3, tx + 3, ty - 9, tx + 7, ty + 3)
+      g.fillTriangle(tx + tw + 1, ty + 3, tx + tw - 3, ty - 9, tx + tw - 7, ty + 3)
+      for (const sx of [hx - 6, hx, hx + 6]) g.fillTriangle(sx - 2, ty + 4, sx, ty - 4, sx + 2, ty + 4)
+    }
     // Arms / fists.
     g.fillStyle(p.skin, 1)
     g.fillCircle(tx - 2, armY, 3.5)
     g.fillCircle(tx + tw + 2, armY, 3.5)
     // Head archetype.
     this.drawTrooperHead(g, p, hx, hy, hr)
-    // Helmet (not on bare skulls) + optional horns.
+    // Helmet (not on bare skulls) + optional horns (bigger the fiercer it is).
     if (p.helm && p.head !== 1) {
       g.fillStyle(p.helm, 1)
       g.fillEllipse(hx, hy - hr + 1, hr * 2 + 4, 12)
       g.fillRect(hx - hr - 1, hy - hr, hr * 2 + 2, 3)
     }
     if (p.horns && p.head !== 4) {
+      const hf = 1 + p.rank
       g.fillStyle(0xe8e2d0, 1)
-      g.fillTriangle(hx - hr - 1, hy - hr + 3, hx - hr - 9, hy - hr - 7, hx - hr + 5, hy - hr + 1)
-      g.fillTriangle(hx + hr + 1, hy - hr + 3, hx + hr + 9, hy - hr - 7, hx + hr - 5, hy - hr + 1)
+      g.fillTriangle(hx - hr - 1, hy - hr + 3, hx - hr - 9 * hf, hy - hr - 7 * hf, hx - hr + 5, hy - hr + 1)
+      g.fillTriangle(hx + hr + 1, hy - hr + 3, hx + hr + 9 * hf, hy - hr - 7 * hf, hx + hr - 5, hy - hr + 1)
     }
   }
 
@@ -701,6 +713,20 @@ export class BootScene extends Phaser.Scene {
       case 'spear':
         g.fillStyle(0x5c3b22, 1); g.fillRect(43, 10, 3, 34)
         g.fillStyle(0xcdd3e0, 1); g.fillTriangle(44.5, 2, 41, 12, 48, 12)
+        break
+      case 'club':
+        g.fillStyle(0x5c3b22, 1); g.fillRect(43, 20, 3, 22)
+        g.fillStyle(0x6b4a2a, 1); g.fillPoints(this.pts([40, 6, 49, 8, 48, 22, 41, 22]), true)
+        g.fillStyle(0x3a2a1a, 1); g.fillCircle(43, 11, 1.2); g.fillCircle(46, 16, 1.2)
+        break
+      case 'halberd':
+        g.fillStyle(0x5c3b22, 1); g.fillRect(43, 6, 3, 40)
+        g.fillStyle(0x9198a6, 1); g.fillPoints(this.pts([46, 8, 54, 11, 53, 20, 46, 18]), true) // axe head
+        g.fillStyle(0xcdd3e0, 1); g.fillTriangle(44.5, 0, 42, 8, 47, 8) // top spike
+        break
+      case 'scimitar':
+        g.fillStyle(0xcdd3e0, 1); g.fillPoints(this.pts([44, 8, 52, 18, 49, 30, 44, 34, 42, 20]), true)
+        g.fillStyle(0xffce5a, 1); g.fillRect(40, 33, 8, 2)
         break
     }
   }
