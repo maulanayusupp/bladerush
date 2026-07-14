@@ -198,8 +198,8 @@ function genTroops(): TrooperSkin[] {
       weapon: WEAPONS[i % WEAPONS.length] as string,
       rank,
       glow: band >= 3 ? p.accent : 0,
-      head: i % 5, // orc / skull / cyclops / beast / imp
-      body: Math.floor(i / 5) % 4, // standard / hulking / goblin / tall
+      head: i % 7, // orc / skull / cyclops / beast / imp / insectoid / wraith
+      body: Math.floor(i / 7) % 4, // standard / hulking / goblin / tall
     })
   }
   return out
@@ -626,6 +626,37 @@ export class BootScene extends Phaser.Scene {
         g.fillStyle(0xffffff, 1)
         g.fillRect(cx - 2, cy + r * 0.5, 1.5, 2)
         g.fillRect(cx + 1, cy + r * 0.5, 1.5, 2)
+        break
+      case 5: // insectoid — compound eyes, mandibles, antennae
+        g.fillStyle(dark, 1) // antennae
+        g.fillRect(cx - r * 0.5, cy - r - 6, 1.4, 8)
+        g.fillRect(cx + r * 0.5, cy - r - 6, 1.4, 8)
+        g.fillStyle(p.eye, 1)
+        g.fillCircle(cx - r * 0.5, cy - r - 6, 1.8)
+        g.fillCircle(cx + r * 0.5, cy - r - 6, 1.8)
+        g.fillStyle(p.skin, 1)
+        g.fillEllipse(cx, cy, r * 1.9, r * 1.8)
+        g.fillStyle(0x0c0f08, 1) // big compound eyes
+        g.fillEllipse(cx - r * 0.5, cy - 1, r * 0.75, r * 0.9)
+        g.fillEllipse(cx + r * 0.5, cy - 1, r * 0.75, r * 0.9)
+        g.fillStyle(p.eye, 0.9)
+        g.fillCircle(cx - r * 0.5, cy - 2, 1.6)
+        g.fillCircle(cx + r * 0.5, cy - 2, 1.6)
+        g.fillStyle(shade(p.skin, 0.7), 1) // mandibles
+        g.fillTriangle(cx - 4, cy + r * 0.7, cx - 1, cy + r * 0.7, cx - 5, cy + r * 1.1)
+        g.fillTriangle(cx + 4, cy + r * 0.7, cx + 1, cy + r * 0.7, cx + 5, cy + r * 1.1)
+        break
+      case 6: // hooded wraith — dark cowl, glowing eyes only
+        g.fillStyle(shade(p.armor, 0.6), 1)
+        g.fillPoints(this.pts([cx - r - 2, cy + r, cx - r + 1, cy - r, cx, cy - r - 4, cx + r - 1, cy - r, cx + r + 2, cy + r]), true)
+        g.fillStyle(0x08060a, 1) // shadowed void inside the hood
+        g.fillEllipse(cx, cy + 1, r * 1.2, r * 1.5)
+        g.fillStyle(p.eye, 1)
+        g.fillEllipse(cx - r * 0.4, cy, 4, 3)
+        g.fillEllipse(cx + r * 0.4, cy, 4, 3)
+        g.fillStyle(0xffffff, 0.8)
+        g.fillCircle(cx - r * 0.4, cy - 0.5, 1)
+        g.fillCircle(cx + r * 0.4, cy - 0.5, 1)
         break
       default: // orc
         g.fillStyle(p.skin, 1)

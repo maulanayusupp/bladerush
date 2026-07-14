@@ -21,32 +21,43 @@ export class SpawnService {
     return SPAWN.gateIntervalMs
   }
 
-  /** Pick a tier index; the "active" tier advances ~every 40s, others stay possible. */
-  private pickTierIndex(elapsedSec: number): number {
-    const weights = ENEMY_TIERS.map((_, i) => Math.max(0.04, 1 - Math.abs(elapsedSec / 40 - i) * 0.7))
+  /**
+   * Pick a tier index by PROGRESS (elapsed time + player power). A rising floor
+   * retires the weak/small tiers as you grow, so a high-level player faces the
+   * bigger, tougher monsters — not tiny early ones.
+   */
+  private pickTierIndex(elapsedSec: number, playerPower: number): number {
+    const n = ENEMY_TIERS.length
+    // Progress grows with time and (log) power; caps at the top tier.
+    const center = Math.min(n - 1, elapsedSec / 45 + Math.log10(1 + playerPower) * 0.9)
+    const floor = Math.max(0, Math.floor(center) - 1) // don't spawn far below center
+    const weights = ENEMY_TIERS.map((_, i) => (i < floor ? 0 : Math.max(0.05, 1 - Math.abs(center - i) * 0.7)))
     const total = weights.reduce((sum, w) => sum + w, 0)
     let roll = Math.random() * total
-    for (let i = 0; i < ENEMY_TIERS.length; i++) {
+    for (let i = 0; i < n; i++) {
       roll -= weights[i] as number
       if (roll <= 0) return i
     }
-    return 0
+    return n - 1
   }
 
   /**
-   * Build an enemy of a time-weighted tier. Its texture is a random troop from
-   * the tier's 20-wide band (0..99). HP and reward scale with player power.
+   * Build an enemy of a progress-weighted tier. Its texture is a random troop
+   * from the tier's 20-wide band (0..99). At high power monsters also grow
+   * BIGGER (and reward more), so strength is visible and worthwhile.
    */
   createEnemy(elapsedSec: number, playerPower: number): EnemyConfig {
-    const idx = this.pickTierIndex(elapsedSec)
+    const idx = this.pickTierIndex(elapsedSec, playerPower)
     const tier = ENEMY_TIERS[idx] as (typeof ENEMY_TIERS)[number]
     const hpScale = 1 + playerPower * SPAWN.enemyHpPerPower
     const rewardScale = 1 + playerPower * SPAWN.enemyRewardPerPower
+    // Bigger the stronger you get (visible menace) — capped so it stays sane.
+    const sizeMul = 1 + Math.min(1.1, Math.log10(1 + playerPower) * 0.07)
     const band = idx * 20
-    let value = Math.max(1, Math.round(randomInt(tier.value[0], tier.value[1]) * rewardScale))
-    let hp = Math.round(tier.hp * hpScale)
+    let value = Math.max(1, Math.round(randomInt(tier.value[0], tier.value[1]) * rewardScale * sizeMul))
+    let hp = Math.round(tier.hp * hpScale * sizeMul)
     let speed = randomRange(tier.speed[0], tier.speed[1])
-    let scale = tier.scale
+    let scale = tier.scale * sizeMul
     let dmgTaken = 1
     let tint = 0
     // Elite roll — chance rises over the run.
