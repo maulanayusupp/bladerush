@@ -106,11 +106,11 @@ function render(): void {
   if (!ctx) return
   const c = ctx
   const cx = w / 2
-  const heroY = h * 0.46
+  const heroY = h * 0.34
   const bob = reduced ? 0 : Math.sin(t * 0.9) * 8
   const hx = cx + px * 26
   const hy = heroY + bob + py * 12
-  const heroH = Math.min(h * 0.5, 460)
+  const heroH = Math.min(h * 0.46, 380)
   const k = heroH / 64
 
   // 1) Moody sky + bloom behind the hero.

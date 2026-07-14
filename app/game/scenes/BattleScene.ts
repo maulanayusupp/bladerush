@@ -706,7 +706,7 @@ export class BattleScene extends Phaser.Scene {
     }
     // Brawl with other NPCs whose rings overlap — the STRONGER one wins and
     // absorbs the weaker (equal power = stalemate, neither is chipped).
-    const brawlReach = NPC.ringRadius * 2 // rings touch when centers are within 2r
+    const brawlReach = NPC.ringRadius + 24 // its blades must reach the other's body
     for (const other of this.npcs) {
       if (other === npc || !other.active) continue
       if (npc.power < other.power) continue // only the stronger deals damage
