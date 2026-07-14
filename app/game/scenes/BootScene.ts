@@ -328,7 +328,15 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    CHAMPION_SKINS.forEach((skin, i) => this.bake(`hero${i}`, 64, 64, (g) => this.drawChampion(g, skin)))
+    CHAMPION_SKINS.forEach((skin, i) => {
+      if (skin.special >= 0) {
+        // Divine champions have wings/halos beyond the 64 box — bake padded so
+        // nothing is clipped.
+        this.bake(`hero${i}`, 80, 80, (g) => { g.translateCanvas(8, 8); this.drawChampion(g, skin) })
+      } else {
+        this.bake(`hero${i}`, 64, 64, (g) => this.drawChampion(g, skin))
+      }
+    })
     RIVAL_SKINS.forEach((skin, i) => this.bake(`rivalHero${i}`, 56, 64, (g) => this.drawWarlord(g, skin)))
     TROOP_SKINS.forEach((skin, i) => this.bake(`troop${i}`, 60, 60, (g) => this.drawTrooper(g, 60, skin)))
     BOSS_SKINS.forEach((skin, i) => this.bake(`boss${i}`, 76, 76, (g) => this.drawBoss(g, skin)))

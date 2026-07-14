@@ -361,7 +361,7 @@ export class BattleScene extends Phaser.Scene {
     this.npcs.forEach((npc, i) => {
       const x = randomRange(200, this.worldW - 200)
       const y = randomRange(200, this.worldH - 200)
-      npc.spawn(x, y, 10 + i * 4, NPC.colors[i % NPC.colors.length] as number)
+      npc.spawn(x, y, this.npcSpawnPower(), NPC.colors[i % NPC.colors.length] as number)
     })
 
     // Pooled floating reward popups shown on kills.
@@ -520,7 +520,7 @@ export class BattleScene extends Phaser.Scene {
       this.player.setScale(this.heroScale * breathe, this.heroScale * (breathe + 0.015 * Math.sin(t / 230)))
     }
     this.updateHeroAura()
-    this.updateNpcs(deltaMs, elapsedSec)
+    this.updateNpcs(deltaMs)
     this.updateRanking(deltaMs)
     this.drawMinimap()
   }
@@ -548,12 +548,18 @@ export class BattleScene extends Phaser.Scene {
 
   // ---- AI survivors -------------------------------------------------------
 
-  private updateNpcs(deltaMs: number, elapsedSec: number): void {
+  /** Seed an NPC's power relative to the player's, so rivals stay competitive
+   *  (not a flat 100 while you're at billions). Varied so some are stronger. */
+  private npcSpawnPower(): number {
+    return Math.max(10, Math.round(this.power.power * randomRange(0.2, 1.2)))
+  }
+
+  private updateNpcs(deltaMs: number): void {
     for (const npc of this.npcs) {
       if (!npc.active) {
         if (npc.respawnAt && this.elapsedMs >= npc.respawnAt) {
           const { x, y } = this.randomEdgePoint()
-          npc.spawn(x, y, Math.max(10, Math.round(10 + elapsedSec * 3)), npc.ringColor)
+          npc.spawn(x, y, this.npcSpawnPower(), npc.ringColor)
         }
         continue
       }
@@ -581,7 +587,7 @@ export class BattleScene extends Phaser.Scene {
   private npcDuel(npc: NpcHero, deltaMs: number): void {
     const d = distance(npc.x, npc.y, this.player.x, this.player.y)
     // Nothing happens until at least one ring's blades reach the other's body.
-    const playerReach = SWORD.orbitRadius + 16 // your blades touch the NPC
+    const playerReach = SWORD.orbitRadius * (0.85 + this.heroScale * 0.35) + 16 // your (grown) ring reaches the NPC
     const npcReach = NPC.ringRadius + 16 // its blades touch YOU
     if (d >= Math.max(playerReach, npcReach)) {
       npc.duelAcc = 0
@@ -1727,7 +1733,9 @@ export class BattleScene extends Phaser.Scene {
     const fury = this.elapsedMs < this.furyUntil
     this.swordDamageMul = (fury ? SKILLS.fury.damageMul : 1) * this.upgrades.damageMul * this.metaDamageMul
     const orbitSpeed = stats.orbitSpeed * (fury ? SKILLS.fury.orbitMul : 1) * this.upgrades.orbitMul * this.metaOrbitMul
-    const radius = SWORD.orbitRadius * (fury ? SKILLS.fury.radiusMul : 1)
+    // Ring grows with the hero (bigger ring = stronger) instead of shrinking the
+    // hero to fit — keeps big champions readable.
+    const radius = SWORD.orbitRadius * (fury ? SKILLS.fury.radiusMul : 1) * (0.85 + this.heroScale * 0.35)
     const baseScale = fury ? 1.3 : 1
     this.orbitAngle = (this.orbitAngle + orbitSpeed * (deltaMs / 1000)) % TAU
 

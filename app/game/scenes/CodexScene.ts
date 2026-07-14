@@ -74,12 +74,16 @@ export class CodexScene extends Phaser.Scene {
 
     const viewW = this.scale.width
     const cell = cat.cell
+    // Heroes carry a (sometimes 2-line) name → taller rows so labels never
+    // overlap the row below.
+    const isHero = category === 'hero'
+    const rowH = cell + (isHero ? 22 : 0)
     const cols = Math.max(1, Math.floor((viewW - 16) / cell))
     const gridW = cols * cell
     const startX = (viewW - gridW) / 2 + cell / 2
 
     // Heroes get a rarity-colored frame around each cell (Codex categorization).
-    const frames = category === 'hero' ? this.add.graphics().setDepth(-1) : null
+    const frames = isHero ? this.add.graphics().setDepth(-1) : null
     if (frames) this.items.push(frames)
 
     for (let i = 0; i < cat.count; i++) {
@@ -88,7 +92,7 @@ export class CodexScene extends Phaser.Scene {
       const col = i % cols
       const row = Math.floor(i / cols)
       const cx = startX + col * cell
-      const cy = TOP_PAD + row * cell + cell / 2
+      const cy = TOP_PAD + row * rowH + cell / 2
 
       const discovered = codexService.has(catKey, i)
       if (frames) {
@@ -98,30 +102,31 @@ export class CodexScene extends Phaser.Scene {
         frames.lineStyle(2, color, discovered ? 0.85 : 0.25)
         frames.strokeRoundedRect(cx - cell / 2 + 3, cy - cell / 2 + 3, cell - 6, cell - 6, 6)
       }
-      const sprite = this.add.image(cx, cy - 6, key)
+      const sprite = this.add.image(cx, cy - 8, key)
       // Fit into the cell.
       const maxDim = Math.max(sprite.width, sprite.height)
-      sprite.setScale(Math.min(1.15, (cell - 22) / maxDim))
+      sprite.setScale(Math.min(1.1, (cell - 26) / maxDim))
       if (!discovered) sprite.setTint(0x0b0b0d).setAlpha(0.9) // locked silhouette
       else if (cat.tint) sprite.setTint(cat.tint)
       this.items.push(sprite)
 
-      // Heroes show their NAME; other categories show the index number.
-      const labelText = discovered ? (category === 'hero' ? heroName(i) : String(i)) : '?'
+      // Heroes show their NAME (below the frame); others show the index number.
+      const labelText = discovered ? (isHero ? heroName(i) : String(i)) : '?'
       const label = this.add
-        .text(cx, cy + cell / 2 - 11, labelText, {
+        .text(cx, cy + cell / 2 - 2, labelText, {
           fontFamily: 'Segoe UI, sans-serif',
-          fontSize: category === 'hero' ? '9px' : '11px',
-          color: discovered ? '#d8d2c4' : '#55504a',
+          fontSize: isHero ? '9px' : '11px',
+          fontStyle: 'bold',
+          color: discovered ? '#e6e0d0' : '#55504a',
           align: 'center',
-          wordWrap: { width: cell - 8 },
+          wordWrap: { width: cell + 12 },
         })
         .setOrigin(0.5, 0)
       this.items.push(label)
     }
 
     const rows = Math.ceil(cat.count / cols)
-    const contentH = TOP_PAD + rows * cell + 24
+    const contentH = TOP_PAD + rows * rowH + 24
     this.maxScroll = Math.max(0, contentH - this.scale.height)
     this.cameras.main.setBounds(0, 0, viewW, Math.max(contentH, this.scale.height))
     this.cameras.main.scrollY = 0
