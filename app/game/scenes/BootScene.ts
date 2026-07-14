@@ -348,6 +348,7 @@ export class BootScene extends Phaser.Scene {
     this.bake('wMace', 28, 56, (g) => this.drawMace(g))
     this.bake('wAxe', 28, 56, (g) => this.drawAxe(g))
     this.bake('wSpear', 28, 56, (g) => this.drawSpear(g))
+    for (let i = 0; i < 4; i++) this.bake(`obs${i}`, 72, 72, (g) => this.drawObstacle(g, i))
     this.bake('wScythe', 28, 56, (g) => this.drawScythe(g))
     this.bake('wHammer', 28, 56, (g) => this.drawHammer(g))
     this.bake('wTrident', 28, 56, (g) => this.drawTrident(g))
@@ -1034,6 +1035,57 @@ export class BootScene extends Phaser.Scene {
     g.fillPoints(this.pts([14, 0, 18, 14, 14, 12, 10, 14]), true)
     g.lineStyle(1.4, 0x14171f, 1)
     g.strokePoints(this.pts([14, 0, 18, 14, 14, 12, 10, 14]), true)
+  }
+
+  /** Solid map obstacle (72x72): boulder / pillar / crystal cluster / stump. */
+  private drawObstacle(g: Phaser.GameObjects.Graphics, variant: number): void {
+    const dark = 0x14100c
+    g.fillStyle(0x000000, 0.28) // ground shadow
+    g.fillEllipse(36, 62, 52, 14)
+    switch (variant) {
+      case 1: // stone pillar
+        g.fillStyle(dark, 1)
+        g.fillRect(21, 12, 30, 52)
+        g.fillStyle(0x6b6f78, 1)
+        g.fillRect(23, 14, 26, 48)
+        g.fillStyle(0x878c96, 1)
+        g.fillRect(25, 16, 8, 44)
+        g.fillStyle(0x54585f, 1)
+        g.fillRect(19, 10, 34, 6) // cap
+        g.fillRect(19, 58, 34, 6) // base
+        break
+      case 2: // crystal cluster
+        g.fillStyle(0x5a2a8a, 1)
+        g.fillPoints(this.pts([36, 4, 48, 40, 24, 40]), true)
+        g.fillPoints(this.pts([20, 22, 30, 60, 10, 58]), true)
+        g.fillPoints(this.pts([52, 24, 60, 60, 42, 58]), true)
+        g.fillStyle(0xb06bff, 1)
+        g.fillPoints(this.pts([36, 8, 42, 38, 33, 38]), true)
+        g.fillStyle(0xe0c0ff, 0.8)
+        g.fillPoints(this.pts([36, 10, 39, 30, 35, 30]), true)
+        break
+      case 3: // dead stump / log
+        g.fillStyle(0x3a2416, 1)
+        g.fillRoundedRect(16, 30, 40, 30, 6)
+        g.fillStyle(0x5c3b22, 1)
+        g.fillEllipse(36, 30, 40, 16)
+        g.fillStyle(0x7a5230, 1)
+        g.fillEllipse(36, 30, 26, 10)
+        g.fillStyle(0x3a2416, 1)
+        g.fillEllipse(36, 30, 12, 5) // rings
+        g.fillStyle(0x2a1a10, 1)
+        g.fillTriangle(52, 24, 66, 14, 58, 30) // broken branch
+        break
+      default: // boulder
+        g.fillStyle(dark, 1)
+        g.fillRoundedRect(8, 24, 56, 38, 14)
+        g.fillStyle(0x707680, 1)
+        g.fillRoundedRect(10, 22, 52, 36, 13)
+        g.fillStyle(0x898f99, 1)
+        g.fillEllipse(28, 34, 22, 14)
+        g.fillStyle(0x585c64, 1)
+        g.fillRect(16, 46, 40, 3) // crack
+    }
   }
 
   private drawScythe(g: Phaser.GameObjects.Graphics): void {

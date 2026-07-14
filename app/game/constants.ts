@@ -16,9 +16,19 @@ export const ARENA = {
  * scattered over the whole world, and ambient particles keep it alive.
  */
 export const WORLD = {
-  width: 3200,
-  height: 3200,
+  width: 4800,
+  height: 4800,
   cameraLerp: 0.11, // how snappily the camera tracks the hero (0..1)
+} as const
+
+/**
+ * Solid obstacles scattered across the world (rocks / pillars / crystals /
+ * stumps) that block the hero's movement, so the arena has cover to navigate.
+ */
+export const OBSTACLE = {
+  count: 60,
+  variants: 4,
+  minFromCenter: 420, // keep the spawn area clear
 } as const
 
 /**
@@ -54,7 +64,7 @@ export const MINIMAP = {
  * ambient.dir: 'fall' (down) | 'rise' (up) | 'side' (wind) | 'drift' (float).
  */
 export const MAP_TILE = 256
-export const DECOR_COUNT = 220
+export const DECOR_COUNT = 380
 export const MAPS = [
   { key: 'map0', name: 'Verdant Meadow', props: ['treePine', 'rockGray', 'bushGreen'], ambient: { tint: 0xdff3b0, dir: 'drift' } },
   { key: 'map1', name: 'Sunscar Desert', props: ['cactus', 'rockSand', 'deadBush'], ambient: { tint: 0xe8cf96, dir: 'side' } },

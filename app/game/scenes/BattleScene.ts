@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -118,6 +118,7 @@ export class BattleScene extends Phaser.Scene {
   private bossMeteorAcc = 0
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   private npcs: NpcHero[] = []
+  private obstacles!: Phaser.Physics.Arcade.StaticGroup
   // Live ranking + run stats.
   private rankAcc = 0
   private curRank = 1
@@ -320,6 +321,26 @@ export class BattleScene extends Phaser.Scene {
       .setVisible(false)
 
     this.enemies = this.physics.add.group({ classType: Enemy, defaultKey: 'troop0', maxSize: ENEMY.poolSize })
+
+    // Scattered solid obstacles the hero (and enemies) must navigate around.
+    this.obstacles = this.physics.add.staticGroup()
+    const cx0 = this.worldW / 2
+    const cy0 = this.worldH / 2
+    for (let i = 0; i < OBSTACLE.count; i++) {
+      let ox = 0
+      let oy = 0
+      for (let tries = 0; tries < 12; tries++) {
+        ox = randomRange(140, this.worldW - 140)
+        oy = randomRange(140, this.worldH - 140)
+        if (distance(ox, oy, cx0, cy0) >= OBSTACLE.minFromCenter) break
+      }
+      const o = this.obstacles.create(ox, oy, `obs${randomInt(0, OBSTACLE.variants - 1)}`) as Phaser.Physics.Arcade.Sprite
+      o.setDepth(-8)
+      const body = o.body as Phaser.Physics.Arcade.StaticBody
+      body.setCircle(24, o.width / 2 - 24, o.height / 2 - 22)
+    }
+    this.physics.add.collider(this.player, this.obstacles)
+    this.physics.add.collider(this.enemies, this.obstacles)
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
     this.swordPool = Array.from({ length: SWORD.poolSize }, () => new Sword(this, 0, 0))
     // Pick one of the 10 blade skins for this run.
