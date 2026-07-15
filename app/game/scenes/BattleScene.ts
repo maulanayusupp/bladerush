@@ -359,7 +359,7 @@ export class BattleScene extends Phaser.Scene {
         oy = randomRange(140, this.worldH - 140)
         if (distance(ox, oy, cx0, cy0) >= OBSTACLE.minFromCenter) break
       }
-      const o = this.obstacles.create(ox, oy, `obs${randomInt(0, OBSTACLE.variants - 1)}`) as Phaser.Physics.Arcade.Sprite
+      const o = this.obstacles.create(ox, oy, pickOne(map.obstacles)) as Phaser.Physics.Arcade.Sprite
       o.setDepth(-8)
       const body = o.body as Phaser.Physics.Arcade.StaticBody
       body.setCircle(24, o.width / 2 - 24, o.height / 2 - 22)

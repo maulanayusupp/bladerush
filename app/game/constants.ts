@@ -66,11 +66,14 @@ export const MINIMAP = {
 export const MAP_TILE = 256
 export const DECOR_COUNT = 380
 export const MAPS = [
-  { key: 'map0', name: 'Verdant Meadow', props: ['treePine', 'rockGray', 'bushGreen'], ambient: { tint: 0xdff3b0, dir: 'drift' } },
-  { key: 'map1', name: 'Sunscar Desert', props: ['cactus', 'rockSand', 'deadBush'], ambient: { tint: 0xe8cf96, dir: 'side' } },
-  { key: 'map2', name: 'Frostwind Tundra', props: ['treeSnow', 'rockIce', 'snowMound'], ambient: { tint: 0xffffff, dir: 'fall' } },
-  { key: 'map3', name: 'Emberfall Caldera', props: ['deadTree', 'rockChar', 'lavaCrystal'], ambient: { tint: 0xff9a4a, dir: 'rise' } },
-  { key: 'map4', name: 'The Void Expanse', props: ['crystalVoid', 'asteroid', 'starCluster'], ambient: { tint: 0xc9b0ff, dir: 'drift' } },
+  { key: 'map0', name: 'Verdant Meadow', props: ['treePine', 'rockGray', 'bushGreen'], obstacles: ['obs0', 'obs3', 'obsTree', 'obsMushroom'], ambient: { tint: 0xdff3b0, dir: 'drift' } },
+  { key: 'map1', name: 'Sunscar Desert', props: ['cactus', 'rockSand', 'deadBush'], obstacles: ['obs0', 'obs1', 'obsCactus'], ambient: { tint: 0xe8cf96, dir: 'side' } },
+  { key: 'map2', name: 'Frostwind Tundra', props: ['treeSnow', 'rockIce', 'snowMound'], obstacles: ['obs0', 'obsIce', 'obs2'], ambient: { tint: 0xffffff, dir: 'fall' } },
+  { key: 'map3', name: 'Emberfall Caldera', props: ['deadTree', 'rockChar', 'lavaCrystal'], obstacles: ['obsLava', 'obs1', 'obs2'], ambient: { tint: 0xff9a4a, dir: 'rise' } },
+  { key: 'map4', name: 'The Void Expanse', props: ['crystalVoid', 'asteroid', 'starCluster'], obstacles: ['obs2', 'obs1', 'obsMonolith'], ambient: { tint: 0xc9b0ff, dir: 'drift' } },
+  { key: 'map5', name: 'Sunken Marsh', props: ['mangrove', 'lilyRock', 'reed'], obstacles: ['obsMushroom', 'obsTree', 'obs3', 'obs0'], ambient: { tint: 0xaee0c0, dir: 'drift' } },
+  { key: 'map6', name: 'Golden Savanna', props: ['acacia', 'rockSand', 'grassTuft'], obstacles: ['obsTree', 'obs0', 'obs1'], ambient: { tint: 0xf0d78a, dir: 'side' } },
+  { key: 'map7', name: 'Celestial Ruins', props: ['brokenPillar', 'runeStone', 'crystalVoid'], obstacles: ['obsMonolith', 'obs1', 'obs2'], ambient: { tint: 0xc9b0ff, dir: 'rise' } },
 ] as const
 
 export const PLAYER = {

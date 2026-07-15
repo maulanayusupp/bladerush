@@ -349,6 +349,14 @@ export class BootScene extends Phaser.Scene {
     this.bake('wAxe', 28, 56, (g) => this.drawAxe(g))
     this.bake('wSpear', 28, 56, (g) => this.drawSpear(g))
     for (let i = 0; i < 4; i++) this.bake(`obs${i}`, 72, 72, (g) => this.drawObstacle(g, i))
+    // Themed obstacles (per-map, see MAPS[].obstacles). All 72x72 so the shared
+    // circular collision body offset stays correct.
+    this.bake('obsTree', 72, 72, (g) => this.drawObsTree(g))
+    this.bake('obsMushroom', 72, 72, (g) => this.drawObsMushroom(g))
+    this.bake('obsCactus', 72, 72, (g) => this.drawObsCactus(g))
+    this.bake('obsIce', 72, 72, (g) => this.drawObsIce(g))
+    this.bake('obsLava', 72, 72, (g) => this.drawObsLava(g))
+    this.bake('obsMonolith', 72, 72, (g) => this.drawObsMonolith(g))
     this.bake('wScythe', 28, 56, (g) => this.drawScythe(g))
     this.bake('wHammer', 28, 56, (g) => this.drawHammer(g))
     this.bake('wTrident', 28, 56, (g) => this.drawTrident(g))
@@ -359,6 +367,9 @@ export class BootScene extends Phaser.Scene {
     this.bake('map2', MAP_TILE, MAP_TILE, (g) => this.drawTundra(g))
     this.bake('map3', MAP_TILE, MAP_TILE, (g) => this.drawCaldera(g))
     this.bake('map4', MAP_TILE, MAP_TILE, (g) => this.drawVoid(g))
+    this.bake('map5', MAP_TILE, MAP_TILE, (g) => this.drawMarsh(g))
+    this.bake('map6', MAP_TILE, MAP_TILE, (g) => this.drawSavanna(g))
+    this.bake('map7', MAP_TILE, MAP_TILE, (g) => this.drawRuins(g))
     this.makeVignette()
     this.drawProps()
     this.bake('sword', 16, 46, (g) => this.drawSword(g))
@@ -1088,6 +1099,73 @@ export class BootScene extends Phaser.Scene {
     }
   }
 
+  // ---- Themed obstacles (all 72x72; shared circular collision body) --------
+
+  private obsShadow(g: Phaser.GameObjects.Graphics, w = 52): void {
+    g.fillStyle(0x000000, 0.28)
+    g.fillEllipse(36, 62, w, 14)
+  }
+
+  /** A big gnarled leafy tree. */
+  private drawObsTree(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g)
+    g.lineStyle(5, 0x3a2416, 1) // limbs
+    g.beginPath(); g.moveTo(36, 36); g.lineTo(20, 24); g.moveTo(36, 32); g.lineTo(52, 22); g.strokePath()
+    g.fillStyle(0x3a2416, 1); g.fillRect(30, 30, 12, 32) // trunk
+    g.fillStyle(0x2f6a34, 1); g.fillCircle(24, 20, 14); g.fillCircle(48, 20, 15); g.fillCircle(36, 10, 16)
+    g.fillStyle(0x3f8a44, 1); g.fillCircle(30, 14, 6); g.fillCircle(44, 16, 5)
+  }
+
+  /** A giant red-capped mushroom + a smaller one. */
+  private drawObsMushroom(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g)
+    g.fillStyle(0xe8e0d0, 1); g.fillRoundedRect(52, 46, 6, 14, 2) // small stalk
+    g.fillStyle(0xc23a3a, 1); g.fillEllipse(55, 44, 20, 12)
+    g.fillStyle(0xe8e0d0, 1); g.fillRoundedRect(29, 34, 14, 26, 4) // big stalk
+    g.fillStyle(0xc23a3a, 1); g.fillEllipse(36, 32, 46, 26) // big cap
+    g.fillStyle(0xffffff, 0.9); g.fillCircle(26, 28, 3); g.fillCircle(45, 27, 3); g.fillCircle(36, 22, 3) // spots
+  }
+
+  /** A tall saguaro cactus. */
+  private drawObsCactus(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g, 44)
+    g.fillStyle(0x3f8a44, 1)
+    g.fillRoundedRect(30, 10, 14, 52, 6) // main column
+    g.fillRoundedRect(14, 30, 10, 24, 5); g.fillRoundedRect(14, 30, 10, 8, 4) // left arm
+    g.fillRoundedRect(48, 22, 10, 30, 5); g.fillRoundedRect(48, 22, 10, 8, 4) // right arm
+    g.fillStyle(0x2f6a34, 1); g.fillRect(36, 14, 2, 44) // ridge
+    g.fillStyle(0xffe14d, 0.85); g.fillCircle(37, 15, 2) // flower
+  }
+
+  /** A cluster of ice spires. */
+  private drawObsIce(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g, 50)
+    g.fillStyle(0x8fbcd6, 1)
+    g.fillPoints(this.pts([36, 4, 48, 58, 24, 58]), true)
+    g.fillPoints(this.pts([18, 26, 28, 60, 8, 58]), true)
+    g.fillPoints(this.pts([52, 22, 60, 60, 44, 58]), true)
+    g.fillStyle(0xdff0ff, 0.9); g.fillPoints(this.pts([36, 8, 42, 54, 33, 54]), true)
+    g.fillStyle(0xffffff, 0.8); g.fillPoints(this.pts([36, 10, 39, 40, 35, 40]), true)
+  }
+
+  /** A cracked, molten-glowing boulder. */
+  private drawObsLava(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g, 54)
+    g.fillStyle(0x2a201c, 1); g.fillRoundedRect(8, 24, 56, 38, 14)
+    g.fillStyle(0x3a2a24, 1); g.fillRoundedRect(10, 22, 52, 36, 13)
+    g.fillStyle(0xff5a1a, 1); g.fillRect(20, 40, 32, 3); g.fillRect(30, 30, 3, 26); g.fillRect(40, 36, 16, 2) // lava cracks
+    g.fillStyle(0xffd08a, 0.9); g.fillCircle(30, 44, 2); g.fillCircle(46, 40, 2)
+  }
+
+  /** A tall rune-etched monolith. */
+  private drawObsMonolith(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g, 44)
+    g.fillStyle(0x241f3a, 1); g.fillPoints(this.pts([36, 2, 52, 14, 50, 60, 22, 60, 20, 14]), true)
+    g.fillStyle(0x342d54, 1); g.fillPoints(this.pts([36, 6, 46, 16, 45, 56, 36, 56]), true) // lit face
+    g.fillStyle(0x8a7aff, 0.95) // runes
+    g.fillCircle(34, 22, 3); g.fillRect(30, 30, 10, 2.5); g.fillRect(34, 34, 2.5, 10); g.fillRect(28, 46, 14, 2.5)
+  }
+
   private drawScythe(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0x3a2418, 1)
     g.fillRect(12.5, 6, 3, 48) // shaft
@@ -1223,6 +1301,38 @@ export class BootScene extends Phaser.Scene {
     for (let i = 0; i < 120; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.15 ? 1.8 : 0.9)
   }
 
+  private drawMarsh(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x244a3a, 1) // murky teal-green
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0x18342a, 0.7) // dark water pools
+    for (let i = 0; i < 55; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 10 + rnd(22), 6 + rnd(10))
+    g.fillStyle(0x3f8a5e, 0.6) // algae specks
+    for (let i = 0; i < 50; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.3 ? 2 : 1)
+    this.grain(g, 0x3a7a5a, 0x163026, 120)
+  }
+
+  private drawSavanna(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xc7a44e, 1) // dry golden grass
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0xb08c3c, 0.6) // grass blades
+    for (let i = 0; i < 130; i++) g.fillRect(rnd(MAP_TILE), rnd(MAP_TILE), 2, 4 + rnd(6))
+    this.grain(g, 0xd8b85e, 0xa07c34, 140)
+  }
+
+  private drawRuins(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x1a1630, 1) // dark starlit marble
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    this.grain(g, 0x2a2448, 0x100c1e, 120)
+    g.lineStyle(1.5, 0x3a3358, 1) // tile seams → a temple-floor grid
+    g.strokeRect(1, 1, MAP_TILE - 2, MAP_TILE - 2)
+    g.beginPath()
+    g.moveTo(MAP_TILE / 2, 0); g.lineTo(MAP_TILE / 2, MAP_TILE)
+    g.moveTo(0, MAP_TILE / 2); g.lineTo(MAP_TILE, MAP_TILE / 2)
+    g.strokePath()
+    g.fillStyle(0x8a7aff, 0.8) // star dust
+    for (let i = 0; i < 80; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.15 ? 1.6 : 0.8)
+  }
+
   // ---- Decoration props (scattered at random world positions) -------------
 
   private drawProps(): void {
@@ -1291,6 +1401,47 @@ export class BootScene extends Phaser.Scene {
     this.bake('starCluster', 30, 30, (g) => {
       g.fillStyle(0xffffff, 1); g.fillCircle(15, 15, 2)
       g.fillStyle(0xb794ff, 0.9); g.fillCircle(8, 8, 1.4); g.fillCircle(23, 10, 1.2); g.fillCircle(20, 22, 1.4); g.fillCircle(9, 22, 1)
+    })
+    // --- Sunken Marsh props ---
+    this.bake('mangrove', 44, 52, (g) => {
+      g.lineStyle(3, 0x3a2a1a, 1) // arching roots
+      g.beginPath(); g.moveTo(20, 40); g.lineTo(8, 50); g.moveTo(24, 40); g.lineTo(36, 50); g.strokePath()
+      g.fillStyle(0x3a2a1a, 1); g.fillRect(19, 24, 6, 24) // trunk
+      g.fillStyle(0x2f6a4e, 1); g.fillCircle(14, 18, 10); g.fillCircle(30, 18, 11); g.fillCircle(22, 9, 10)
+      g.fillStyle(0x3f8a64, 1); g.fillCircle(19, 12, 4); g.fillCircle(28, 15, 3)
+    })
+    this.bake('lilyRock', 40, 30, (g) => {
+      g.fillStyle(0x3a7a5a, 0.85); g.fillEllipse(28, 24, 22, 8) // lily pad
+      g.fillStyle(0x6b6f78, 1); g.fillPoints(this.pts([6, 26, 12, 14, 22, 12, 28, 22, 24, 27]), true) // rock
+      g.fillStyle(0x2f6a4e, 1); g.fillCircle(12, 16, 3); g.fillCircle(18, 14, 2) // moss
+    })
+    this.bake('reed', 30, 50, (g) => {
+      g.lineStyle(2, 0x3f8a64, 1)
+      g.beginPath(); g.moveTo(10, 48); g.lineTo(8, 10); g.moveTo(16, 48); g.lineTo(16, 6); g.moveTo(22, 48); g.lineTo(24, 12); g.strokePath()
+      g.fillStyle(0x5c3b22, 1); g.fillRoundedRect(14.5, 4, 3, 10, 1.5) // cattail head
+    })
+    // --- Golden Savanna props ---
+    this.bake('acacia', 52, 44, (g) => {
+      g.lineStyle(2, 0x5c3b22, 1); g.beginPath(); g.moveTo(26, 26); g.lineTo(16, 18); g.moveTo(26, 26); g.lineTo(38, 18); g.strokePath()
+      g.fillStyle(0x5c3b22, 1); g.fillRect(24, 22, 4, 20) // trunk
+      g.fillStyle(0x4a7a34, 1); g.fillEllipse(26, 14, 46, 14) // flat canopy
+      g.fillStyle(0x5f9a44, 1); g.fillEllipse(20, 12, 20, 8)
+    })
+    this.bake('grassTuft', 30, 24, (g) => {
+      g.lineStyle(2, 0xb89a4a, 1)
+      g.beginPath(); g.moveTo(8, 22); g.lineTo(4, 6); g.moveTo(12, 22); g.lineTo(12, 2)
+      g.moveTo(16, 22); g.lineTo(20, 6); g.moveTo(20, 22); g.lineTo(26, 10); g.strokePath()
+    })
+    // --- Celestial Ruins props ---
+    this.bake('brokenPillar', 30, 52, (g) => {
+      g.fillStyle(0x2a2444, 1); g.fillRect(6, 48, 20, 4) // base
+      g.fillStyle(0x3a3358, 1); g.fillRect(8, 18, 16, 32) // shaft
+      g.fillStyle(0x5a5388, 1); g.fillRect(10, 18, 5, 32) // highlight
+      g.fillStyle(0x4a4370, 1); g.fillPoints(this.pts([8, 20, 24, 20, 20, 12, 12, 14]), true) // broken top
+    })
+    this.bake('runeStone', 30, 44, (g) => {
+      g.fillStyle(0x2a2444, 1); g.fillPoints(this.pts([15, 2, 26, 10, 24, 40, 6, 40, 4, 10]), true)
+      g.fillStyle(0x8a7aff, 0.9); g.fillCircle(15, 18, 2); g.fillRect(12, 24, 6, 2); g.fillRect(14, 28, 2, 6) // runes
     })
   }
 
