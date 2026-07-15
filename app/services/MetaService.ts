@@ -47,6 +47,16 @@ class MetaService {
     this.save()
   }
 
+  /** Spend coins if affordable. @returns true on success. */
+  spendCoins(amount: number): boolean {
+    this.load()
+    const cost = Math.max(0, Math.round(amount))
+    if (this.coinsValue < cost) return false
+    this.coinsValue -= cost
+    this.save()
+    return true
+  }
+
   levelOf(id: MetaId): number {
     this.load()
     return this.levels[id] ?? 0

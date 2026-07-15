@@ -4,10 +4,13 @@
 // category comes from the game registry ('codexCategory'), driven by Vue tabs.
 // =============================================================================
 import Phaser from 'phaser'
-import { HERO, HERO_RARITIES, SWORD_SHAPES, TROOP, bossName, heroName, heroRarity, rivalName, troopName, weaponName } from '../constants'
+import { HERO, HERO_RARITIES, SWORD_SHAPES, TROOP, bossName, heroName, heroRarity, heroUnlockCost, rivalName, troopName, weaponName } from '../constants'
 import { clamp } from '~/helpers/math.helper'
+import { formatCompact } from '~/helpers/format.helper'
 import { codexService, type CodexCategory } from '~/services/CodexService'
 import { loadoutService } from '~/services/LoadoutService'
+import { metaService } from '~/services/MetaService'
+import { gameEventBus } from '~/services/EventBus'
 
 interface Category {
   prefix: string
@@ -69,11 +72,14 @@ export class CodexScene extends Phaser.Scene {
 
   /** Rebuild the grid for a category. */
   private build(category: string): void {
+    // Preserve the scroll position across rebuilds (e.g. selecting/unlocking).
+    const prevScroll = this.cameras.main.scrollY
     for (const o of this.items) o.destroy()
     this.items = []
     const cat = CATEGORIES[category] ?? CATEGORIES.hero
     if (!cat) return
     codexService.load()
+    metaService.load()
     const catKey = category as CodexCategory
 
     const viewW = this.scale.width
@@ -115,7 +121,8 @@ export class CodexScene extends Phaser.Scene {
       else if (cat.tint) sprite.setTint(cat.tint)
       this.items.push(sprite)
 
-      // Discovered heroes are selectable as your starting loadout (tap, not drag).
+      // Heroes are interactive: discovered → select as loadout (tap again for
+      // Auto); locked → tap to unlock with coins.
       if (isHero && discovered) {
         sprite.setInteractive({ useHandCursor: true })
         sprite.on('pointerup', () => {
@@ -133,21 +140,28 @@ export class CodexScene extends Phaser.Scene {
           }).setOrigin(0.5, 0)
           this.items.push(tick)
         }
+      } else if (isHero && !discovered) {
+        sprite.setInteractive({ useHandCursor: true })
+        sprite.on('pointerup', () => {
+          if (this.dragDist < 12) this.tryUnlockHero(i, category)
+        })
       }
 
       // Every category shows a name below its cell (wrapped inside the cell so
-      // long names never bleed into neighbors).
+      // long names never bleed into neighbors). Locked heroes show their coin
+      // unlock price instead of a "?" so progression is visible.
       const nm = category === 'rival' ? rivalName(i)
         : category === 'troop' ? troopName(i)
           : category === 'boss' ? bossName(i)
             : category === 'weapon' ? weaponName(i)
               : heroName(i)
+      const lockedLabel = isHero ? `💰 ${formatCompact(heroUnlockCost(i))}` : '?'
       const label = this.add
-        .text(cx, cy + cell / 2 - 2, discovered ? nm : '?', {
+        .text(cx, cy + cell / 2 - 2, discovered ? nm : lockedLabel, {
           fontFamily: 'Segoe UI, sans-serif',
           fontSize: '9px',
           fontStyle: 'bold',
-          color: discovered ? '#e6e0d0' : '#55504a',
+          color: discovered ? '#e6e0d0' : isHero ? '#ffcf4a' : '#55504a',
           align: 'center',
           wordWrap: { width: cell - 8 },
         })
@@ -159,6 +173,22 @@ export class CodexScene extends Phaser.Scene {
     const contentH = TOP_PAD + rows * rowH + 24
     this.maxScroll = Math.max(0, contentH - this.scale.height)
     this.cameras.main.setBounds(0, 0, viewW, Math.max(contentH, this.scale.height))
-    this.cameras.main.scrollY = 0
+    this.cameras.main.scrollY = clamp(prevScroll, 0, this.maxScroll)
+  }
+
+  /** Spend coins to unlock a locked hero, then auto-select it as the loadout. */
+  private tryUnlockHero(index: number, category: string): void {
+    const cost = heroUnlockCost(index)
+    if (!metaService.spendCoins(cost)) {
+      // Not enough coins — a red flash reads as "denied".
+      this.cameras.main.flash(180, 90, 0, 0)
+      return
+    }
+    codexService.mark('hero', index)
+    loadoutService.setHero(index)
+    this.game.registry.set('selectedHero', index)
+    gameEventBus.emit('meta:coins', { coins: metaService.coins })
+    this.cameras.main.flash(200, 0, 220, 190)
+    this.build(category)
   }
 }

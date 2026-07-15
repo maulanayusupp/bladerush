@@ -123,19 +123,33 @@ export const HERO_RARITIES = [
   { id: 'epic', min: 0.6, color: 0xb06bff },
   { id: 'legendary', min: 0.8, color: 0xffb020 },
   { id: 'mythic', min: 0.85, color: 0xff3b6b },
-  { id: 'divine', min: 0.91, color: 0x00ffd0 }, // the 10 bespoke top champions (index 100-109)
+  { id: 'divine', min: 0.91, color: 0x00ffd0 }, // the 20 bespoke top champions (index 100-119)
 ] as const
 
-/** Rarity tier index (0..5) for a hero rank (0..1). */
+/**
+ * Rarity tier index (0..5) for a hero rank (0..1). The top `divineCount` heroes
+ * are ALWAYS Divine (a count-based block, not a fraction), and the remaining
+ * tiers are distributed across the non-divine range — so the classification
+ * stays correct no matter how many Divine champions exist.
+ */
 export function heroRarity(rank: number): number {
+  const last = HERO_RARITIES.length - 1 // divine
+  const divineStart = (HERO.skins - HERO.divineCount) / (HERO.skins - 1)
+  if (rank >= divineStart) return last
+  const local = rank / divineStart // 0..1 within the non-divine (procedural) range
+  const bands = [0, 0.4, 0.62, 0.8, 0.92] // common, rare, epic, legendary, mythic
   let idx = 0
-  for (let i = 0; i < HERO_RARITIES.length; i++) {
-    if (rank >= (HERO_RARITIES[i] as { min: number }).min) idx = i
-  }
+  for (let i = 0; i < bands.length; i++) if (local >= (bands[i] as number)) idx = i
   return idx
 }
 
-/** The 10 bespoke Divine champions' names (index 100..109). */
+/** Coin cost to unlock a hero directly (by rarity). */
+export const HERO_UNLOCK_COST = [200, 500, 1200, 3000, 7000, 15000] as const
+export function heroUnlockCost(index: number): number {
+  return HERO_UNLOCK_COST[heroRarity(index / (HERO.skins - 1))] ?? 200
+}
+
+/** The 20 bespoke Divine champions' names (index 100..119). */
 export const DIVINE_NAMES = [
   'Seraph of War', 'Void Sovereign', 'Inferno Lord', 'God-Emperor', 'Dragon Ascendant',
   'Death Reaper', 'Storm Titan', 'Frost Monarch', 'Blood Warlord', 'Cosmic Overlord',

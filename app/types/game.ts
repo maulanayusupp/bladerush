@@ -85,4 +85,5 @@ export interface GameEventMap {
   'rush:wave': { wave: number; size: number; cleared: boolean }
   'divine:cast': { index: number }
   'timer:changed': { remainingMs: number }
+  'meta:coins': { coins: number }
 }

@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import CodexCanvas from '~/components/game/CodexCanvas.vue'
 import { codexService, type CodexCategory } from '~/services/CodexService'
+import { metaService } from '~/services/MetaService'
+import { gameEventBus } from '~/services/EventBus'
+import { formatCompact } from '~/helpers/format.helper'
 import { BOSS, HERO, HERO_RARITIES, RIVAL, SWORD_SHAPES, TROOP } from '~/game/constants'
 
 const rarities = HERO_RARITIES.map((r) => ({ id: r.id, css: `#${r.color.toString(16).padStart(6, '0')}` }))
@@ -20,9 +23,28 @@ const totals: Record<Tab, number> = {
 
 // Read once on mount (progress only changes between runs).
 const found = ref<Record<Tab, number>>({ hero: 0, rival: 0, troop: 0, boss: 0, weapon: 0 })
+const coins = ref(0)
+let offCoins: (() => void) | null = null
+
+function refreshFound(): void {
+  for (const t of tabs) found.value[t] = codexService.count(t as CodexCategory)
+}
+
 onMounted(() => {
   codexService.load()
-  for (const t of tabs) found.value[t] = codexService.count(t as CodexCategory)
+  metaService.load()
+  coins.value = metaService.coins
+  refreshFound()
+  // Unlocking a hero in the canvas spends coins + discovers it — keep the header live.
+  offCoins = gameEventBus.on('meta:coins', ({ coins: c }) => {
+    coins.value = c
+    codexService.load()
+    refreshFound()
+  })
+})
+
+onUnmounted(() => {
+  offCoins?.()
 })
 
 const activeCount = computed(() => `${found.value[active.value]} / ${totals[active.value]}`)
@@ -33,6 +55,7 @@ const activeCount = computed(() => `${found.value[active.value]} / ${totals[acti
     <header class="codex__bar">
       <NuxtLink to="/" class="codex__back" :aria-label="$t('codex.back')">←</NuxtLink>
       <h1 class="codex__title">{{ $t('codex.title') }}</h1>
+      <div v-if="active === 'hero'" class="codex__coins">💰 {{ formatCompact(coins) }}</div>
       <p class="codex__hint">
         {{ $t('codex.discovered') }} {{ activeCount }}
         <template v-if="active === 'hero'"> · {{ $t('codex.selectHint') }}</template>

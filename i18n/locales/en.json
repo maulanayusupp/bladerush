@@ -157,7 +157,7 @@
     "weapon": "Weapons",
     "discovered": "Discovered",
     "hint": "Drag or scroll to browse",
-    "selectHint": "Tap a hero to play as it · tap again for Auto"
+    "selectHint": "Tap to play as it · tap again for Auto · tap a locked one to unlock with 💰"
   },
   "dskill": {
     "seraph": "Divine Judgment",

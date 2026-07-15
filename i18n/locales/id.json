@@ -157,7 +157,7 @@
     "weapon": "Senjata",
     "discovered": "Ditemukan",
     "hint": "Geser atau scroll untuk menjelajah",
-    "selectHint": "Ketuk hero untuk memakainya · ketuk lagi untuk Auto"
+    "selectHint": "Ketuk untuk memakai · ketuk lagi untuk Auto · ketuk yang terkunci untuk buka pakai 💰"
   },
   "dskill": {
     "seraph": "Penghakiman Suci",

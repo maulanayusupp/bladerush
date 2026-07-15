@@ -10,12 +10,30 @@
   color: $color-text;
 
   &__bar {
+    position: relative;
     display: grid;
     grid-template-columns: auto 1fr;
     align-items: center;
     gap: $space-2 $space-3;
     padding: $space-3 $space-4;
     background-color: rgba(#000, 0.35);
+  }
+
+  &__coins {
+    position: absolute;
+    top: $space-3;
+    right: $space-4;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2em;
+    padding: 2px $space-3;
+    border-radius: $radius-pill;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+    color: $color-warning;
+    background: rgba($color-warning, 0.15);
+    border: 1px solid rgba($color-warning, 0.4);
   }
 
   &__back {
