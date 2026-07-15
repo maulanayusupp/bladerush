@@ -84,4 +84,5 @@ export interface GameEventMap {
   'rush:start': undefined
   'rush:wave': { wave: number; size: number; cleared: boolean }
   'divine:cast': { index: number }
+  'timer:changed': { remainingMs: number }
 }

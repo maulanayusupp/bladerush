@@ -14,6 +14,17 @@
       "rivals": { "label": "Duel rival", "text": "Ungguli jumlah hero rival, atau habis" }
     }
   },
+  "mode": {
+    "label": "Mode",
+    "normal": "Normal",
+    "endless": "Tanpa Henti",
+    "bossrush": "Boss Rush",
+    "timeattack": "Adu Waktu",
+    "normalDesc": "Bertahan dari gerombolan; Boss Rush terbuka di Lvl 10.",
+    "endlessDesc": "Bertahan tanpa henti — tanpa Boss Rush.",
+    "bossrushDesc": "Hadapi gelombang bos sejak awal.",
+    "timeattackDesc": "Kejar skor setinggi mungkin dalam 5 menit."
+  },
   "guide": {
     "title": "Cara Bermain",
     "subtitle": "Semua yang perlu kamu tahu untuk menguasai Blade Rush — baca dari atas ke bawah.",

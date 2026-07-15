@@ -14,6 +14,17 @@
       "rivals": { "label": "Duel rivals", "text": "Out-number rival heroes, or get wiped" }
     }
   },
+  "mode": {
+    "label": "Mode",
+    "normal": "Normal",
+    "endless": "Endless",
+    "bossrush": "Boss Rush",
+    "timeattack": "Time Attack",
+    "normalDesc": "Survive the horde; Boss Rush unlocks at Lvl 10.",
+    "endlessDesc": "Pure endless survival — no Boss Rush.",
+    "bossrushDesc": "Face waves of bosses from the very start.",
+    "timeattackDesc": "Score as high as you can in 5 minutes."
+  },
   "guide": {
     "title": "How to Play",
     "subtitle": "Everything you need to master Blade Rush — read top to bottom.",

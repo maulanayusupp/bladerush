@@ -367,6 +367,29 @@
     text-shadow: 0 0 18px rgba(#00e0c8, 0.9), 0 0 40px rgba(#00e0c8, 0.5), 0 3px 8px rgba(#000, 0.8);
   }
 
+  &__timer {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px $space-3;
+    border-radius: $radius-pill;
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    color: $color-text;
+    background: rgba(#000, 0.5);
+    border: 1px solid rgba(#fff, 0.14);
+    white-space: nowrap;
+
+    &--low {
+      color: $color-danger;
+      border-color: rgba($color-danger, 0.7);
+      animation: hud-rush-pulse 1s ease-in-out infinite;
+    }
+  }
+
   &__combo {
     position: absolute;
     top: 96px;

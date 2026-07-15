@@ -229,6 +229,52 @@
   color: rgba($color-warning, 0.9);
 }
 
+.menu__modes {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: $space-2;
+  margin-top: $space-4;
+}
+
+.menu__mode {
+  @include button-reset;
+  padding: $space-2 $space-4;
+  border-radius: $radius-pill;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.04em;
+  color: rgba($color-text, 0.7);
+  background: rgba($color-surface, 0.6);
+  border: 1px solid rgba(#fff, 0.08);
+  transition: color $transition-base, border-color $transition-base,
+    background $transition-base, transform $transition-fast;
+
+  &:hover {
+    color: $color-text;
+    transform: translateY(-1px);
+  }
+
+  &--active {
+    color: $color-text;
+    background: rgba($color-primary, 0.24);
+    border-color: rgba($color-primary, 0.7);
+    box-shadow: 0 0 16px rgba($color-primary, 0.35);
+  }
+}
+
+.menu__mode-desc {
+  position: relative;
+  z-index: 4;
+  margin: $space-2 0 0;
+  min-height: 1.2em;
+  font-size: $font-size-sm;
+  color: rgba($color-text, 0.6);
+  text-align: center;
+}
+
 .menu__loadout {
   position: relative;
   z-index: 4;

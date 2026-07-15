@@ -32,6 +32,7 @@ import { codexService } from '~/services/CodexService'
 import { achievementService } from '~/services/AchievementService'
 import { loadoutService } from '~/services/LoadoutService'
 import { settingsService } from '~/services/SettingsService'
+import { modeService, TIME_ATTACK_MS, type GameMode } from '~/services/ModeService'
 import type { RunStats } from '~/types/game'
 import { angleBetween, clamp, distance, pickOne, randomInt, randomRange } from '~/helpers/math.helper'
 import { formatCompact } from '~/helpers/format.helper'
@@ -122,6 +123,9 @@ export class BattleScene extends Phaser.Scene {
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   // ---- Boss Rush (endgame) ----
   private bossRush = false
+  private mode: GameMode = 'normal'
+  private timeLimitMs = 0 // >0 in time-attack; run ends when elapsed reaches it
+  private lastTimerEmit = -1
   private escorts: Boss[] = []
   private escortLabels: Phaser.GameObjects.Text[] = []
   private rushWave = 0
@@ -231,6 +235,10 @@ export class BattleScene extends Phaser.Scene {
     codexService.load()
     const chosen = loadoutService.selectedHero
     this.heroFloor = chosen >= 0 && chosen < HERO.skins && codexService.has('hero', chosen) ? chosen : 0
+    // Selected game mode drives spawns, the Boss-Rush trigger, and the timer.
+    this.mode = modeService.mode
+    this.timeLimitMs = this.mode === 'timeattack' ? TIME_ATTACK_MS : 0
+    this.lastTimerEmit = -1
     // Apply persistent meta-upgrades bought in the shop.
     metaService.load()
     this.metaDamageMul = metaService.damageMul
@@ -489,6 +497,9 @@ export class BattleScene extends Phaser.Scene {
     gameEventBus.emit('boss:end', undefined)
     this.emitCombo()
     this.emitXp()
+    // Boss Rush mode drops you straight into the gauntlet.
+    if (this.mode === 'bossrush') this.enterBossRush()
+    if (this.timeLimitMs > 0) gameEventBus.emit('timer:changed', { remainingMs: this.timeLimitMs })
   }
 
   override update(time: number, deltaMs: number): void {
@@ -497,6 +508,20 @@ export class BattleScene extends Phaser.Scene {
     if (time < this.hitStopUntil) return // brief freeze for impact
     this.elapsedMs += deltaMs
     const elapsedSec = this.elapsedMs / 1000
+
+    // Time-attack: count down, emit each whole second, end the run at zero.
+    if (this.timeLimitMs > 0) {
+      const remaining = Math.max(0, this.timeLimitMs - this.elapsedMs)
+      const sec = Math.ceil(remaining / 1000)
+      if (sec !== this.lastTimerEmit) {
+        this.lastTimerEmit = sec
+        gameEventBus.emit('timer:changed', { remainingMs: remaining })
+      }
+      if (remaining <= 0) {
+        this.gameOver(true)
+        return
+      }
+    }
 
     const dashing = this.elapsedMs < this.dashUntil
     const speedMul = (dashing ? SKILLS.dash.speedMul : 1) * this.metaMoveMul
@@ -1716,7 +1741,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.xp < next) return
     this.xp -= next
     this.level++
-    if (!this.bossRush && this.level >= BOSS_RUSH.triggerLevel) this.enterBossRush()
+    if (this.mode === 'normal' && !this.bossRush && this.level >= BOSS_RUSH.triggerLevel) this.enterBossRush()
     this.leveling = true
     this.emitXp()
     gameEventBus.emit('levelup:offer', { ids: this.upgrades.roll(3) })
@@ -2846,10 +2871,10 @@ export class BattleScene extends Phaser.Scene {
     return n
   }
 
-  private gameOver(): void {
+  private gameOver(force = false): void {
     // Second Wind (meta): survive a lethal hit — restore HP, brief mercy, clear
-    // the immediate threats, and press on.
-    if (this.revivesLeft > 0) {
+    // the immediate threats, and press on. `force` (time-attack end) skips it.
+    if (!force && this.revivesLeft > 0) {
       this.revivesLeft--
       this.player.hp = this.player.maxHp
       this.emitHp()

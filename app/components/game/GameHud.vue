@@ -66,6 +66,17 @@ function flashRushBanner(text: string): void {
 // ---- Divine ultimate cinematic cut-in ----
 const ultCast = ref<{ skill: string; hero: string } | null>(null)
 let ultTimer: ReturnType<typeof setTimeout> | null = null
+
+// ---- Time-attack countdown ----
+const timerMs = ref(0)
+const showTimer = ref(false)
+const timerLabel = computed(() => {
+  const total = Math.ceil(timerMs.value / 1000)
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+})
+const timerLow = computed(() => timerMs.value <= 30000)
 const comboMult = ref(1)
 const level = ref(1)
 const xp = ref(0)
@@ -211,6 +222,10 @@ onMounted(() => {
         flashRushBanner(t('rush.wave', { wave }))
       }
     }),
+    gameEventBus.on('timer:changed', ({ remainingMs }) => {
+      showTimer.value = true
+      timerMs.value = remainingMs
+    }),
     gameEventBus.on('divine:cast', ({ index }) => {
       const s = DIVINE_SKILLS[index]
       if (!s) return
@@ -223,6 +238,7 @@ onMounted(() => {
       rushWave.value = 0
       rushBanner.value = ''
       ultCast.value = null
+      showTimer.value = false
     }),
   )
   cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
@@ -308,6 +324,8 @@ function restart(): void {
     </Transition>
 
     <div v-if="bossRush" class="hud__rush-wave">☠ {{ $t('rush.waveShort', { wave: rushWave }) }}</div>
+
+    <div v-if="showTimer" class="hud__timer" :class="{ 'hud__timer--low': timerLow }">⏱ {{ timerLabel }}</div>
 
     <div v-if="bossActive" class="hud__boss">
       <div class="hud__boss-top">

@@ -9,6 +9,7 @@ import { audioService } from '~/services/AudioService'
 import { metaService } from '~/services/MetaService'
 import { loadoutService } from '~/services/LoadoutService'
 import { codexService } from '~/services/CodexService'
+import { modeService, GAME_MODES, type GameMode } from '~/services/ModeService'
 import { HERO, heroName } from '~/game/constants'
 
 const store = useGameStore()
@@ -17,6 +18,13 @@ const shopOpen = ref(false)
 const coins = ref(0)
 // The hero chosen in the Codex (or "auto"), shown so the player knows who they play as.
 const heroChoice = ref('')
+// Selected game mode (persisted).
+const mode = ref<GameMode>('normal')
+const modes = GAME_MODES
+function selectMode(m: GameMode): void {
+  mode.value = m
+  modeService.setMode(m)
+}
 
 // Subtle DOM parallax — kept as CSS custom properties (data, not styling).
 const parallax = ref({ '--px': '0', '--py': '0' })
@@ -36,6 +44,7 @@ onMounted(() => {
   loadoutService.load()
   const chosen = loadoutService.selectedHero
   heroChoice.value = chosen >= 0 && chosen < HERO.skins && codexService.has('hero', chosen) ? heroName(chosen) : ''
+  mode.value = modeService.mode
   reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (!reduced) window.addEventListener('pointermove', onPointer, { passive: true })
 })
@@ -95,6 +104,22 @@ function startGame(): void {
 
       <div class="menu__divider" aria-hidden="true" />
       <p class="menu__tagline">{{ $t('menu.subtitle') }}</p>
+
+      <div class="menu__modes" role="tablist" :aria-label="$t('mode.label')">
+        <button
+          v-for="m in modes"
+          :key="m"
+          type="button"
+          role="tab"
+          class="menu__mode"
+          :class="{ 'menu__mode--active': mode === m }"
+          :aria-selected="mode === m"
+          @click="selectMode(m)"
+        >
+          {{ $t('mode.' + m) }}
+        </button>
+      </div>
+      <p class="menu__mode-desc">{{ $t('mode.' + mode + 'Desc') }}</p>
 
       <div class="menu__cta">
         <NuxtLink to="/play" class="cta" @click="startGame">
