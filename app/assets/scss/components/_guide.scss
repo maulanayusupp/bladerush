@@ -1,0 +1,370 @@
+// =============================================================================
+// Guide / How-to-play — a scrollable, flowchart-style walkthrough of the game.
+// Single dark visual world to match the menu & codex. Accent color per section
+// is driven by a `--accent` custom property set on each section modifier.
+// =============================================================================
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.guide {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  color: $color-text;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba($color-primary, 0.16), transparent 60%),
+    radial-gradient(900px 500px at 100% 110%, rgba($color-danger, 0.12), transparent 60%),
+    #0d0c10;
+
+  // ---- Sticky header ----
+  &__bar {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-3 $space-4;
+    background: rgba(#000, 0.5);
+    border-bottom: 1px solid rgba(#fff, 0.08);
+    backdrop-filter: blur(10px);
+  }
+
+  &__back {
+    @include flex-center;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    border-radius: $radius-md;
+    background: rgba($color-surface, 0.8);
+    border: 1px solid rgba(#fff, 0.08);
+    color: $color-text;
+    font-size: $font-size-lg;
+    text-decoration: none;
+    transition: border-color $transition-base, transform $transition-fast;
+
+    &:hover {
+      border-color: rgba($color-warning, 0.6);
+      transform: translateY(-1px);
+    }
+  }
+
+  &__headings {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.02em;
+  }
+
+  &__subtitle {
+    margin: 2px 0 0;
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+  }
+
+  &__play {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-2 $space-4;
+    border-radius: $radius-pill;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: $color-text;
+    background: linear-gradient(135deg, rgba($color-primary, 0.9), rgba($color-primary-dark, 0.9));
+    border: 1px solid rgba(#fff, 0.16);
+    box-shadow: $shadow-md;
+    transition: transform $transition-fast, box-shadow $transition-base;
+
+    &:hover { transform: translateY(-1px); box-shadow: $shadow-lg; }
+  }
+
+  // ---- Scroll body ----
+  &__scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  &__inner {
+    display: flex;
+    flex-direction: column;
+    gap: $space-6;
+    width: min(100%, 960px);
+    margin: 0 auto;
+    padding: $space-6 $space-4 $space-8;
+  }
+
+  // ---- Section card ----
+  &__section {
+    --accent: #{$color-primary};
+    position: relative;
+    padding: $space-5;
+    border-radius: $radius-lg;
+    background: linear-gradient(180deg, rgba($color-surface-2, 0.55), rgba(#000, 0.35));
+    border: 1px solid rgba(#fff, 0.07);
+    box-shadow: $shadow-md;
+    overflow: hidden;
+
+    // Accent rail down the left edge.
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--accent);
+      opacity: 0.9;
+    }
+
+    &--power { --accent: #{$color-primary}; }
+    &--xp    { --accent: #{$color-warning}; }
+    &--boss  { --accent: #{$color-danger}; }
+    &--hero  { --accent: #00e0c8; }
+    &--divine { --accent: #00e0c8; }
+    &--tips  { --accent: #{$color-success}; }
+  }
+
+  &__section-head {
+    margin-bottom: $space-5;
+  }
+
+  &__step {
+    display: inline-block;
+    margin-bottom: $space-2;
+    padding: 2px $space-3;
+    border-radius: $radius-pill;
+    font-size: 0.72rem;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+
+  &__section-title {
+    margin: 0;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  &__section-desc {
+    margin: $space-2 0 0;
+    font-size: $font-size-base;
+    color: $color-text-muted;
+  }
+
+  // ---- Flowchart nodes ----
+  &__flow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $space-5;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @include respond-to(tablet) {
+      grid-template-columns: repeat(4, 1fr);
+      gap: $space-4;
+    }
+  }
+
+  &__node {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    padding: $space-4;
+    border-radius: $radius-md;
+    background: rgba(#000, 0.32);
+    border: 1px solid rgba(#fff, 0.08);
+    counter-increment: none;
+
+    // Connector arrow to the next node (down on mobile, right on desktop).
+    &:not(:last-child)::after {
+      content: '➜';
+      position: absolute;
+      z-index: 1;
+      color: var(--accent);
+      font-size: 1.2rem;
+      line-height: 1;
+      left: 50%;
+      bottom: -1.35rem;
+      transform: translateX(-50%) rotate(90deg);
+      opacity: 0.85;
+
+      @include respond-to(tablet) {
+        top: 50%;
+        left: auto;
+        right: -1.2rem;
+        bottom: auto;
+        transform: translateY(-50%);
+      }
+    }
+  }
+
+  &__node-icon {
+    @include flex-center;
+    width: 44px;
+    height: 44px;
+    border-radius: $radius-md;
+    font-size: 1.5rem;
+    background: color-mix(in srgb, var(--accent) 18%, rgba(#000, 0.4));
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+
+  &__node-title {
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+  }
+
+  &__node-text {
+    font-size: $font-size-sm;
+    line-height: 1.45;
+    color: $color-text-muted;
+  }
+
+  // A "repeat" glyph after the core-loop flow.
+  &__flow--loop {
+    position: relative;
+
+    &::after {
+      content: '↻';
+      display: block;
+      margin: $space-2 auto 0;
+      font-size: 1.4rem;
+      color: var(--accent);
+      text-align: center;
+      opacity: 0.8;
+
+      @include respond-to(tablet) {
+        grid-column: 1 / -1;
+      }
+    }
+  }
+
+  // ---- Rarity evolution ladder ----
+  &__ladder {
+    margin-top: $space-5;
+    padding: $space-4;
+    border-radius: $radius-md;
+    background: rgba(#000, 0.32);
+    border: 1px solid rgba(#fff, 0.08);
+  }
+
+  &__ladder-heading {
+    display: block;
+    margin-bottom: $space-3;
+    font-size: 0.72rem;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: $color-text-muted;
+  }
+
+  &__ladder-track {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__rarity {
+    --c: #{$color-text};
+    display: inline-flex;
+    align-items: center;
+    padding: $space-2 $space-3;
+    border-radius: $radius-pill;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: var(--c);
+    background: color-mix(in srgb, var(--c) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--c) 30%, transparent);
+  }
+
+  &__ladder-arrow {
+    color: $color-text-muted;
+    font-size: $font-size-sm;
+  }
+
+  &__ladder-note {
+    margin: $space-3 0 0;
+    font-size: $font-size-sm;
+    line-height: 1.5;
+    color: $color-text-muted;
+  }
+
+  // ---- Tips ----
+  &__tips {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $space-3;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @include respond-to(tablet) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__tip {
+    position: relative;
+    padding: $space-3 $space-3 $space-3 $space-6;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    line-height: 1.45;
+    color: $color-text;
+    background: rgba(#000, 0.28);
+    border: 1px solid rgba(#fff, 0.07);
+
+    &::before {
+      content: '✓';
+      position: absolute;
+      left: $space-3;
+      top: $space-3;
+      color: var(--accent);
+      font-weight: $font-weight-bold;
+    }
+  }
+
+  // ---- Bottom CTA ----
+  &__cta {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+    margin-top: $space-2;
+    padding: $space-4 $space-8;
+    border-radius: $radius-pill;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: $color-text;
+    background: linear-gradient(135deg, rgba($color-primary, 0.95), rgba($color-primary-dark, 0.95));
+    border: 1px solid rgba(#fff, 0.18);
+    box-shadow: $shadow-lg;
+    transition: transform $transition-fast;
+
+    &:hover { transform: translateY(-2px) scale(1.02); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide__back:hover,
+  .guide__play:hover,
+  .guide__cta:hover { transform: none; }
+}

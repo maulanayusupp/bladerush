@@ -79,6 +79,10 @@ function startGame(): void {
         <span class="navbtn__icon" aria-hidden="true">📖</span>
         <span class="navbtn__label">{{ $t('codex.open') }}</span>
       </NuxtLink>
+      <NuxtLink to="/guide" class="navbtn">
+        <span class="navbtn__icon" aria-hidden="true">❓</span>
+        <span class="navbtn__label">{{ $t('guide.title') }}</span>
+      </NuxtLink>
     </nav>
 
     <LanguageSwitcher />

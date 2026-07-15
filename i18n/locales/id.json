@@ -14,6 +14,78 @@
       "rivals": { "label": "Duel rival", "text": "Ungguli jumlah hero rival, atau habis" }
     }
   },
+  "guide": {
+    "title": "Cara Bermain",
+    "subtitle": "Semua yang perlu kamu tahu untuk menguasai Blade Rush — baca dari atas ke bawah.",
+    "back": "Kembali",
+    "play": "Main sekarang",
+    "step": "Langkah",
+    "rarityHeading": "Tangga evolusi",
+    "rarityNote": "Tiap tier tampil lebih garang dari sebelumnya. Capai Divine (10 hero teratas) untuk membuka ultimate ke-4 yang unik.",
+    "loop": {
+      "title": "Alur inti",
+      "desc": "Bergerak, biarkan pedang bekerja, tumbuh — lalu ulangi.",
+      "move": { "t": "Gerak & arahkan", "d": "Seret layar, gerakkan mouse, atau pakai WASD / tombol panah untuk mengarahkan hero." },
+      "auto": { "t": "Pedang otomatis", "d": "Ring pedang yang berputar merajang musuh terdekat secara otomatis — tak perlu menembak." },
+      "kill": { "t": "Hancurkan gerombolan", "d": "Setiap musuh mati memberi skor, power, dan XP sekaligus." },
+      "grow": { "t": "Tumbuh makin kuat", "d": "Pakai gerbang untuk menambah pedang, lalu ulangi — makin besar ring, makin ganas hero-mu." }
+    },
+    "power": {
+      "title": "Power & gerbang",
+      "desc": "Gerbang adalah cara kamu berkembang. Kejar terus.",
+      "plus": { "t": "Gerbang +N", "d": "Lewati untuk MENAMBAH N pedang ke ring-mu." },
+      "times": { "t": "Gerbang ×N", "d": "MELIPATGANDAKAN jumlah pedang — selalu incar yang besar." },
+      "ring": { "t": "Ring lebih besar", "d": "Power tinggi = lebih banyak bilah, putaran lebih cepat, jangkauan lebih luas." },
+      "dmg": { "t": "Damage naik", "d": "Power juga menaikkan damage tiap bilah. Ring besar = hero kuat." }
+    },
+    "level": {
+      "title": "Naik level",
+      "desc": "Bunuhan mengisi XP; tiap level kamu merancang build.",
+      "xp": { "t": "Kumpulkan XP", "d": "Bunuh musuh (+1) dan bos (+8) mengisi bar XP di bawah darah." },
+      "up": { "t": "Naik level", "d": "Saat bar penuh, level naik dan game berhenti sejenak untuk memilih." },
+      "choose": { "t": "Pilih upgrade", "d": "Pilih 1 dari 3: damage pedang, tambah bilah, kecepatan putar, lifesteal, bakar / beku / racun, HP, dll." },
+      "stack": { "t": "Tumpuk build", "d": "Upgrade menumpuk sepanjang run — racik kombinasi andalanmu." }
+    },
+    "hero": {
+      "title": "Evolusi & transformasi hero",
+      "desc": "Hero-mu berubah wujud seiring skor naik.",
+      "score": { "t": "Skor menaikkan tier", "d": "Makin tinggi skor, hero berevolusi bertahap ke wujud yang lebih hebat." },
+      "loadout": { "t": "Pilih hero (Codex)", "d": "Buka Codex dan ketuk hero yang sudah ditemukan untuk memakainya tiap run." },
+      "auto": { "t": "Mode Auto", "d": "Tanpa memilih, kamu mulai sederhana dan berevolusi otomatis mengikuti skor." }
+    },
+    "skills": {
+      "title": "Skill & ultimate",
+      "desc": "Ketuk tombol skill di HUD; masing-masing punya cooldown.",
+      "fury": { "t": "Blade Fury", "d": "Ledakan kecepatan putar — rajang lebih cepat sesaat." },
+      "nova": { "t": "Shockwave", "d": "Gelombang kejut melingkar melukai semua musuh di sekitarmu." },
+      "dash": { "t": "Dash", "d": "Melesat cepat untuk kabur dari kepungan atau menghindari serangan bos." },
+      "divine": { "t": "Ultimate Divine", "d": "Hero tier Dewa membuka skill ke-4 yang dahsyat dan unik." }
+    },
+    "boss": {
+      "title": "Bos & Boss Rush",
+      "desc": "Pertarungan penanda — dan tantangan endgame.",
+      "spawn": { "t": "Bos datang", "d": "Secara berkala bos raksasa muncul dengan serangan meteor dan proyektil." },
+      "beat": { "t": "Kalahkan bos", "d": "Bos jatuh memberi skor besar + peti epik. Panah merah menunjuk lokasinya di luar layar." },
+      "rush": { "t": "Boss Rush (Lvl 10)", "d": "Di level 10 horde berhenti — bos datang bergelombang: 1 bos utama plus pengawal." },
+      "waves": { "t": "Gelombang makin berat", "d": "Mulai 5 bos, +1 tiap 2 gelombang (maks 10), dan +20% HP tiap gelombang bersih." }
+    },
+    "world": {
+      "title": "Medan perang",
+      "desc": "Kamu berbagi dunia terbuka luas dengan rival dan bahaya.",
+      "npc": { "t": "Hero AI", "d": "Hero rival ikut berkeliaran dan bertarung. Kalahkan atau serap mereka untuk tumbuh." },
+      "rank": { "t": "Peringkat langsung", "d": "Papan peringkat menunjukkan posisimu (#) di antara semua hero di dunia." },
+      "obstacle": { "t": "Rintangan", "d": "Batu dan pilar menghalangi gerak — manfaatkan untuk memutus kejaran." },
+      "heart": { "t": "Hati & peti", "d": "Ambil hati untuk memulihkan darah; buka peti untuk bonus power." }
+    },
+    "tips": {
+      "title": "Tips singkat",
+      "desc": "Kebiasaan kecil yang memenangkan run.",
+      "t1": "Selalu kejar gerbang ×N — mengalikan lebih baik daripada menambah.",
+      "t2": "Terus bergerak; hero yang diam akan dikepung.",
+      "t3": "Simpan dash untuk meteor bos dan kepungan padat.",
+      "t4": "Ambil hati sebelum kritis, bukan sesudahnya."
+    }
+  },
   "hud": {
     "level": "Lvl",
     "power": "Power",

@@ -14,6 +14,78 @@
       "rivals": { "label": "Duel rivals", "text": "Out-number rival heroes, or get wiped" }
     }
   },
+  "guide": {
+    "title": "How to Play",
+    "subtitle": "Everything you need to master Blade Rush — read top to bottom.",
+    "back": "Back",
+    "play": "Play now",
+    "step": "Step",
+    "rarityHeading": "Evolution ladder",
+    "rarityNote": "Each tier looks fiercer than the last. Reach Divine (top 10 heroes) to unlock a unique 4th ultimate.",
+    "loop": {
+      "title": "The core loop",
+      "desc": "Move, let your blades work, grow — then repeat.",
+      "move": { "t": "Move & aim", "d": "Drag the screen, move the mouse, or use WASD / arrow keys to steer your hero." },
+      "auto": { "t": "Blades auto-attack", "d": "Your spinning ring of blades shreds nearby enemies automatically — no shooting needed." },
+      "kill": { "t": "Crush the horde", "d": "Every kill grants score, power, and XP all at once." },
+      "grow": { "t": "Grow stronger", "d": "Spend gates to add blades, then repeat — a bigger ring means a deadlier hero." }
+    },
+    "power": {
+      "title": "Power & gates",
+      "desc": "Gates are how you scale. Chase them constantly.",
+      "plus": { "t": "+N gate", "d": "Run through it to ADD N blades to your ring." },
+      "times": { "t": "×N gate", "d": "MULTIPLIES your blade count — always aim for the big one." },
+      "ring": { "t": "Bigger ring", "d": "More power = more blades, faster spin, wider reach." },
+      "dmg": { "t": "More damage", "d": "Power also raises each blade's damage. A large ring = a strong hero." }
+    },
+    "level": {
+      "title": "Leveling up",
+      "desc": "Kills fuel XP; each level lets you build your run.",
+      "xp": { "t": "Collect XP", "d": "Kills (+1) and bosses (+8) fill the XP bar under your health." },
+      "up": { "t": "Level up", "d": "When the bar fills, you level up and the game pauses for a choice." },
+      "choose": { "t": "Choose an upgrade", "d": "Pick 1 of 3: sword damage, extra blades, spin speed, lifesteal, burn / frost / venom, HP, and more." },
+      "stack": { "t": "Stack your build", "d": "Upgrades stack across the whole run — craft your favorite combo." }
+    },
+    "hero": {
+      "title": "Hero evolution & transform",
+      "desc": "Your hero visibly transforms as your score climbs.",
+      "score": { "t": "Score raises your tier", "d": "The higher your score, the more your hero gradually transforms into fiercer forms." },
+      "loadout": { "t": "Pick a hero (Codex)", "d": "Open the Codex and tap any discovered hero to start as it every run." },
+      "auto": { "t": "Auto mode", "d": "Without a pick you start humble and evolve automatically with your score." }
+    },
+    "skills": {
+      "title": "Skills & ultimate",
+      "desc": "Tap a skill button in the HUD; each has a cooldown.",
+      "fury": { "t": "Blade Fury", "d": "A burst of spin speed — shred everything faster for a moment." },
+      "nova": { "t": "Shockwave", "d": "A ring of force blasts outward, damaging every enemy around you." },
+      "dash": { "t": "Dash", "d": "Lunge quickly to escape a swarm or dodge a boss attack." },
+      "divine": { "t": "Divine ultimate", "d": "Divine-tier heroes unlock a devastating, one-of-a-kind 4th skill." }
+    },
+    "boss": {
+      "title": "Bosses & Boss Rush",
+      "desc": "Milestone fights — and the endgame gauntlet.",
+      "spawn": { "t": "A boss arrives", "d": "Periodically a giant boss appears with meteor and projectile attacks." },
+      "beat": { "t": "Defeat the boss", "d": "A downed boss drops big score + an epic chest. A red arrow points to it off-screen." },
+      "rush": { "t": "Boss Rush (Lvl 10)", "d": "At level 10 the horde stops — bosses arrive in waves: one lead boss plus escorts." },
+      "waves": { "t": "Waves get harder", "d": "Starts at 5 bosses, +1 every 2 waves (max 10), and +20% HP each wave cleared." }
+    },
+    "world": {
+      "title": "The battlefield",
+      "desc": "You share a big open world with rivals and hazards.",
+      "npc": { "t": "AI heroes", "d": "Rival heroes roam and fight too. Out-duel or absorb them to grow." },
+      "rank": { "t": "Live ranking", "d": "A leaderboard shows your rank (#) among every hero in the world." },
+      "obstacle": { "t": "Obstacles", "d": "Boulders and pillars block movement — use them to break line of sight." },
+      "heart": { "t": "Hearts & chests", "d": "Grab hearts to heal; open chests for power bonuses." }
+    },
+    "tips": {
+      "title": "Quick tips",
+      "desc": "Small habits that win runs.",
+      "t1": "Always chase ×N gates — multiplying beats adding.",
+      "t2": "Keep moving; a stationary hero gets surrounded.",
+      "t3": "Save your dash for boss meteors and dense swarms.",
+      "t4": "Grab hearts before you're critical, not after."
+    }
+  },
   "hud": {
     "level": "Lvl",
     "power": "Power",
