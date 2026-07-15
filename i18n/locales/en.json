@@ -158,7 +158,17 @@
     "storm": "Thunderstorm",
     "frost": "Absolute Zero",
     "blood": "Bloodbath",
-    "cosmic": "Big Bang"
+    "cosmic": "Big Bang",
+    "nature": "Wild Overgrowth",
+    "tide": "Maelstrom",
+    "solar": "Supernova Flare",
+    "lunar": "Eclipse",
+    "chrono": "Time Stop",
+    "quake": "Earthquake",
+    "tempest": "Tornado",
+    "plague": "Pandemic",
+    "chaos": "Rift of Chaos",
+    "prism": "Prismatic Beam"
   },
   "weffect": {
     "crit": "Critical",

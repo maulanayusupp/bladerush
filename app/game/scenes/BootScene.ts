@@ -89,8 +89,8 @@ function unlock(features: string[], at: number, rank: number, f: string): void {
   if (rank >= at) features.push(f)
 }
 
-const CHAMPION_COUNT = 110 // 100 procedural + 10 bespoke Divine champions
-const DIVINE_COUNT = 10
+const CHAMPION_COUNT = 120 // 100 procedural + 20 bespoke Divine champions
+const DIVINE_COUNT = 20
 
 /**
  * 500 UNIQUE knight heroes. Uniqueness comes from combining several dimensions
@@ -1550,7 +1550,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   /**
-   * The 10 bespoke DIVINE champions — the top rarity. Each is a fully unique,
+   * The 20 bespoke DIVINE champions — the top rarity. Each is a fully unique,
    * fierce, hand-authored silhouette far grander than the procedural heroes.
    */
   private drawDivineHero(g: Phaser.GameObjects.Graphics, idx: number): void {
@@ -1700,7 +1700,7 @@ export class BootScene extends Phaser.Scene {
         g.fillTriangle(29, 8, 32, -1, 35, 8)
         break
       }
-      default: { // Cosmic Overlord — the ultimate: wings + halo + prismatic plate
+      case 9: { // Cosmic Overlord — the ultimate: wings + halo + prismatic plate
         this.bakedGlow(g, 32, 32, 0x9d5cff, 46)
         this.bakedGlow(g, 32, 32, 0x00ffd0, 30)
         for (const wy of [24, 38]) { // radiant wings
@@ -1720,6 +1720,218 @@ export class BootScene extends Phaser.Scene {
         for (const x of [22, 27, 32, 37, 42]) g.fillTriangle(x - 2.6, 6, x, -4, x + 2.6, 6)
         g.lineStyle(3, 0x8affff, 1) // halo
         g.strokeEllipse(32, 2, 32, 10)
+        break
+      }
+      case 10: { // Verdant Titan — branching antlers, bark torso, vine arms, foliage
+        this.bakedGlow(g, 32, 34, 0x4ad06a, 42)
+        g.fillStyle(0x2a5a2e, 0.9) // foliage mane behind the shoulders
+        for (const p of [[10, 26], [16, 20], [48, 20], [54, 26], [12, 40], [52, 40]]) g.fillCircle(p[0] as number, p[1] as number, 7)
+        this.divineCore(g, 0x5a4326, 0x7a5e34, 0x8fe36b, 0xd8ff8a) // bark-brown plate
+        g.fillStyle(0x3a2c18, 1) // bark grain
+        for (const yy of [32, 40, 48]) g.fillRect(18, yy, 28, 1.4)
+        g.fillStyle(0x6bd06a, 1) // vine wraps on the arms
+        g.fillRect(12, 32, 3, 16)
+        g.fillRect(49, 32, 3, 16)
+        g.fillStyle(0x9bf07a, 1)
+        for (const p of [[13, 35], [13, 43], [50, 35], [50, 43]]) g.fillCircle(p[0] as number, p[1] as number, 2)
+        g.fillStyle(0x6a4a26, 1) // huge branching antlers
+        g.fillPoints(this.pts([22, 12, 14, -4, 8, -2, 6, -12, 12, -6, 18, -8, 26, 8]), true)
+        g.fillPoints(this.pts([42, 12, 50, -4, 56, -2, 58, -12, 52, -6, 46, -8, 38, 8]), true)
+        g.fillStyle(0x9bf07a, 1) // leaves on the antlers
+        for (const p of [[8, -6], [12, -12], [56, -6], [52, -12], [32, -2]]) g.fillCircle(p[0] as number, p[1] as number, 2.4)
+        break
+      }
+      case 11: { // Tide Emperor — finned crown, scaled teal plate, wave motif, trident
+        this.bakedGlow(g, 32, 34, 0x2ad0ff, 42)
+        g.fillStyle(0x0e3a5a, 1) // fin wings
+        g.fillPoints(this.pts([16, 24, 0, 14, 6, 30, 0, 42, 14, 36]), true)
+        g.fillPoints(this.pts([48, 24, 64, 14, 58, 30, 64, 42, 50, 36]), true)
+        this.divineCore(g, 0x14607a, 0x2a9ab0, 0x7fffe0, 0xffffff)
+        g.fillStyle(0x0e3a4a, 1) // scale rows
+        for (const yy of [33, 39, 45]) for (let sx = 18; sx < 46; sx += 6) g.fillCircle(sx, yy, 2.2)
+        g.fillStyle(0x7fffe0, 1) // wave crest crown
+        g.fillPoints(this.pts([20, 8, 24, 0, 28, 8, 32, 0, 36, 8, 40, 0, 44, 8]), true)
+        g.fillStyle(0xcfd6dd, 1) // trident
+        g.fillRect(53, 8, 2.4, 46)
+        g.fillPoints(this.pts([49, 10, 49, -2, 51, 6]), true)
+        g.fillPoints(this.pts([59, 10, 59, -2, 57, 6]), true)
+        g.fillRect(53, -2, 2.4, 8)
+        break
+      }
+      case 12: { // Solar Deity — huge sun disc + rays behind, radiant gold plate
+        this.bakedGlow(g, 32, 16, 0xffd23a, 40)
+        g.fillStyle(0xffb020, 0.9) // sun rays
+        for (let a = 0; a < 12; a++) {
+          const ang = (a / 12) * Math.PI * 2
+          g.fillTriangle(
+            32 + Math.cos(ang) * 15, 16 + Math.sin(ang) * 15,
+            32 + Math.cos(ang + 0.16) * 30, 16 + Math.sin(ang + 0.16) * 30,
+            32 + Math.cos(ang - 0.16) * 30, 16 + Math.sin(ang - 0.16) * 30,
+          )
+        }
+        g.fillStyle(0xffe14d, 1) // sun disc
+        g.fillCircle(32, 16, 15)
+        this.divineCore(g, 0xffcf3a, 0xfff2a8, 0xff7a1a, 0xff3b1a)
+        g.fillStyle(0xff7a1a, 1) // flame crown
+        for (const x of [24, 29, 34, 39] ) g.fillTriangle(x - 3, 9, x, -2, x + 3, 9)
+        g.fillStyle(0xffe14d, 1) // solar emblem on chest
+        g.fillCircle(32, 40, 4)
+        break
+      }
+      case 13: { // Lunar Sovereign — flowing silver robe, crescent staff, star freckles
+        this.bakedGlow(g, 32, 34, 0xbfd0ff, 42)
+        g.fillStyle(0x2a3050, 1) // flowing robe body
+        g.fillPoints(this.pts([20, 20, 44, 20, 52, 62, 32, 56, 12, 62]), true)
+        g.fillStyle(0x3a4470, 1)
+        g.fillPoints(this.pts([24, 22, 40, 22, 46, 58, 32, 52, 18, 58]), true)
+        g.fillStyle(0xdfe6ff, 1) // stars on the robe
+        for (const p of [[26, 34], [34, 40], [40, 32], [30, 48], [22, 44]]) g.fillCircle(p[0] as number, p[1] as number, 1)
+        g.fillStyle(0x1a1e34, 1) // hood
+        g.fillPoints(this.pts([22, 20, 42, 20, 38, 2, 26, 2]), true)
+        g.fillStyle(0xeef2ff, 1) // pale face
+        g.fillEllipse(32, 14, 15, 16)
+        g.fillStyle(0x6a86c8, 1)
+        g.fillCircle(28, 14, 2)
+        g.fillCircle(36, 14, 2)
+        g.fillStyle(0xcfd6ff, 1) // crescent staff shaft
+        g.fillRect(51, 6, 2.4, 48)
+        g.fillStyle(0xdfe6ff, 1) // crescent = bright moon minus an offset bite
+        g.fillCircle(52, 6, 8)
+        g.fillStyle(0x0d0c10, 1)
+        g.fillCircle(56, 4, 7)
+        g.fillStyle(0xdfe6ff, 1) // crescent crown
+        for (const x of [27, 32, 37]) g.fillTriangle(x - 2, 6, x, -2, x + 2, 6)
+        break
+      }
+      case 14: { // Chrono Sovereign — floating gears, hourglass chest, ethereal robe
+        this.bakedGlow(g, 32, 34, 0x8ad0c8, 42)
+        g.fillStyle(0x1c3a3a, 1) // ethereal robe
+        g.fillPoints(this.pts([20, 22, 44, 22, 50, 62, 14, 62]), true)
+        this.divineCore(g, 0x2a4a4a, 0x3a6a66, 0xffe08a, 0x8afff0)
+        g.lineStyle(2.4, 0xffe08a, 1) // floating gears (rings + teeth)
+        for (const gp of [[10, 20, 6], [54, 22, 6], [12, 46, 5]]) {
+          const gx = gp[0] as number, gy = gp[1] as number, gr = gp[2] as number
+          g.strokeCircle(gx, gy, gr)
+          for (let a = 0; a < 8; a++) {
+            const ang = (a / 8) * Math.PI * 2
+            g.fillStyle(0xffe08a, 1)
+            g.fillCircle(gx + Math.cos(ang) * gr, gy + Math.sin(ang) * gr, 1.1)
+          }
+        }
+        g.fillStyle(0xffe08a, 1) // hourglass on the chest
+        g.fillTriangle(27, 34, 37, 34, 32, 41)
+        g.fillTriangle(27, 48, 37, 48, 32, 41)
+        g.fillStyle(0x8afff0, 1) // gear crown
+        for (const x of [24, 32, 40]) g.fillCircle(x, 2, 3)
+        break
+      }
+      case 15: { // Stone Titan — blocky boulder shoulders, cracked stone body, peak crown
+        this.bakedGlow(g, 32, 36, 0x9a8a70, 40)
+        this.drawHeroLegs(g, 0x5a5148, 0x0c0a12)
+        g.fillStyle(0x6a6156, 1) // massive blocky torso
+        g.fillRect(14, 26, 36, 30)
+        g.fillStyle(0x847a6a, 1)
+        g.fillRect(17, 28, 30, 12)
+        g.fillStyle(0x4a423a, 1) // cracks
+        g.fillPoints(this.pts([32, 28, 30, 38, 34, 44, 31, 54]), false)
+        g.fillRect(22, 42, 12, 1.6)
+        g.fillStyle(0x847a6a, 1) // huge boulder pauldrons
+        g.fillRect(2, 24, 16, 16)
+        g.fillRect(46, 24, 16, 16)
+        g.fillStyle(0x5a5148, 1)
+        g.fillRect(4, 26, 12, 5)
+        g.fillRect(48, 26, 12, 5)
+        g.fillStyle(0x4a423a, 1) // stone head
+        g.fillRect(22, 6, 20, 20)
+        g.fillStyle(0xffb020, 1) // molten eyes
+        g.fillRect(26, 14, 5, 3)
+        g.fillRect(34, 14, 5, 3)
+        g.fillStyle(0x847a6a, 1) // mountain-peak crown
+        g.fillTriangle(20, 6, 26, -6, 30, 6)
+        g.fillTriangle(30, 6, 36, -8, 42, 6)
+        break
+      }
+      case 16: { // Tempest Sovereign — single vast feathered wings + cyclone base
+        this.bakedGlow(g, 32, 32, 0xdff4ff, 44)
+        g.fillStyle(0xeef6ff, 0.95) // one huge pair of wings
+        g.fillPoints(this.pts([16, 22, -6, 6, 2, 20, -8, 30, 4, 32, -4, 44, 14, 36]), true)
+        g.fillPoints(this.pts([48, 22, 70, 6, 62, 20, 72, 30, 60, 32, 68, 44, 50, 36]), true)
+        g.fillStyle(0xbfe0ff, 0.85) // wind feather detail
+        for (const wy of [18, 28, 38]) { g.fillTriangle(6, wy, 16, wy - 3, 16, wy + 3); g.fillTriangle(58, wy, 48, wy - 3, 48, wy + 3) }
+        this.divineCore(g, 0x3a5a72, 0x6a9ac0, 0xdff4ff, 0xffffff)
+        g.fillStyle(0xcfeaff, 0.8) // cyclone swirl at the base
+        for (const yy of [52, 56, 60]) g.fillEllipse(32, yy, 30 - (yy - 52) * 5, 4)
+        g.fillStyle(0xdff4ff, 1) // wind crest
+        for (const x of [24, 30, 36, 42]) g.fillPoints(this.pts([x - 3, 8, x + 2, -2, x, 4, x + 4, -4]), true)
+        break
+      }
+      case 17: { // Plague Lord — hooded robe, gas-mask face, toxic drip, orb
+        this.bakedGlow(g, 32, 34, 0x6ad02a, 42)
+        g.fillStyle(0x1e2a12, 1) // heavy hooded robe
+        g.fillPoints(this.pts([18, 18, 46, 18, 54, 62, 10, 62]), true)
+        g.fillStyle(0x2c3a1a, 1)
+        g.fillPoints(this.pts([22, 20, 42, 20, 48, 58, 16, 58]), true)
+        g.fillStyle(0x3a2a12, 1) // gas-mask face plate
+        g.fillEllipse(32, 15, 22, 20)
+        g.fillStyle(0x6aff2a, 1) // round green lenses
+        g.fillCircle(27, 13, 3.4)
+        g.fillCircle(37, 13, 3.4)
+        g.fillStyle(0x2a1e0e, 1) // filter snout
+        g.fillRoundedRect(28, 18, 8, 8, 3)
+        g.fillStyle(0x9bff5a, 1) // toxic drips
+        for (const p of [[20, 60], [32, 62], [44, 60]]) g.fillCircle(p[0] as number, p[1] as number, 2)
+        g.fillStyle(0x8fff3a, 0.9) // bubbling toxin orb in hand
+        g.fillCircle(52, 44, 6)
+        g.fillStyle(0xdfff9a, 1)
+        g.fillCircle(50, 42, 2)
+        g.fillStyle(0x2c3a1a, 1) // hood peak
+        g.fillPoints(this.pts([22, 18, 42, 18, 34, 0, 30, 0]), true)
+        break
+      }
+      case 18: { // Abyssal Tyrant — dark mass, many eyes, tentacles, jagged maw
+        this.bakedGlow(g, 32, 36, 0x7a1aff, 44)
+        this.bakedGlow(g, 32, 36, 0xff2060, 26)
+        g.fillStyle(0x0a0614, 1) // writhing tentacles at the base
+        for (const tx of [10, 20, 32, 44, 54]) g.fillPoints(this.pts([tx - 4, 44, tx + 4, 44, tx + (tx < 32 ? 6 : -6), 64]), true)
+        g.fillStyle(0x140a24, 1) // amorphous body
+        g.fillEllipse(32, 34, 42, 40)
+        g.fillStyle(0x241436, 1)
+        g.fillEllipse(32, 32, 32, 30)
+        g.fillStyle(0xff2060, 1) // jagged maw
+        for (let mx = 22; mx < 42; mx += 4) g.fillTriangle(mx, 40, mx + 2, 46, mx + 4, 40)
+        g.fillStyle(0xd8ff3a, 1) // many glowing eyes, scattered
+        for (const p of [[24, 24], [40, 26], [32, 20], [20, 34], [46, 36], [30, 32], [38, 34]]) {
+          g.fillCircle(p[0] as number, p[1] as number, 2.4)
+          g.fillStyle(0x0a0614, 1)
+          g.fillCircle(p[0] as number, p[1] as number, 0.9)
+          g.fillStyle(0xd8ff3a, 1)
+        }
+        g.fillStyle(0x7a1aff, 1) // chaotic horn spikes
+        for (const x of [18, 26, 32, 38, 46]) g.fillTriangle(x - 3, 10, x, -6, x + 3, 10)
+        break
+      }
+      default: { // Prism Archon — crystalline geometric body, refracting facets
+        this.bakedGlow(g, 32, 32, 0x8affff, 42)
+        this.bakedGlow(g, 32, 32, 0xff5aff, 28)
+        g.fillStyle(0x1a2440, 1) // dark facet backing
+        g.fillPoints(this.pts([32, 22, 52, 40, 32, 60, 12, 40]), true) // big diamond torso
+        g.fillStyle(0x4a6ad0, 0.9)
+        g.fillPoints(this.pts([32, 26, 46, 40, 32, 54, 18, 40]), true)
+        // refracted facet gems (rainbow)
+        const facets = [0xff4d6a, 0xffb020, 0xffe14d, 0x6bff9a, 0x5ad0ff, 0xb06bff]
+        facets.forEach((c, fi) => {
+          const ang = (fi / facets.length) * Math.PI * 2
+          g.fillStyle(c, 1)
+          g.fillCircle(32 + Math.cos(ang) * 10, 40 + Math.sin(ang) * 10, 2)
+        })
+        g.fillStyle(0xdff4ff, 1) // crystal head (octahedron)
+        g.fillPoints(this.pts([32, 2, 42, 14, 32, 26, 22, 14]), true)
+        g.fillStyle(0x8affff, 1)
+        g.fillPoints(this.pts([32, 6, 38, 14, 32, 22, 26, 14]), true)
+        g.fillStyle(0xff5aff, 1) // core gem
+        g.fillCircle(32, 14, 2.4)
+        g.fillStyle(0x8affff, 1) // shard crown
+        for (const x of [24, 32, 40]) g.fillTriangle(x - 2.6, 4, x, -6, x + 2.6, 4)
       }
     }
   }

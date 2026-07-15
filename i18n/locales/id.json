@@ -158,7 +158,17 @@
     "storm": "Badai Petir",
     "frost": "Nol Mutlak",
     "blood": "Mandi Darah",
-    "cosmic": "Ledakan Kosmik"
+    "cosmic": "Ledakan Kosmik",
+    "nature": "Rimba Murka",
+    "tide": "Pusaran Maut",
+    "solar": "Suar Supernova",
+    "lunar": "Gerhana",
+    "chrono": "Henti Waktu",
+    "quake": "Gempa Bumi",
+    "tempest": "Angin Topan",
+    "plague": "Pandemi",
+    "chaos": "Robekan Kekacauan",
+    "prism": "Sinar Prisma"
   },
   "weffect": {
     "crit": "Kritikal",

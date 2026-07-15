@@ -2673,11 +2673,158 @@ export class BattleScene extends Phaser.Scene {
         this.emitHp()
         break
       }
-      default: // Cosmic Overlord — Big Bang: the ultimate screen-clearing nuke
+      case 9: // Cosmic Overlord — Big Bang: the ultimate screen-clearing nuke
         this.hitStopUntil = this.frameTime + 140
         this.divineDamageAll(45, 0x9d5cff, 900, '#c9a0ff')
         this.divineDamageAll(45, 0x00ffd0, 700, '#8affff')
         this.cameras.main.shake(400, 0.02)
+        break
+      case 10: { // Verdant Titan — Wild Overgrowth: root everything + big heal
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          e.chillUntil = this.elapsedMs + 3500
+          e.chillMul = 0.08
+        }
+        this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(this.player.maxHp * 0.4))
+        this.emitHp()
+        this.divineDamageAll(16, 0x6bff6a, 620, '#b6ff8a')
+        break
+      }
+      case 11: { // Tide Emperor — Maelstrom: pull foes in and drown them
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          const a = angleBetween(e.x, e.y, this.player.x, this.player.y)
+          const d = distance(e.x, e.y, this.player.x, this.player.y)
+          const pull = Math.min(d, 220)
+          e.setPosition(e.x + Math.cos(a) * pull, e.y + Math.sin(a) * pull)
+          e.chillUntil = this.elapsedMs + 2500
+          e.chillMul = 0.45
+        }
+        this.divineDamageAll(18, 0x2ad0ff, 520, '#8fe6ff')
+        break
+      }
+      case 12: { // Solar Deity — Supernova Flare: blinding burst + ignite all
+        this.divineDamageAll(20, 0xffe14d, 720, '#fff2a8')
+        const burnDps = this.power.stats.damage * this.swordDamageMul * 4
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          e.burnUntil = this.elapsedMs + 4000
+          e.burnDps = burnDps
+        }
+        this.cameras.main.flash(320, 255, 240, 180)
+        break
+      }
+      case 13: { // Lunar Sovereign — Eclipse: darkness weakens, then twin pulses
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          e.chillUntil = this.elapsedMs + 4000
+          e.chillMul = 0.35
+        }
+        this.divineDamageAll(12, 0x3a2a6a, 560, '#b9a8ff')
+        this.time.delayedCall(500, () => { if (!this.isOver) this.divineDamageAll(16, 0x1a1030, 620, '#dfd0ff') })
+        break
+      }
+      case 14: { // Chrono Sovereign — Time Stop: freeze foes in place + ticks
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          e.chillUntil = this.elapsedMs + 5000
+          e.chillMul = 0.02
+        }
+        this.divineDamageAll(14, 0x8afff0, 700, '#dffff8')
+        this.time.delayedCall(900, () => { if (!this.isOver) this.divineDamageAll(14, 0xffe08a, 640, '#ffe08a') })
+        this.cameras.main.flash(240, 200, 255, 245)
+        break
+      }
+      case 15: { // Stone Titan — Earthquake: expanding stone shockwaves + stagger
+        const dmg = Math.max(1, Math.round(this.power.stats.damage * this.swordDamageMul * 12))
+        this.skillStrike(420, dmg, 0x9a8a70, '#e6d8b0', 10)
+        this.time.delayedCall(260, () => { if (!this.isOver) this.skillStrike(680, dmg, 0x6a6156, '#e6d8b0', 10) })
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          e.chillUntil = this.elapsedMs + 2000
+          e.chillMul = 0.3
+        }
+        this.cameras.main.shake(500, 0.02)
+        audioService.nova()
+        break
+      }
+      case 16: { // Tempest Sovereign — Tornado: roaming cyclones pull & shred
+        const cam = this.cameras.main
+        for (let k = 0; k < 8; k++) {
+          const tx = cam.scrollX + randomRange(60, this.viewW - 60)
+          const ty = cam.scrollY + randomRange(60, this.viewH - 60)
+          this.time.delayedCall(k * 80, () => {
+            if (this.isOver) return
+            const r = this.add.image(tx, ty, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(0xdff4ff).setScale(0.2).setDepth(6)
+            this.tweens.add({ targets: r, scale: 2.2, alpha: { from: 0.9, to: 0 }, duration: 320, onComplete: () => r.destroy() })
+            const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 7)
+            for (const obj of this.enemies.getChildren()) {
+              const e = obj as Enemy
+              if (!e.active) continue
+              const d = distance(e.x, e.y, tx, ty)
+              if (d < 150) {
+                const a = angleBetween(e.x, e.y, tx, ty)
+                const pull = Math.min(d, 80)
+                e.setPosition(e.x + Math.cos(a) * pull, e.y + Math.sin(a) * pull)
+                this.skillHitEnemy(e, dmg, '#dff4ff')
+              }
+            }
+          })
+        }
+        this.cameras.main.shake(300, 0.006)
+        audioService.nova()
+        break
+      }
+      case 17: { // Plague Lord — Pandemic: toxic cloud + venom over time
+        this.divineDamageAll(10, 0x6aff2a, 640, '#bfff6a')
+        const venomDps = this.power.stats.damage * this.swordDamageMul * 2.5
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active) continue
+          e.burnUntil = this.elapsedMs + 6000
+          e.burnDps = venomDps
+          e.chillUntil = this.elapsedMs + 6000
+          e.chillMul = 0.6
+        }
+        break
+      }
+      case 18: { // Abyssal Tyrant — Rift of Chaos: reality tears strike at random
+        const cam = this.cameras.main
+        for (let k = 0; k < 14; k++) {
+          const tx = cam.scrollX + randomRange(40, this.viewW - 40)
+          const ty = cam.scrollY + randomRange(40, this.viewH - 40)
+          this.time.delayedCall(k * 60, () => {
+            if (this.isOver) return
+            this.sparks.explode(12, tx, ty)
+            const c = k % 2 ? 0x7a1aff : 0xff2060
+            const r = this.add.image(tx, ty, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(c).setScale(0.2).setDepth(6)
+            this.tweens.add({ targets: r, scale: 2, alpha: { from: 0.95, to: 0 }, duration: 260, onComplete: () => r.destroy() })
+            const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 9)
+            for (const obj of this.enemies.getChildren()) {
+              const e = obj as Enemy
+              if (e.active && distance(e.x, e.y, tx, ty) < 140) this.skillHitEnemy(e, dmg, '#d8a0ff')
+            }
+          })
+        }
+        this.cameras.main.shake(360, 0.014)
+        audioService.nova()
+        break
+      }
+      default: { // Prism Archon — Prismatic Beam: staggered rainbow shockwaves
+        const colors: Array<[number, string]> = [[0xff4d6a, '#ff9db0'], [0x5ad0ff, '#bfeeff'], [0xb06bff, '#e0c8ff']]
+        colors.forEach(([ring, num], i) => {
+          this.time.delayedCall(i * 180, () => {
+            if (!this.isOver) this.divineDamageAll(20, ring, 760, num)
+          })
+        })
+        this.cameras.main.shake(320, 0.014)
+      }
     }
   }
 

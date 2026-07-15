@@ -99,8 +99,8 @@ export const SWORD_SHAPES = [
  * astronomical survivor scores.
  */
 export const HERO = {
-  skins: 110, // 100 procedural + 10 bespoke "Divine" champions at the very top
-  divineCount: 10,
+  skins: 120, // 100 procedural + 20 bespoke "Divine" champions at the very top
+  divineCount: 20,
   // Look/size evolve with SCORE (monotonic — never flips backwards). tier =
   // floor(tierPerLog10 * log10(1 + score)); ~1.85 reaches the golden top tier
   // around score 1e54 (survivor scores climb astronomically).
@@ -139,6 +139,8 @@ export function heroRarity(rank: number): number {
 export const DIVINE_NAMES = [
   'Seraph of War', 'Void Sovereign', 'Inferno Lord', 'God-Emperor', 'Dragon Ascendant',
   'Death Reaper', 'Storm Titan', 'Frost Monarch', 'Blood Warlord', 'Cosmic Overlord',
+  'Verdant Titan', 'Tide Emperor', 'Solar Deity', 'Lunar Sovereign', 'Chrono Sovereign',
+  'Stone Titan', 'Tempest Sovereign', 'Plague Lord', 'Abyssal Tyrant', 'Prism Archon',
 ]
 const HERO_PREFIX = ['Iron', 'Bronze', 'Steel', 'Silver', 'Emerald', 'Sapphire', 'Amethyst', 'Crimson', 'Obsidian', 'Golden']
 const HERO_TITLE = [
@@ -354,9 +356,9 @@ export const SKILLS = {
 } as const
 
 /**
- * Each Divine champion (hero index 100..104) wields a UNIQUE ultimate, shown as
- * a 4th skill button while that hero is active. Ordered to match the 5 Divine
- * heroes (seraph, void, inferno, emperor, dragon).
+ * Each Divine champion (hero index 100..119) wields a UNIQUE ultimate, shown as
+ * a 4th skill button while that hero is active. Ordered to match the 20 Divine
+ * heroes (DIVINE_NAMES) one-to-one.
  */
 export const DIVINE_SKILLS = [
   { id: 'seraph', icon: '👼', cooldownMs: 18000 }, // Divine Judgment: heal + holy nova + shield
@@ -369,6 +371,16 @@ export const DIVINE_SKILLS = [
   { id: 'frost', icon: '❄️', cooldownMs: 18000 }, // Absolute Zero: freeze + shatter
   { id: 'blood', icon: '🩸', cooldownMs: 18000 }, // Bloodbath: massive damage + lifesteal
   { id: 'cosmic', icon: '🌌', cooldownMs: 22000 }, // Big Bang: ultimate screen nuke
+  { id: 'nature', icon: '🌿', cooldownMs: 18000 }, // Wild Overgrowth: root all + heal
+  { id: 'tide', icon: '🌊', cooldownMs: 18000 }, // Maelstrom: pull in + drown
+  { id: 'solar', icon: '☀️', cooldownMs: 18000 }, // Supernova Flare: blinding burn burst
+  { id: 'lunar', icon: '🌙', cooldownMs: 18000 }, // Eclipse: twin dark pulses + weaken
+  { id: 'chrono', icon: '⏳', cooldownMs: 20000 }, // Time Stop: freeze in place + ticks
+  { id: 'quake', icon: '🌋', cooldownMs: 18000 }, // Earthquake: expanding stone rings
+  { id: 'tempest', icon: '🌪️', cooldownMs: 16000 }, // Tornado: roaming pulling cyclones
+  { id: 'plague', icon: '☣️', cooldownMs: 18000 }, // Pandemic: toxic cloud + venom DoT
+  { id: 'chaos', icon: '👁️', cooldownMs: 20000 }, // Rift of Chaos: random reality tears
+  { id: 'prism', icon: '🔷', cooldownMs: 22000 }, // Prismatic Beam: staggered rainbow pulses
 ] as const
 
 /** Brief freeze on big moments (boss kill) for punch. */
