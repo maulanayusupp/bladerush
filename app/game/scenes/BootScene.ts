@@ -1778,29 +1778,29 @@ export class BootScene extends Phaser.Scene {
         g.fillCircle(32, 40, 4)
         break
       }
-      case 13: { // Lunar Sovereign — flowing silver robe, crescent staff, star freckles
-        this.bakedGlow(g, 32, 34, 0xbfd0ff, 42)
-        g.fillStyle(0x2a3050, 1) // flowing robe body
-        g.fillPoints(this.pts([20, 20, 44, 20, 52, 62, 32, 56, 12, 62]), true)
-        g.fillStyle(0x3a4470, 1)
-        g.fillPoints(this.pts([24, 22, 40, 22, 46, 58, 32, 52, 18, 58]), true)
-        g.fillStyle(0xdfe6ff, 1) // stars on the robe
-        for (const p of [[26, 34], [34, 40], [40, 32], [30, 48], [22, 44]]) g.fillCircle(p[0] as number, p[1] as number, 1)
-        g.fillStyle(0x1a1e34, 1) // hood
-        g.fillPoints(this.pts([22, 20, 42, 20, 38, 2, 26, 2]), true)
-        g.fillStyle(0xeef2ff, 1) // pale face
-        g.fillEllipse(32, 14, 15, 16)
-        g.fillStyle(0x6a86c8, 1)
-        g.fillCircle(28, 14, 2)
-        g.fillCircle(36, 14, 2)
-        g.fillStyle(0xcfd6ff, 1) // crescent staff shaft
-        g.fillRect(51, 6, 2.4, 48)
-        g.fillStyle(0xdfe6ff, 1) // crescent = bright moon minus an offset bite
-        g.fillCircle(52, 6, 8)
+      case 13: { // Lunar Sovereign — moonlit-god: silver-blue plate, crescent crown + staff
+        this.bakedGlow(g, 32, 34, 0xbfd0ff, 44)
+        g.fillStyle(0x1a2140, 1) // starry night cape behind
+        g.fillPoints(this.pts([12, 24, 52, 24, 60, 62, 4, 62]), true)
+        g.fillStyle(0xdfe6ff, 1) // stars on the cape
+        for (const p of [[14, 40], [20, 54], [48, 40], [44, 56], [32, 58]]) g.fillCircle(p[0] as number, p[1] as number, 0.9)
+        this.divineCore(g, 0x33406e, 0x8aa0e0, 0xdfe6ff, 0x9bd0ff) // moonlit silver-blue plate
+        g.fillStyle(0xeef2ff, 1) // crescent moon emblem on the chest
+        g.fillCircle(32, 40, 4)
+        g.fillStyle(0x33406e, 1)
+        g.fillCircle(34, 39, 3.4)
+        g.fillStyle(0xdfe6ff, 1) // crescent-moon crown (bright disc minus an offset bite)
+        g.fillCircle(32, 2, 6)
         g.fillStyle(0x0d0c10, 1)
-        g.fillCircle(56, 4, 7)
-        g.fillStyle(0xdfe6ff, 1) // crescent crown
-        for (const x of [27, 32, 37]) g.fillTriangle(x - 2, 6, x, -2, x + 2, 6)
+        g.fillCircle(35, 0, 5.2)
+        g.fillStyle(0xcfd6ff, 1) // side crown spikes
+        for (const x of [22, 42]) g.fillTriangle(x - 2, 8, x, -2, x + 2, 8)
+        g.fillStyle(0xcfd6ff, 1) // crescent-moon staff
+        g.fillRect(53, 8, 2.4, 46)
+        g.fillStyle(0xdfe6ff, 1)
+        g.fillCircle(54, 8, 7)
+        g.fillStyle(0x0d0c10, 1)
+        g.fillCircle(57, 6, 6)
         break
       }
       case 14: { // Chrono Sovereign — floating gears, hourglass chest, ethereal robe
