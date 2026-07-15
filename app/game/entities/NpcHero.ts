@@ -63,7 +63,9 @@ export class NpcHero extends Phaser.GameObjects.Container {
 
   /** Update the hero look + label + toughness to match current power. */
   refresh(): void {
-    const tier = clamp(Math.floor(HERO.tierPerLog10 * Math.log10(1 + this.power)), 0, HERO.skins - 1)
+    // NPC rivals cap at mythic — Divine (the last HERO.divineCount skins) is reserved for the player.
+    const maxTier = HERO.skins - HERO.divineCount - 1
+    const tier = clamp(Math.floor(HERO.tierPerLog10 * Math.log10(1 + this.power)), 0, maxTier)
     this.heroImg.setTexture(`hero${tier}`)
     this.baseScale = 0.6 + (tier / (HERO.skins - 1)) * 1.05 // grows like the player
     this.heroImg.setScale(this.baseScale)
