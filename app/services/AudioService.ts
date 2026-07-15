@@ -240,6 +240,64 @@ class AudioService {
     ;[440, 330, 247, 165].forEach((f, i) => this.beep(f, 0.22, 'sawtooth', 0.32, t + i * 0.09))
     this.noise(0.5, 0.3, t, 600, 0.7)
   }
+
+  /**
+   * Divine ultimate — a bespoke flourish per sonic "family" so the 20 ultimates
+   * feel distinct. The caller passes the skill id; families group similar themes.
+   */
+  ultimate(id: string): void {
+    const t = this.t
+    switch (ULT_FAMILY[id] ?? 'cosmic') {
+      case 'holy': // radiant ascending bell chord
+        ;[659, 880, 1319, 1760].forEach((f, i) => this.beep(f, 0.45, 'triangle', 0.3, t + i * 0.05))
+        this.noise(0.5, 0.1, t, 6500, 0.5)
+        break
+      case 'dark': // deep detuned ominous swell
+        this.beep(70, 0.8, 'sawtooth', 0.42, t, 40)
+        this.beep(104, 0.7, 'sine', 0.3, t, 55)
+        this.noise(0.7, 0.28, t, 400, 0.6)
+        break
+      case 'fire': // sizzling low roar
+        this.beep(180, 0.55, 'sawtooth', 0.36, t, 70)
+        this.beep(90, 0.5, 'sine', 0.3, t, 50)
+        this.noise(0.6, 0.42, t, 1500, 0.4)
+        break
+      case 'ice': // crystalline shimmer
+        ;[1200, 1600, 2100, 2600].forEach((f, i) => this.beep(f, 0.32, 'sine', 0.22, t + i * 0.04))
+        this.noise(0.45, 0.12, t, 7500, 0.6)
+        break
+      case 'thunder': // zap + crackle
+        this.beep(120, 0.28, 'square', 0.32, t, 2200)
+        this.noise(0.28, 0.5, t, 3000, 0.3)
+        this.noise(0.16, 0.4, t + 0.12, 5200, 0.4)
+        break
+      case 'earth': // seismic rumble
+        this.beep(58, 0.9, 'sine', 0.5, t, 38)
+        this.beep(92, 0.6, 'sawtooth', 0.3, t, 52)
+        this.noise(0.8, 0.32, t, 300, 0.7)
+        break
+      case 'nature': // organic mid bloom
+        ;[330, 440, 550].forEach((f, i) => this.beep(f, 0.4, 'triangle', 0.26, t + i * 0.06))
+        this.noise(0.5, 0.16, t, 2000, 0.5)
+        break
+      default: // cosmic — grand layered boom
+        this.beep(140, 0.6, 'sine', 0.4, t, 60)
+        ;[523, 784, 1047].forEach((f, i) => this.beep(f, 0.4, 'triangle', 0.24, t + i * 0.05))
+        this.noise(0.55, 0.3, t, 1200, 0.5)
+    }
+  }
+}
+
+/** Maps each Divine ultimate id to a sonic family (see AudioService.ultimate). */
+const ULT_FAMILY: Record<string, string> = {
+  seraph: 'holy', solar: 'holy',
+  void: 'dark', lunar: 'dark', chaos: 'dark', reaper: 'dark',
+  inferno: 'fire', dragon: 'fire', blood: 'fire',
+  frost: 'ice', chrono: 'ice', tide: 'ice',
+  storm: 'thunder', tempest: 'thunder', prism: 'thunder',
+  quake: 'earth', emperor: 'earth',
+  nature: 'nature', plague: 'nature',
+  cosmic: 'cosmic',
 }
 
 /** Shared singleton. */

@@ -61,6 +61,10 @@ function flashRushBanner(text: string): void {
   if (rushBannerTimer) clearTimeout(rushBannerTimer)
   rushBannerTimer = setTimeout(() => (rushBanner.value = ''), 2600)
 }
+
+// ---- Divine ultimate cinematic cut-in ----
+const ultCast = ref<{ skill: string; hero: string } | null>(null)
+let ultTimer: ReturnType<typeof setTimeout> | null = null
 const comboMult = ref(1)
 const level = ref(1)
 const xp = ref(0)
@@ -194,10 +198,18 @@ onMounted(() => {
         flashRushBanner(t('rush.wave', { wave }))
       }
     }),
+    gameEventBus.on('divine:cast', ({ index }) => {
+      const s = DIVINE_SKILLS[index]
+      if (!s) return
+      ultCast.value = { skill: t('dskill.' + s.id), hero: heroLabel.value }
+      if (ultTimer) clearTimeout(ultTimer)
+      ultTimer = setTimeout(() => (ultCast.value = null), 1300)
+    }),
     gameEventBus.on('game:restart', () => {
       bossRush.value = false
       rushWave.value = 0
       rushBanner.value = ''
+      ultCast.value = null
     }),
   )
   cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
@@ -207,6 +219,7 @@ onUnmounted(() => {
   unsubscribers.forEach((off) => off())
   if (cooldownTimer) clearInterval(cooldownTimer)
   if (rushBannerTimer) clearTimeout(rushBannerTimer)
+  if (ultTimer) clearTimeout(ultTimer)
 })
 
 function restart(): void {
@@ -265,6 +278,17 @@ function restart(): void {
     <div class="hud__xp">
       <div class="hud__xp-fill" :style="{ '--xp-ratio': xpRatio }" />
     </div>
+
+    <div v-if="bossRush" class="hud__rush-vignette" aria-hidden="true" />
+
+    <Transition name="hud-ult">
+      <div v-if="ultCast" class="hud__ult" aria-hidden="true">
+        <div class="hud__ult-band">
+          <span class="hud__ult-hero">{{ ultCast.hero }}</span>
+          <span class="hud__ult-name">{{ ultCast.skill }}</span>
+        </div>
+      </div>
+    </Transition>
 
     <Transition name="hud-rush">
       <div v-if="rushBanner" class="hud__rush-banner">{{ rushBanner }}</div>

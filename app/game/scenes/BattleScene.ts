@@ -2558,9 +2558,14 @@ export class BattleScene extends Phaser.Scene {
     const idx = this.divineSkill
     if (idx < 0) return
     if (this.elapsedMs < (this.skillReadyAt.divine ?? 0)) return
-    const cd = (DIVINE_SKILLS[idx] as { cooldownMs: number }).cooldownMs
+    const skill = DIVINE_SKILLS[idx] as { cooldownMs: number; id: string }
+    const cd = skill.cooldownMs
     this.skillReadyAt.divine = this.elapsedMs + cd
     gameEventBus.emit('skill:started', { id: 'divine', cooldownMs: cd, durationMs: 0 })
+    // Cinematic cut-in + bespoke sound, then a brief beat of hit-stop for punch.
+    gameEventBus.emit('divine:cast', { index: idx })
+    audioService.ultimate(skill.id)
+    this.hitStopUntil = this.frameTime + 90
     this.castDivineSkill(idx)
   }
 

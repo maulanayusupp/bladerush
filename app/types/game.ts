@@ -83,4 +83,5 @@ export interface GameEventMap {
   'levelup:pick': { id: string }
   'rush:start': undefined
   'rush:wave': { wave: number; size: number; cleared: boolean }
+  'divine:cast': { index: number }
 }

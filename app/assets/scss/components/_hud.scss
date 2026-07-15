@@ -304,6 +304,69 @@
     white-space: nowrap;
   }
 
+  // Pulsing crimson vignette while Boss Rush is active.
+  &__rush-vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 50%, transparent 52%, rgba($color-danger, 0.34) 100%);
+    animation: hud-rush-pulse 1.6s ease-in-out infinite;
+  }
+
+  // ---- Divine ultimate cinematic cut-in ----
+  &__ult {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  &__ult-band {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-1;
+    width: 130%;
+    padding: $space-4 0;
+    transform: skewY(-3deg);
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(#000, 0.72) 14%,
+      rgba(#00e0c8, 0.18) 50%,
+      rgba(#000, 0.72) 86%,
+      transparent 100%);
+    border-top: 2px solid rgba(#00e0c8, 0.9);
+    border-bottom: 2px solid rgba($color-warning, 0.85);
+    box-shadow: 0 0 40px rgba(#00e0c8, 0.4);
+  }
+
+  &__ult-hero {
+    transform: skewY(3deg);
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: $color-warning;
+    text-shadow: 0 2px 6px rgba(#000, 0.8);
+  }
+
+  &__ult-name {
+    transform: skewY(3deg);
+    font-size: clamp(1.8rem, 7vw, 3.4rem);
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-wrap: balance;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 0 18px rgba(#00e0c8, 0.9), 0 0 40px rgba(#00e0c8, 0.5), 0 3px 8px rgba(#000, 0.8);
+  }
+
   &__combo {
     position: absolute;
     top: 96px;
@@ -402,4 +465,33 @@
 .hud-rush-leave-to {
   opacity: 0;
   transform: translateX(-50%) scale(1.15);
+}
+
+@keyframes hud-rush-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+// Divine ultimate cut-in: band sweeps in, holds, then flashes out.
+.hud-ult-enter-active { transition: opacity 0.16s ease; }
+.hud-ult-enter-active .hud__ult-band {
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+.hud-ult-leave-active { transition: opacity 0.3s ease; }
+.hud-ult-leave-active .hud__ult-band { transition: transform 0.3s ease, opacity 0.3s ease; }
+.hud-ult-enter-from .hud__ult-band {
+  opacity: 0;
+  transform: skewY(-3deg) translateX(-60%) scaleX(0.4);
+}
+.hud-ult-leave-to {
+  opacity: 0;
+}
+.hud-ult-leave-to .hud__ult-band {
+  transform: skewY(-3deg) scale(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud__rush-vignette { animation: none; }
+  .hud-ult-enter-active .hud__ult-band,
+  .hud-ult-leave-active .hud__ult-band { transition: opacity 0.2s ease; }
 }
