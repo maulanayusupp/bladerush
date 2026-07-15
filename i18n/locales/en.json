@@ -6,7 +6,10 @@
     "play": "Play",
     "best": "Best {score}",
     "playAs": "Play as: {hero}",
-    "autoHero": "Auto (evolve with score)",
+    "autoHero": "Auto",
+    "heroLabel": "Playing as",
+    "bestLabel": "Best",
+    "coinsLabel": "Coins",
     "controls": "Move to aim — your blades strike automatically",
     "features": {
       "gates": { "label": "Collect swords", "text": "Run gates — +N and ×N grow your ring" },

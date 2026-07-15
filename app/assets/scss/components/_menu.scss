@@ -78,6 +78,13 @@
     color: $color-warning;
     font-variant-numeric: tabular-nums;
   }
+
+  // Compact to icon-only on small screens so the nav never crowds the title.
+  @media (max-width: $bp-mobile) {
+    &__label {
+      display: none;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -152,18 +159,40 @@
   animation: intro-fade 1.3s ease-out both;
 }
 
-// --- Hero copy block -------------------------------------------------------
+// --- Content column (parallaxed) -------------------------------------------
 .menu__content {
   position: relative;
   z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $space-4;
+  gap: clamp($space-5, 5vh, $space-8);
   width: 100%;
-  max-width: 680px;
+  max-width: 600px;
   text-align: center;
   transform: translate3d(calc(var(--px, 0) * -14px), calc(var(--py, 0) * -8px), 0);
+}
+
+// --- Title lockup ----------------------------------------------------------
+.menu__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-3;
+}
+
+.menu__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: $space-1 $space-4;
+  border-radius: $radius-pill;
+  font-size: 0.72rem;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba($color-warning, 0.95);
+  background: rgba($color-warning, 0.08);
+  border: 1px solid rgba($color-warning, 0.32);
 }
 
 .menu__title {
@@ -194,114 +223,172 @@
   }
 }
 
-.menu__divider {
-  width: clamp(90px, 26vw, 190px);
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba($color-warning, 0.85), transparent);
-  box-shadow: 0 0 14px rgba($color-warning, 0.5);
-}
-
 .menu__tagline {
   margin: 0;
-  font-size: $font-size-lg;
+  font-size: $font-size-base;
   font-weight: $font-weight-regular;
   line-height: 1.5;
-  color: rgba($color-text, 0.72);
+  color: rgba($color-text, 0.7);
   max-width: 40ch;
 }
 
-// --- Actions ---------------------------------------------------------------
-.menu__cta {
+// --- Command console (glass panel) -----------------------------------------
+.console {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+  width: 100%;
+  padding: $space-5;
+  border-radius: $radius-lg;
+  background: linear-gradient(180deg, rgba($color-surface-2, 0.5), rgba(#04030b, 0.6));
+  border: 1px solid rgba(#fff, 0.09);
+  box-shadow: $shadow-lg, inset 0 1px 0 rgba(#fff, 0.05);
+  backdrop-filter: blur(14px);
+}
+
+.console__group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.console__label {
+  font-size: 0.68rem;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba($color-text, 0.45);
+}
+
+.console__modes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $space-2;
+
+  @media (max-width: $bp-mobile) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.modecard {
+  @include button-reset;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $space-4;
-  margin-top: $space-2;
-}
-
-.menu__best {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-bold;
-  letter-spacing: 0.04em;
-  color: rgba($color-warning, 0.9);
-}
-
-.menu__modes {
-  position: relative;
-  z-index: 4;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: $space-2;
-  margin-top: $space-4;
-}
-
-.menu__mode {
-  @include button-reset;
-  padding: $space-2 $space-4;
-  border-radius: $radius-pill;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-bold;
-  letter-spacing: 0.04em;
-  color: rgba($color-text, 0.7);
-  background: rgba($color-surface, 0.6);
+  gap: $space-1;
+  padding: $space-3 $space-2;
+  border-radius: $radius-md;
+  background: rgba(#000, 0.28);
   border: 1px solid rgba(#fff, 0.08);
+  color: rgba($color-text, 0.66);
   transition: color $transition-base, border-color $transition-base,
     background $transition-base, transform $transition-fast;
 
   &:hover {
     color: $color-text;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    border-color: rgba($color-primary, 0.4);
   }
 
   &--active {
     color: $color-text;
-    background: rgba($color-primary, 0.24);
-    border-color: rgba($color-primary, 0.7);
-    box-shadow: 0 0 16px rgba($color-primary, 0.35);
+    background: linear-gradient(180deg, rgba($color-primary, 0.36), rgba($color-primary, 0.12));
+    border-color: rgba($color-primary, 0.8);
+    box-shadow: 0 0 18px rgba($color-primary, 0.4), inset 0 0 12px rgba($color-primary, 0.18);
   }
 }
 
-.menu__mode-desc {
-  position: relative;
-  z-index: 4;
-  margin: $space-2 0 0;
-  min-height: 1.2em;
+.modecard__icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.modecard__name {
+  font-size: 0.8rem;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.02em;
+}
+
+.console__desc {
+  margin: 0;
+  min-height: 2.6em; // reserve height so switching modes never shifts the layout
   font-size: $font-size-sm;
+  line-height: 1.4;
   color: rgba($color-text, 0.6);
   text-align: center;
 }
 
-.menu__loadout {
-  position: relative;
-  z-index: 4;
-  display: inline-flex;
+// --- Player stats rail -----------------------------------------------------
+.console__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-2;
+}
+
+.stat {
+  display: flex;
   align-items: center;
   gap: $space-2;
-  margin-top: $space-3;
-  padding: $space-2 $space-4;
-  border-radius: $radius-pill;
-  border: 1px solid rgba($color-primary, 0.28);
-  background: rgba($color-primary, 0.06);
-  font-size: $font-size-sm;
-  font-weight: $font-weight-bold;
-  letter-spacing: 0.04em;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: rgba(#000, 0.28);
+  border: 1px solid rgba(#fff, 0.07);
+  color: $color-text;
+  text-align: left;
   text-decoration: none;
-  color: rgba($color-text, 0.82);
-  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  min-width: 0;
+}
+
+button.stat {
+  appearance: none;
+  margin: 0;
+  font: inherit;
+}
+
+a.stat,
+button.stat {
+  cursor: pointer;
+  transition: border-color $transition-base, background $transition-base, transform $transition-fast;
 
   &:hover {
-    border-color: rgba($color-primary, 0.6);
-    background: rgba($color-primary, 0.12);
-    color: $color-text;
+    border-color: rgba($color-warning, 0.5);
+    background: rgba($color-surface-2, 0.7);
+    transform: translateY(-1px);
   }
 }
 
-.menu__loadout-icon {
-  font-size: $font-size-base;
+.stat--hero {
+  border-color: rgba($color-primary, 0.3);
+}
+
+.stat__icon {
+  flex: 0 0 auto;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.stat__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.stat__label {
+  font-size: 0.6rem;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba($color-text, 0.42);
+}
+
+.stat__value {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .menu__hint {
@@ -320,6 +407,8 @@
   overflow: hidden;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
   gap: $space-3;
   padding: $space-4 $space-8;
   border-radius: $radius-pill;
@@ -371,16 +460,15 @@
 
 // --- Motion ----------------------------------------------------------------
 @media (prefers-reduced-motion: no-preference) {
-  .menu__content > *,
+  .menu__hero,
+  .console,
   .menu__hint {
     animation: menu-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  .menu__title { animation-delay: 0.55s; }
-  .menu__divider { animation-delay: 0.78s; }
-  .menu__tagline { animation-delay: 0.9s; }
-  .menu__cta { animation-delay: 1.02s; }
-  .menu__hint { animation-delay: 1.2s; }
+  .menu__hero { animation-delay: 0.55s; }
+  .console { animation-delay: 0.92s; }
+  .menu__hint { animation-delay: 1.18s; }
 }
 
 @media (prefers-reduced-motion: reduce) {

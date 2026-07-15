@@ -21,6 +21,12 @@ const heroChoice = ref('')
 // Selected game mode (persisted).
 const mode = ref<GameMode>('normal')
 const modes = GAME_MODES
+const MODE_ICONS: Record<GameMode, string> = {
+  normal: '⚔️',
+  endless: '♾️',
+  bossrush: '☠️',
+  timeattack: '⏱️',
+}
 function selectMode(m: GameMode): void {
   mode.value = m
   modeService.setMode(m)
@@ -82,7 +88,6 @@ function startGame(): void {
       <button type="button" class="navbtn" @click="openShop">
         <span class="navbtn__icon" aria-hidden="true">🛒</span>
         <span class="navbtn__label">{{ $t('shop.open') }}</span>
-        <b class="navbtn__meta">💰 {{ formatCompact(coins) }}</b>
       </button>
       <NuxtLink to="/codex" class="navbtn">
         <span class="navbtn__icon" aria-hidden="true">📖</span>
@@ -97,45 +102,65 @@ function startGame(): void {
     <LanguageSwitcher />
 
     <div class="menu__content" :style="parallax">
-      <h1 class="menu__title">
-        <span class="menu__title-line">BLADE</span>
-        <span class="menu__title-line menu__title-line--accent">RUSH</span>
-      </h1>
-
-      <div class="menu__divider" aria-hidden="true" />
-      <p class="menu__tagline">{{ $t('menu.subtitle') }}</p>
-
-      <div class="menu__modes" role="tablist" :aria-label="$t('mode.label')">
-        <button
-          v-for="m in modes"
-          :key="m"
-          type="button"
-          role="tab"
-          class="menu__mode"
-          :class="{ 'menu__mode--active': mode === m }"
-          :aria-selected="mode === m"
-          @click="selectMode(m)"
-        >
-          {{ $t('mode.' + m) }}
-        </button>
+      <div class="menu__hero">
+        <span class="menu__badge">{{ $t('menu.badge') }}</span>
+        <h1 class="menu__title">
+          <span class="menu__title-line">BLADE</span>
+          <span class="menu__title-line menu__title-line--accent">RUSH</span>
+        </h1>
+        <p class="menu__tagline">{{ $t('menu.subtitle') }}</p>
       </div>
-      <p class="menu__mode-desc">{{ $t('mode.' + mode + 'Desc') }}</p>
 
-      <div class="menu__cta">
+      <section class="console">
+        <div class="console__group">
+          <span class="console__label">{{ $t('mode.label') }}</span>
+          <div class="console__modes" role="tablist" :aria-label="$t('mode.label')">
+            <button
+              v-for="m in modes"
+              :key="m"
+              type="button"
+              role="tab"
+              class="modecard"
+              :class="{ 'modecard--active': mode === m }"
+              :aria-selected="mode === m"
+              @click="selectMode(m)"
+            >
+              <span class="modecard__icon" aria-hidden="true">{{ MODE_ICONS[m] }}</span>
+              <span class="modecard__name">{{ $t('mode.' + m) }}</span>
+            </button>
+          </div>
+          <p class="console__desc">{{ $t('mode.' + mode + 'Desc') }}</p>
+        </div>
+
         <NuxtLink to="/play" class="cta" @click="startGame">
           <span class="cta__icon" aria-hidden="true">▶</span>
           <span class="cta__label">{{ $t('menu.play') }}</span>
         </NuxtLink>
 
-        <span v-if="store.highScore" class="menu__best">
-          🏆 {{ $t('menu.best', { score: formatCompact(store.highScore) }) }}
-        </span>
-      </div>
-
-      <NuxtLink to="/codex" class="menu__loadout">
-        <span class="menu__loadout-icon" aria-hidden="true">🛡️</span>
-        {{ $t('menu.playAs', { hero: heroChoice || $t('menu.autoHero') }) }}
-      </NuxtLink>
+        <div class="console__stats">
+          <NuxtLink to="/codex" class="stat stat--hero">
+            <span class="stat__icon" aria-hidden="true">🛡️</span>
+            <span class="stat__body">
+              <b class="stat__label">{{ $t('menu.heroLabel') }}</b>
+              <span class="stat__value">{{ heroChoice || $t('menu.autoHero') }}</span>
+            </span>
+          </NuxtLink>
+          <div class="stat">
+            <span class="stat__icon" aria-hidden="true">🏆</span>
+            <span class="stat__body">
+              <b class="stat__label">{{ $t('menu.bestLabel') }}</b>
+              <span class="stat__value">{{ formatCompact(store.highScore) }}</span>
+            </span>
+          </div>
+          <button type="button" class="stat stat--action" @click="openShop">
+            <span class="stat__icon" aria-hidden="true">💰</span>
+            <span class="stat__body">
+              <b class="stat__label">{{ $t('menu.coinsLabel') }}</b>
+              <span class="stat__value">{{ formatCompact(coins) }}</span>
+            </span>
+          </button>
+        </div>
+      </section>
     </div>
 
     <p class="menu__hint">{{ $t('menu.controls') }}</p>
