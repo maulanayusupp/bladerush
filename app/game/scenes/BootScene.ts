@@ -1865,73 +1865,63 @@ export class BootScene extends Phaser.Scene {
         for (const x of [24, 30, 36, 42]) g.fillPoints(this.pts([x - 3, 8, x + 2, -2, x, 4, x + 4, -4]), true)
         break
       }
-      case 17: { // Plague Lord — hooded robe, gas-mask face, toxic drip, orb
-        this.bakedGlow(g, 32, 34, 0x6ad02a, 42)
-        g.fillStyle(0x1e2a12, 1) // heavy hooded robe
-        g.fillPoints(this.pts([18, 18, 46, 18, 54, 62, 10, 62]), true)
-        g.fillStyle(0x2c3a1a, 1)
-        g.fillPoints(this.pts([22, 20, 42, 20, 48, 58, 16, 58]), true)
-        g.fillStyle(0x3a2a12, 1) // gas-mask face plate
-        g.fillEllipse(32, 15, 22, 20)
-        g.fillStyle(0x6aff2a, 1) // round green lenses
-        g.fillCircle(27, 13, 3.4)
-        g.fillCircle(37, 13, 3.4)
-        g.fillStyle(0x2a1e0e, 1) // filter snout
-        g.fillRoundedRect(28, 18, 8, 8, 3)
-        g.fillStyle(0x9bff5a, 1) // toxic drips
-        for (const p of [[20, 60], [32, 62], [44, 60]]) g.fillCircle(p[0] as number, p[1] as number, 2)
-        g.fillStyle(0x8fff3a, 0.9) // bubbling toxin orb in hand
-        g.fillCircle(52, 44, 6)
-        g.fillStyle(0xdfff9a, 1)
-        g.fillCircle(50, 42, 2)
-        g.fillStyle(0x2c3a1a, 1) // hood peak
-        g.fillPoints(this.pts([22, 18, 42, 18, 34, 0, 30, 0]), true)
+      case 17: { // Plague Lord — toxic plague-god: beaked helm, miasma cape, vials
+        this.bakedGlow(g, 32, 34, 0x6ad02a, 44)
+        g.fillStyle(0x18320f, 1) // ragged miasma cape behind (jagged hem)
+        g.fillPoints(this.pts([12, 24, 52, 24, 58, 62, 48, 54, 40, 62, 32, 54, 24, 62, 16, 54, 6, 62]), true)
+        this.divineCore(g, 0x33632c, 0x4f8f3a, 0x9bff3a, 0x9bff3a) // sickly-green plate
+        g.fillStyle(0x1c2e12, 1) // toxin seams
+        g.fillRect(31, 30, 2, 20)
+        g.fillRect(24, 40, 16, 1.4)
+        g.fillStyle(0x2a3a18, 1) // plague-doctor beak mask over the visor
+        g.fillEllipse(32, 16, 22, 20)
+        g.fillStyle(0x9bff3a, 1) // glowing round lenses
+        g.fillCircle(27, 15, 3.2)
+        g.fillCircle(37, 15, 3.2)
+        g.fillStyle(0x24160a, 1) // downward beak
+        g.fillPoints(this.pts([29, 19, 35, 19, 32, 31]), true)
+        g.fillStyle(0x9bff3a, 1) // vial / spike crown
+        for (const x of [24, 30, 36, 42]) g.fillTriangle(x - 2.5, 6, x, -5, x + 2.5, 6)
+        g.fillStyle(0x8fff3a, 0.92) // toxin orbs hovering at the shoulders
+        g.fillCircle(8, 30, 4)
+        g.fillCircle(56, 30, 4)
         break
       }
-      case 18: { // Abyssal Tyrant — dark mass, many eyes, tentacles, jagged maw
-        this.bakedGlow(g, 32, 36, 0x7a1aff, 44)
-        this.bakedGlow(g, 32, 36, 0xff2060, 26)
-        g.fillStyle(0x0a0614, 1) // writhing tentacles at the base
-        for (const tx of [10, 20, 32, 44, 54]) g.fillPoints(this.pts([tx - 4, 44, tx + 4, 44, tx + (tx < 32 ? 6 : -6), 64]), true)
-        g.fillStyle(0x140a24, 1) // amorphous body
-        g.fillEllipse(32, 34, 42, 40)
-        g.fillStyle(0x241436, 1)
-        g.fillEllipse(32, 32, 32, 30)
-        g.fillStyle(0xff2060, 1) // jagged maw
-        for (let mx = 22; mx < 42; mx += 4) g.fillTriangle(mx, 40, mx + 2, 46, mx + 4, 40)
-        g.fillStyle(0xd8ff3a, 1) // many glowing eyes, scattered
-        for (const p of [[24, 24], [40, 26], [32, 20], [20, 34], [46, 36], [30, 32], [38, 34]]) {
-          g.fillCircle(p[0] as number, p[1] as number, 2.4)
-          g.fillStyle(0x0a0614, 1)
-          g.fillCircle(p[0] as number, p[1] as number, 0.9)
-          g.fillStyle(0xd8ff3a, 1)
+      case 18: { // Abyssal Tyrant — void-god: tentacle cape, many-eyed plate, void crown
+        this.bakedGlow(g, 32, 34, 0x7a1aff, 44)
+        this.bakedGlow(g, 32, 34, 0xff2060, 24)
+        g.fillStyle(0x160a2a, 1) // tentacle-fringed cape behind
+        g.fillPoints(this.pts([12, 24, 52, 24, 58, 62, 50, 52, 44, 62, 38, 52, 32, 62, 26, 52, 20, 62, 14, 52, 6, 62]), true)
+        this.divineCore(g, 0x271642, 0x4a2a7a, 0xb06bff, 0xd8ff3a) // deep-void plate
+        g.fillStyle(0xd8ff3a, 1) // a cluster of small glowing eyes across the chest
+        for (const p of [[26, 36], [38, 36], [32, 41], [23, 44], [41, 44], [32, 33]]) {
+          g.fillCircle(p[0] as number, p[1] as number, 1.5)
         }
-        g.fillStyle(0x7a1aff, 1) // chaotic horn spikes
-        for (const x of [18, 26, 32, 38, 46]) g.fillTriangle(x - 3, 10, x, -6, x + 3, 10)
+        g.fillStyle(0x9d3cff, 1) // chaotic void crown
+        for (const x of [20, 26, 32, 38, 44]) g.fillTriangle(x - 3, 8, x, -7, x + 3, 8)
+        g.fillStyle(0xff2060, 1)
+        g.fillCircle(32, -5, 2)
         break
       }
-      default: { // Prism Archon — crystalline geometric body, refracting facets
-        this.bakedGlow(g, 32, 32, 0x8affff, 42)
-        this.bakedGlow(g, 32, 32, 0xff5aff, 28)
-        g.fillStyle(0x1a2440, 1) // dark facet backing
-        g.fillPoints(this.pts([32, 22, 52, 40, 32, 60, 12, 40]), true) // big diamond torso
-        g.fillStyle(0x4a6ad0, 0.9)
-        g.fillPoints(this.pts([32, 26, 46, 40, 32, 54, 18, 40]), true)
-        // refracted facet gems (rainbow)
-        const facets = [0xff4d6a, 0xffb020, 0xffe14d, 0x6bff9a, 0x5ad0ff, 0xb06bff]
+      default: { // Prism Archon — crystal-god: shard wings, faceted plate, prism crown
+        this.bakedGlow(g, 32, 32, 0x8affff, 44)
+        this.bakedGlow(g, 32, 32, 0xff5aff, 24)
+        g.fillStyle(0x8fd8ff, 0.92) // angular crystal shard wings behind
+        g.fillPoints(this.pts([16, 24, 2, 6, 9, 22, 0, 36, 13, 30]), true)
+        g.fillPoints(this.pts([48, 24, 62, 6, 55, 22, 64, 36, 51, 30]), true)
+        g.fillStyle(0xdff4ff, 0.8)
+        g.fillPoints(this.pts([16, 26, 8, 14, 13, 28]), true)
+        g.fillPoints(this.pts([48, 26, 56, 14, 51, 28]), true)
+        this.divineCore(g, 0x25436e, 0x4f82c4, 0x8affff, 0xffffff) // crystalline plate
+        const facets = [0xff4d6a, 0xffe14d, 0x6bff9a, 0x5ad0ff] // prismatic facet gems
         facets.forEach((c, fi) => {
-          const ang = (fi / facets.length) * Math.PI * 2
           g.fillStyle(c, 1)
-          g.fillCircle(32 + Math.cos(ang) * 10, 40 + Math.sin(ang) * 10, 2)
+          g.fillCircle(26 + fi * 4, 40, 1.6)
         })
-        g.fillStyle(0xdff4ff, 1) // crystal head (octahedron)
-        g.fillPoints(this.pts([32, 2, 42, 14, 32, 26, 22, 14]), true)
-        g.fillStyle(0x8affff, 1)
-        g.fillPoints(this.pts([32, 6, 38, 14, 32, 22, 26, 14]), true)
-        g.fillStyle(0xff5aff, 1) // core gem
-        g.fillCircle(32, 14, 2.4)
-        g.fillStyle(0x8affff, 1) // shard crown
-        for (const x of [24, 32, 40]) g.fillTriangle(x - 2.6, 4, x, -6, x + 2.6, 4)
+        g.fillStyle(0xdff4ff, 1) // prism crown
+        for (const x of [25, 32, 39]) g.fillTriangle(x - 3, 6, x, -6, x + 3, 6)
+        g.fillStyle(0x8affff, 1) // floating crystal above the head
+        g.fillPoints(this.pts([32, -8, 37, -2, 32, 3, 27, -2]), true)
       }
     }
   }
