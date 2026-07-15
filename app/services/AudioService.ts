@@ -5,16 +5,44 @@
 // =============================================================================
 type OscType = OscillatorType
 
+const STORAGE_KEY = 'blade-rush:audio'
+
 class AudioService {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
   private musicBus: GainNode | null = null
+  private sfxBus: GainNode | null = null
   private _muted = false
   private _musicOn = true
   private musicVol = 0.3
+  private sfxVol = 0.9
   private musicTimer: number | null = null
   private nextNoteAt = 0
   private step = 0
+
+  constructor() {
+    // Restore persisted audio preferences (safe if localStorage is unavailable).
+    if (typeof localStorage === 'undefined') return
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+      const s = JSON.parse(raw) as Partial<{ muted: boolean; musicOn: boolean; musicVol: number; sfxVol: number }>
+      if (typeof s.muted === 'boolean') this._muted = s.muted
+      if (typeof s.musicOn === 'boolean') this._musicOn = s.musicOn
+      if (typeof s.musicVol === 'number') this.musicVol = s.musicVol
+      if (typeof s.sfxVol === 'number') this.sfxVol = s.sfxVol
+    } catch {
+      /* ignore malformed prefs */
+    }
+  }
+
+  private persist(): void {
+    if (typeof localStorage === 'undefined') return
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ muted: this._muted, musicOn: this._musicOn, musicVol: this.musicVol, sfxVol: this.sfxVol }),
+    )
+  }
 
   get muted(): boolean {
     return this._muted
@@ -26,6 +54,10 @@ class AudioService {
 
   get musicVolume(): number {
     return this.musicVol
+  }
+
+  get sfxVolume(): number {
+    return this.sfxVol
   }
 
   /** Create/resume the context. Call from a user gesture (click/tap). */
@@ -44,6 +76,10 @@ class AudioService {
       this.musicBus = this.ctx.createGain()
       this.musicBus.gain.value = this._musicOn ? this.musicVol : 0
       this.musicBus.connect(this.master)
+      // SFX route through their own bus so they get an independent volume.
+      this.sfxBus = this.ctx.createGain()
+      this.sfxBus.gain.value = this.sfxVol
+      this.sfxBus.connect(this.master)
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume()
     this.startMusic()
@@ -52,6 +88,7 @@ class AudioService {
   setMuted(muted: boolean): void {
     this._muted = muted
     if (this.master) this.master.gain.value = muted ? 0 : 0.5
+    this.persist()
   }
 
   toggleMuted(): boolean {
@@ -62,11 +99,19 @@ class AudioService {
   setMusicOn(on: boolean): void {
     this._musicOn = on
     if (this.musicBus) this.musicBus.gain.value = on ? this.musicVol : 0
+    this.persist()
   }
 
   setMusicVolume(v: number): void {
     this.musicVol = Math.max(0, Math.min(1, v))
     if (this.musicBus && this._musicOn) this.musicBus.gain.value = this.musicVol
+    this.persist()
+  }
+
+  setSfxVolume(v: number): void {
+    this.sfxVol = Math.max(0, Math.min(1, v))
+    if (this.sfxBus) this.sfxBus.gain.value = this.sfxVol
+    this.persist()
   }
 
   // ---- Background music: a looping 16-step ambient battle groove -----------
@@ -150,7 +195,7 @@ class AudioService {
     gain.gain.exponentialRampToValueAtTime(peak, when + 0.005)
     gain.gain.exponentialRampToValueAtTime(0.0001, when + dur)
     osc.connect(gain)
-    gain.connect(this.master)
+    gain.connect(this.sfxBus ?? this.master)
     osc.start(when)
     osc.stop(when + dur + 0.02)
   }
@@ -173,7 +218,7 @@ class AudioService {
     gain.gain.exponentialRampToValueAtTime(0.0001, when + dur)
     src.connect(bp)
     bp.connect(gain)
-    gain.connect(this.master)
+    gain.connect(this.sfxBus ?? this.master)
     src.start(when)
     src.stop(when + dur + 0.02)
   }

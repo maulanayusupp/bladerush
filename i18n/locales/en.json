@@ -196,6 +196,8 @@
     "sound": "Sound",
     "music": "Music",
     "musicVolume": "Music volume",
+    "sfxVolume": "SFX volume",
+    "shake": "Screen shake",
     "on": "On",
     "off": "Off"
   },

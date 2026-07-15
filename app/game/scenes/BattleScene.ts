@@ -31,6 +31,7 @@ import { audioService } from '~/services/AudioService'
 import { codexService } from '~/services/CodexService'
 import { achievementService } from '~/services/AchievementService'
 import { loadoutService } from '~/services/LoadoutService'
+import { settingsService } from '~/services/SettingsService'
 import type { RunStats } from '~/types/game'
 import { angleBetween, clamp, distance, pickOne, randomInt, randomRange } from '~/helpers/math.helper'
 import { formatCompact } from '~/helpers/format.helper'
@@ -1067,7 +1068,7 @@ export class BattleScene extends Phaser.Scene {
     })
     this.hitStopUntil = this.frameTime + 60
     this.cameras.main.flash(260, 255, 230, 150)
-    this.cameras.main.shake(220, 0.006)
+    this.shake(220, 0.006)
     audioService.skill()
     audioService.win()
   }
@@ -1208,7 +1209,7 @@ export class BattleScene extends Phaser.Scene {
     this.bossWeapons.forEach((wpn) => wpn.setTexture(weaponKey).setScale(1.7).setVisible(true))
     this.bossLabel.setVisible(true)
     this.bossAura.setVisible(true)
-    this.cameras.main.shake(240, 0.008)
+    this.shake(240, 0.008)
     audioService.nova()
     gameEventBus.emit('boss:spawn', { maxHp: hp })
   }
@@ -1270,7 +1271,7 @@ export class BattleScene extends Phaser.Scene {
           duration: 220,
           onComplete: () => ring.destroy(),
         })
-        this.cameras.main.shake(50, enraged ? 0.004 : 0.002)
+        this.shake(50, enraged ? 0.004 : 0.002)
         audioService.clash()
       }
     }
@@ -1440,7 +1441,7 @@ export class BattleScene extends Phaser.Scene {
       duration: 320,
       onComplete: () => ring.destroy(),
     })
-    this.cameras.main.shake(180, 0.01)
+    this.shake(180, 0.01)
     audioService.nova()
     if (distance(this.player.x, this.player.y, tx, ty) < radius + this.player.width / 2) {
       this.hitPlayer(BOSS_ATTACK.meteorDamage)
@@ -1448,6 +1449,12 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /** Apply damage to the hero (respecting i-frames) with feedback. */
+  /** Camera shake, gated by the player's "screen shake" accessibility setting. */
+  private shake(duration: number, intensity: number): void {
+    if (!settingsService.screenShake) return
+    this.cameras.main.shake(duration, intensity)
+  }
+
   private hitPlayer(amount: number): void {
     if (this.isOver) return
     if (this.elapsedMs < this.playerInvulnUntil) return
@@ -1488,7 +1495,7 @@ export class BattleScene extends Phaser.Scene {
     this.playClashFx(x, y, 0xffd700)
     this.sparks.explode(30, x, y)
     this.cameras.main.flash(260, 255, 220, 120)
-    this.cameras.main.shake(300, 0.012)
+    this.shake(300, 0.012)
     audioService.win()
     gameEventBus.emit('boss:end', undefined)
     this.hitStopUntil = this.frameTime + HITSTOP_MS
@@ -1503,7 +1510,7 @@ export class BattleScene extends Phaser.Scene {
     this.rushWave = 0
     this.rushGapUntil = 0
     this.cameras.main.flash(400, 120, 0, 0)
-    this.cameras.main.shake(360, 0.01)
+    this.shake(360, 0.01)
     audioService.nova()
     gameEventBus.emit('rush:start', undefined)
   }
@@ -1594,7 +1601,7 @@ export class BattleScene extends Phaser.Scene {
     this.emitScore()
     this.playClashFx(x, y, 0xffaa88)
     this.sparks.explode(22, x, y)
-    this.cameras.main.shake(180, 0.008)
+    this.shake(180, 0.008)
     audioService.win()
     this.maybeDropChest(x, y)
   }
@@ -2040,7 +2047,7 @@ export class BattleScene extends Phaser.Scene {
 
     this.sparks.explode(8, cx, cy)
     audioService.clash()
-    this.cameras.main.shake(60, 0.004)
+    this.shake(60, 0.004)
     const ring = this.add
       .image(cx, cy, 'shock')
       .setBlendMode(Phaser.BlendModes.ADD)
@@ -2075,7 +2082,7 @@ export class BattleScene extends Phaser.Scene {
     this.power.reset()
     this.emitPower()
     this.playClashFx(x, y, 0xff6b6b)
-    this.cameras.main.shake(260, 0.012)
+    this.shake(260, 0.012)
     this.cameras.main.flash(240, 255, 60, 60)
     audioService.lose()
     const dead = this.player.takeDamage(RIVAL.loseDamage)
@@ -2281,7 +2288,7 @@ export class BattleScene extends Phaser.Scene {
       duration: 300,
       onComplete: () => ring.destroy(),
     })
-    this.cameras.main.shake(120, 0.006)
+    this.shake(120, 0.006)
     audioService.nova()
     for (const obj of this.enemies.getChildren()) {
       const other = obj as Enemy
@@ -2536,7 +2543,7 @@ export class BattleScene extends Phaser.Scene {
       .setScale(0.3)
       .setDepth(6)
     this.tweens.add({ targets: ring, scale: (radius * 2) / 64, alpha: { from: 0.95, to: 0 }, duration: 500, ease: 'Cubic.Out', onComplete: () => ring.destroy() })
-    this.cameras.main.shake(240, 0.011)
+    this.shake(240, 0.011)
     audioService.nova()
     for (const obj of this.enemies.getChildren()) {
       const e = obj as Enemy
@@ -2615,7 +2622,7 @@ export class BattleScene extends Phaser.Scene {
             }
           })
         }
-        this.cameras.main.shake(300, 0.01)
+        this.shake(300, 0.01)
         audioService.nova()
         break
       }
@@ -2656,7 +2663,7 @@ export class BattleScene extends Phaser.Scene {
             }
           })
         }
-        this.cameras.main.shake(260, 0.008)
+        this.shake(260, 0.008)
         audioService.nova()
         break
       }
@@ -2682,7 +2689,7 @@ export class BattleScene extends Phaser.Scene {
         this.hitStopUntil = this.frameTime + 140
         this.divineDamageAll(45, 0x9d5cff, 900, '#c9a0ff')
         this.divineDamageAll(45, 0x00ffd0, 700, '#8affff')
-        this.cameras.main.shake(400, 0.02)
+        this.shake(400, 0.02)
         break
       case 10: { // Verdant Titan — Wild Overgrowth: root everything + big heal
         for (const obj of this.enemies.getChildren()) {
@@ -2755,7 +2762,7 @@ export class BattleScene extends Phaser.Scene {
           e.chillUntil = this.elapsedMs + 2000
           e.chillMul = 0.3
         }
-        this.cameras.main.shake(500, 0.02)
+        this.shake(500, 0.02)
         audioService.nova()
         break
       }
@@ -2782,7 +2789,7 @@ export class BattleScene extends Phaser.Scene {
             }
           })
         }
-        this.cameras.main.shake(300, 0.006)
+        this.shake(300, 0.006)
         audioService.nova()
         break
       }
@@ -2817,7 +2824,7 @@ export class BattleScene extends Phaser.Scene {
             }
           })
         }
-        this.cameras.main.shake(360, 0.014)
+        this.shake(360, 0.014)
         audioService.nova()
         break
       }
@@ -2828,7 +2835,7 @@ export class BattleScene extends Phaser.Scene {
             if (!this.isOver) this.divineDamageAll(20, ring, 760, num)
           })
         })
-        this.cameras.main.shake(320, 0.014)
+        this.shake(320, 0.014)
       }
     }
   }

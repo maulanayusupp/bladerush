@@ -5,6 +5,7 @@ import BaseButton from '~/components/ui/BaseButton.vue'
 import LevelUpOverlay from '~/components/game/LevelUpOverlay.vue'
 import { gameEventBus } from '~/services/EventBus'
 import { audioService } from '~/services/AudioService'
+import { settingsService } from '~/services/SettingsService'
 import { formatCompact } from '~/helpers/format.helper'
 import { useGameStore } from '~/stores/useGameStore'
 import { ACHIEVEMENTS, DIVINE_SKILLS, HERO, HERO_RARITIES, heroName, heroRarity } from '~/game/constants'
@@ -80,6 +81,8 @@ function toggleMute(): void {
 const paused = ref(false)
 const musicOn = ref(audioService.musicOn)
 const musicVolume = ref(Math.round(audioService.musicVolume * 100))
+const sfxVolume = ref(Math.round(audioService.sfxVolume * 100))
+const screenShake = ref(settingsService.screenShake)
 
 function openPause(): void {
   if (isOver.value) return
@@ -98,6 +101,16 @@ function onMusicVolume(e: Event): void {
   const v = Number((e.target as HTMLInputElement).value)
   musicVolume.value = v
   audioService.setMusicVolume(v / 100)
+}
+function onSfxVolume(e: Event): void {
+  const v = Number((e.target as HTMLInputElement).value)
+  sfxVolume.value = v
+  audioService.setSfxVolume(v / 100)
+  audioService.hit() // preview tick so the player hears the new level
+}
+function toggleShake(): void {
+  screenShake.value = !screenShake.value
+  settingsService.setScreenShake(screenShake.value)
 }
 
 const hpRatio = computed(() => (maxHp.value > 0 ? hp.value / maxHp.value : 0))
@@ -374,6 +387,14 @@ function restart(): void {
             <span>{{ $t('pause.musicVolume') }}</span>
             <input type="range" min="0" max="100" :value="musicVolume" @input="onMusicVolume">
           </label>
+          <label class="hud__setting hud__setting--range">
+            <span>{{ $t('pause.sfxVolume') }}</span>
+            <input type="range" min="0" max="100" :value="sfxVolume" @input="onSfxVolume">
+          </label>
+          <button class="hud__setting" type="button" @click="toggleShake">
+            <span>{{ $t('pause.shake') }}</span>
+            <b>{{ screenShake ? $t('pause.on') : $t('pause.off') }}</b>
+          </button>
         </div>
         <BaseButton variant="primary" block @click="resume">{{ $t('pause.resume') }}</BaseButton>
         <NuxtLink to="/" class="btn btn--block">{{ $t('gameOver.menu') }}</NuxtLink>
