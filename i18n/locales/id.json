@@ -32,6 +32,13 @@
   "levelup": {
     "title": "Naik Level! Pilih upgrade"
   },
+  "rush": {
+    "start": "BOSS RUSH!",
+    "wave": "Gelombang {wave} — bos datang!",
+    "cleared": "Gelombang {wave} bersih!",
+    "waveShort": "Gelombang {wave}",
+    "lead": "Bos Utama"
+  },
   "summary": {
     "kills": "Bunuh",
     "bosses": "Bos",

@@ -32,6 +32,13 @@
   "levelup": {
     "title": "Level Up! Choose an upgrade"
   },
+  "rush": {
+    "start": "BOSS RUSH!",
+    "wave": "Wave {wave} — bosses incoming!",
+    "cleared": "Wave {wave} cleared!",
+    "waveShort": "Wave {wave}",
+    "lead": "Lead Boss"
+  },
   "summary": {
     "kills": "Kills",
     "bosses": "Bosses",

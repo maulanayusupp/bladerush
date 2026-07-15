@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseButton from '~/components/ui/BaseButton.vue'
 import LevelUpOverlay from '~/components/game/LevelUpOverlay.vue'
 import { gameEventBus } from '~/services/EventBus'
@@ -10,6 +11,7 @@ import { ACHIEVEMENTS, DIVINE_SKILLS, HERO, HERO_RARITIES, heroName, heroRarity 
 import type { RunStats } from '~/types/game'
 
 const store = useGameStore()
+const { t } = useI18n()
 
 /** Icon for an unlocked achievement id (fallback trophy). */
 function achIcon(id: string): string {
@@ -48,6 +50,17 @@ const heroColor = computed(() => {
 })
 const runStats = ref<RunStats | null>(null)
 const unlockedAch = ref<string[]>([])
+
+// ---- Boss Rush (endgame) ----
+const bossRush = ref(false)
+const rushWave = ref(0)
+const rushBanner = ref('')
+let rushBannerTimer: ReturnType<typeof setTimeout> | null = null
+function flashRushBanner(text: string): void {
+  rushBanner.value = text
+  if (rushBannerTimer) clearTimeout(rushBannerTimer)
+  rushBannerTimer = setTimeout(() => (rushBanner.value = ''), 2600)
+}
 const comboMult = ref(1)
 const level = ref(1)
 const xp = ref(0)
@@ -168,6 +181,24 @@ onMounted(() => {
     gameEventBus.on('skill:reset', () => {
       for (const key of Object.keys(cooldowns)) delete cooldowns[key]
     }),
+    gameEventBus.on('rush:start', () => {
+      bossRush.value = true
+      rushWave.value = 0
+      flashRushBanner(t('rush.start'))
+    }),
+    gameEventBus.on('rush:wave', ({ wave, cleared }) => {
+      if (cleared) {
+        flashRushBanner(t('rush.cleared', { wave }))
+      } else {
+        rushWave.value = wave
+        flashRushBanner(t('rush.wave', { wave }))
+      }
+    }),
+    gameEventBus.on('game:restart', () => {
+      bossRush.value = false
+      rushWave.value = 0
+      rushBanner.value = ''
+    }),
   )
   cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
 })
@@ -175,6 +206,7 @@ onMounted(() => {
 onUnmounted(() => {
   unsubscribers.forEach((off) => off())
   if (cooldownTimer) clearInterval(cooldownTimer)
+  if (rushBannerTimer) clearTimeout(rushBannerTimer)
 })
 
 function restart(): void {
@@ -234,9 +266,15 @@ function restart(): void {
       <div class="hud__xp-fill" :style="{ '--xp-ratio': xpRatio }" />
     </div>
 
+    <Transition name="hud-rush">
+      <div v-if="rushBanner" class="hud__rush-banner">{{ rushBanner }}</div>
+    </Transition>
+
+    <div v-if="bossRush" class="hud__rush-wave">☠ {{ $t('rush.waveShort', { wave: rushWave }) }}</div>
+
     <div v-if="bossActive" class="hud__boss">
       <div class="hud__boss-top">
-        <span class="hud__boss-label">{{ $t('hud.boss') }}</span>
+        <span class="hud__boss-label">{{ bossRush ? $t('rush.lead') : $t('hud.boss') }}</span>
         <span class="hud__boss-hp">{{ formatCompact(bossHp) }} / {{ formatCompact(bossMax) }}</span>
       </div>
       <div class="hud__boss-bar">

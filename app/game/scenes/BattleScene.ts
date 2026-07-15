@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -119,6 +119,12 @@ export class BattleScene extends Phaser.Scene {
   private bossFanAcc = 0
   private bossMeteorAcc = 0
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
+  // ---- Boss Rush (endgame) ----
+  private bossRush = false
+  private escorts: Boss[] = []
+  private escortLabels: Phaser.GameObjects.Text[] = []
+  private rushWave = 0
+  private rushGapUntil = 0
   private npcs: NpcHero[] = []
   private obstacles!: Phaser.Physics.Arcade.StaticGroup
   // Live ranking + run stats.
@@ -189,6 +195,9 @@ export class BattleScene extends Phaser.Scene {
     this.nextBossMs = BOSS.firstMs
     this.bossActive = false
     this.bossCount = 0
+    this.bossRush = false
+    this.rushWave = 0
+    this.rushGapUntil = 0
     this.rankAcc = 0
     this.curRank = 1
     this.curTotal = 1
@@ -433,6 +442,21 @@ export class BattleScene extends Phaser.Scene {
     this.physics.add.overlap(this.swordPool, this.boss, this.onSwordHitBoss)
     this.physics.add.overlap(this.player, this.boss, this.onBossHitPlayer)
 
+    // Boss Rush escort pool: extra bosses that swarm alongside the lead boss.
+    this.escorts = Array.from({ length: BOSS_RUSH.maxWaveSize - 1 }, () => new Boss(this, 0, 0))
+    this.escortLabels = this.escorts.map(() =>
+      this.add
+        .text(0, 0, '', { fontFamily: 'Segoe UI, sans-serif', fontSize: '16px', fontStyle: 'bold', color: '#ffdede' })
+        .setOrigin(0.5)
+        .setDepth(20)
+        .setStroke('#3a0808', 4)
+        .setVisible(false),
+    )
+    for (const escort of this.escorts) {
+      this.physics.add.overlap(this.swordPool, escort, this.onSwordHitEscort)
+      this.physics.add.overlap(this.player, escort, this.onEscortHitPlayer)
+    }
+
     this.joystick = this.add.graphics().setScrollFactor(0).setDepth(22)
     this.input.on('pointerdown', this.onPointerDown)
     this.input.on('pointermove', this.onPointerMove)
@@ -499,10 +523,21 @@ export class BattleScene extends Phaser.Scene {
     this.bg.tilePositionX = cam.scrollX
     this.bg.tilePositionY = cam.scrollY
 
-    this.enemyAcc += deltaMs
-    if (this.enemyAcc >= this.spawner.enemyInterval(elapsedSec)) {
-      this.enemyAcc = 0
-      this.spawnEnemy(elapsedSec)
+    // During Boss Rush the normal horde & rivals stop — only bosses come. Gates
+    // and hearts keep flowing so you can still power up mid-fight.
+    if (!this.bossRush) {
+      this.enemyAcc += deltaMs
+      if (this.enemyAcc >= this.spawner.enemyInterval(elapsedSec)) {
+        this.enemyAcc = 0
+        this.spawnEnemy(elapsedSec)
+      }
+
+      this.rivalAcc += deltaMs
+      if (this.rivalAcc >= this.nextRivalMs) {
+        this.rivalAcc = 0
+        this.scheduleNextRival()
+        this.spawnRival(elapsedSec)
+      }
     }
 
     this.gateAcc += deltaMs
@@ -511,20 +546,15 @@ export class BattleScene extends Phaser.Scene {
       this.spawnGate()
     }
 
-    this.rivalAcc += deltaMs
-    if (this.rivalAcc >= this.nextRivalMs) {
-      this.rivalAcc = 0
-      this.scheduleNextRival()
-      this.spawnRival(elapsedSec)
-    }
-
     this.healAcc += deltaMs
     if (this.healAcc >= HEAL.intervalMs) {
       this.healAcc = 0
       this.spawnHeal()
     }
 
-    if (this.bossActive) {
+    if (this.bossRush) {
+      this.updateBossRush(deltaMs, elapsedSec)
+    } else if (this.bossActive) {
       this.updateBoss(deltaMs, elapsedSec)
     } else {
       this.bossAcc += deltaMs
@@ -1150,7 +1180,9 @@ export class BattleScene extends Phaser.Scene {
     // (and gets tankier over the run). Prevents one-shots at high power.
     const dps = this.bossTickDamage() * (1000 / BOSS.hitTickMs)
     const seconds = BOSS.targetSeconds + (elapsedSec / 60) * BOSS.secondsPerMin
-    const hp = Math.max(BOSS.minHp, Math.round(dps * seconds))
+    const baseHp = Math.max(BOSS.minHp, Math.round(dps * seconds))
+    // In Boss Rush the lead boss gets tankier every wave.
+    const hp = this.bossRush ? Math.round(baseHp * (1 + Math.max(0, this.rushWave - 1) * BOSS_RUSH.hpWaveGrow)) : baseHp
     const { x, y } = this.randomEdgePoint()
     // Pick a DISTINCT boss skin each appearance (shape + color), biased upward
     // over time so later bosses skew nastier — without saturating to one skin at
@@ -1463,6 +1495,127 @@ export class BattleScene extends Phaser.Scene {
     this.spawnChest(x, y, 2) // bosses always drop an epic chest
   }
 
+  // ---- Boss Rush (endgame wave mode) --------------------------------------
+
+  /** Switch the run into Boss Rush: horde stops, bosses come in waves. */
+  private enterBossRush(): void {
+    this.bossRush = true
+    this.rushWave = 0
+    this.rushGapUntil = 0
+    this.cameras.main.flash(400, 120, 0, 0)
+    this.cameras.main.shake(360, 0.01)
+    audioService.nova()
+    gameEventBus.emit('rush:start', undefined)
+  }
+
+  private escortAliveCount(): number {
+    let n = 0
+    for (const e of this.escorts) if (e.active) n++
+    return n
+  }
+
+  /** Drive the lead boss + escorts, and spawn the next wave once one is cleared. */
+  private updateBossRush(deltaMs: number, elapsedSec: number): void {
+    if (this.bossActive) this.updateBoss(deltaMs, elapsedSec)
+    this.updateEscorts()
+
+    const alive = (this.bossActive ? 1 : 0) + this.escortAliveCount()
+    if (alive > 0) return
+
+    // Wave cleared → breather, then a bigger wave.
+    if (this.rushGapUntil === 0) {
+      this.rushGapUntil = this.elapsedMs + (this.rushWave === 0 ? BOSS_RUSH.firstWaveDelayMs : BOSS_RUSH.waveGapMs)
+      if (this.rushWave > 0) gameEventBus.emit('rush:wave', { wave: this.rushWave, size: 0, cleared: true })
+    }
+    if (this.elapsedMs >= this.rushGapUntil) {
+      this.rushGapUntil = 0
+      this.spawnRushWave(elapsedSec)
+    }
+  }
+
+  private spawnRushWave(elapsedSec: number): void {
+    this.rushWave++
+    const size = Math.min(
+      BOSS_RUSH.maxWaveSize,
+      BOSS_RUSH.baseWaveSize + Math.floor((this.rushWave - 1) / BOSS_RUSH.growEvery) * BOSS_RUSH.waveSizeGrow,
+    )
+    // Lead boss keeps the full attack kit (uses the standard spawn path).
+    this.spawnBoss(elapsedSec)
+    const escortCount = Math.min(this.escorts.length, size - 1)
+    for (let i = 0; i < escortCount; i++) this.spawnEscort(i, elapsedSec)
+    gameEventBus.emit('rush:wave', { wave: this.rushWave, size, cleared: false })
+  }
+
+  private spawnEscort(i: number, elapsedSec: number): void {
+    const escort = this.escorts[i]
+    const label = this.escortLabels[i]
+    if (!escort || !label) return
+    const dps = this.bossTickDamage() * (1000 / BOSS.hitTickMs)
+    const seconds = BOSS.targetSeconds + (elapsedSec / 60) * BOSS.secondsPerMin
+    const baseHp = Math.max(BOSS.minHp, Math.round(dps * seconds))
+    const hp = Math.round(baseHp * BOSS_RUSH.escortHpMul * (1 + Math.max(0, this.rushWave - 1) * BOSS_RUSH.hpWaveGrow))
+    const { x, y } = this.randomEdgePoint()
+    const idx = clamp((this.bossCount * 7 + i * 13 + this.rushWave * 5) % BOSS.skins, 0, BOSS.skins - 1)
+    escort.spawn(x, y, hp, BOSS_RUSH.escortSpeed, BOSS_RUSH.escortScale, `boss${idx}`)
+    escort.setData('skin', idx)
+    label.setVisible(true)
+  }
+
+  private updateEscorts(): void {
+    for (let i = 0; i < this.escorts.length; i++) {
+      const e = this.escorts[i]
+      const label = this.escortLabels[i]
+      if (!e || !label) continue
+      if (!e.active) {
+        if (label.visible) label.setVisible(false)
+        continue
+      }
+      const enraged = e.hp < e.maxHp * BOSS.enrageAt
+      const angle = angleBetween(e.x, e.y, this.player.x, this.player.y)
+      const speed = e.speed * (enraged ? 1.3 : 1)
+      e.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed)
+      e.setTint(enraged ? 0xff5a3a : 0xffc0c0) // crimson tint so escorts read apart from the lead
+      label.setPosition(e.x, e.y - e.displayHeight * 0.6).setText(formatCompact(e.hp))
+    }
+  }
+
+  private escortDefeat(e: Boss): void {
+    const x = e.x
+    const y = e.y
+    e.setVelocity(0, 0)
+    e.deactivate()
+    const skin = e.getData('skin') as number | undefined
+    if (typeof skin === 'number') codexService.mark('boss', skin)
+    this.statBosses++
+    this.xp += LEVEL.xpPerBoss
+    const reward = Math.round(e.maxHp * 0.05)
+    this.registerKill(reward, x, y)
+    this.scorer.add(reward * BOSS.scoreMul)
+    this.emitScore()
+    this.playClashFx(x, y, 0xffaa88)
+    this.sparks.explode(22, x, y)
+    this.cameras.main.shake(180, 0.008)
+    audioService.win()
+    this.maybeDropChest(x, y)
+  }
+
+  private onSwordHitEscort: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (_swordObj, escortObj) => {
+    const e = escortObj as Boss
+    if (!e.active) return
+    if (this.elapsedMs - e.lastHitAt < BOSS.hitTickMs) return
+    e.lastHitAt = this.elapsedMs
+    this.sparks.explode(5, e.x, e.y)
+    const dmg = Math.min(this.bossTickDamage(), Math.ceil(e.maxHp * BOSS.maxHitFraction))
+    this.damageNumber(e.x, e.y - e.displayHeight * 0.3, dmg, '#ffd24a')
+    if (e.takeDamage(dmg)) this.escortDefeat(e)
+  }
+
+  private onEscortHitPlayer: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (_playerObj, escortObj) => {
+    const e = escortObj as Boss
+    if (!e.active) return
+    this.hitPlayer(BOSS_RUSH.escortContactDamage)
+  }
+
   // ---- Chests -------------------------------------------------------------
 
   private maybeDropChest(x: number, y: number): void {
@@ -1556,6 +1709,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.xp < next) return
     this.xp -= next
     this.level++
+    if (!this.bossRush && this.level >= BOSS_RUSH.triggerLevel) this.enterBossRush()
     this.leveling = true
     this.emitXp()
     gameEventBus.emit('levelup:offer', { ids: this.upgrades.roll(3) })

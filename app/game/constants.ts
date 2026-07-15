@@ -500,6 +500,28 @@ export const BOSS_ATTACK = {
 } as const
 
 /**
+ * Boss Rush — the endgame. Once the player reaches `triggerLevel`, the normal
+ * horde/rival spawns stop and bosses arrive in waves: one "lead" boss (full
+ * attack kit) plus several "escort" bosses (chase + contact) so the screen is
+ * genuinely crowded with bosses. Waves grow in count and toughness. The count
+ * starts above 3 on purpose — 3 is a guaranteed win once you're this strong.
+ */
+export const BOSS_RUSH = {
+  triggerLevel: 10, // enter Boss Rush at this character level
+  firstWaveDelayMs: 1600, // beat before the first wave after entering
+  waveGapMs: 3600, // breather after clearing a wave
+  baseWaveSize: 5, // bosses in wave 1 (1 lead + 4 escorts)
+  waveSizeGrow: 1, // +N bosses …
+  growEvery: 2, // … every this many cleared waves
+  maxWaveSize: 10, // hard cap on simultaneous bosses (= escort pool + 1)
+  hpWaveGrow: 0.2, // +20% boss HP per wave cleared
+  escortHpMul: 0.55, // escort HP relative to the lead boss
+  escortScale: 1.2,
+  escortSpeed: 66,
+  escortContactDamage: 12,
+} as const
+
+/**
  * XP + leveling: kills grant XP; each level offers a choice of 3 upgrades.
  * Threshold grows geometrically so level-ups get progressively rarer instead
  * of popping every few kills.
