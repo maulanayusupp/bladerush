@@ -990,6 +990,13 @@ export class BattleScene extends Phaser.Scene {
     this.playerSkin = tier
     this.player.setTexture(`hero${tier}`)
     gameEventBus.emit('hero:changed', { index: tier })
+    // Every hero change refreshes ALL skill cooldowns, so the new form's skills
+    // (including a freshly-unlocked Divine ultimate) are ready to use at once.
+    this.skillReadyAt.fury = 0
+    this.skillReadyAt.nova = 0
+    this.skillReadyAt.dash = 0
+    this.skillReadyAt.divine = 0
+    gameEventBus.emit('skill:reset', undefined)
     // Physically grow from scrawny to towering across the tiers.
     this.heroScale = HERO.minScale + (HERO.maxScale - HERO.minScale) * (tier / (HERO.skins - 1))
     this.player.setScale(this.heroScale)
