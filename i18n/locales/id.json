@@ -17,6 +17,18 @@
       "rivals": { "label": "Duel rival", "text": "Ungguli jumlah hero rival, atau habis" }
     }
   },
+  "changelog": {
+    "title": "Yang Baru",
+    "subtitle": "Semua pembaruan Blade Rush, terbaru dulu.",
+    "back": "Kembali",
+    "tags": {
+      "feature": "Baru",
+      "balance": "Balance",
+      "art": "Art",
+      "redesign": "Desain",
+      "fix": "Perbaikan"
+    }
+  },
   "mode": {
     "label": "Mode",
     "normal": "Normal",

@@ -17,6 +17,18 @@
       "rivals": { "label": "Duel rivals", "text": "Out-number rival heroes, or get wiped" }
     }
   },
+  "changelog": {
+    "title": "What's New",
+    "subtitle": "Every update to Blade Rush, newest first.",
+    "back": "Back",
+    "tags": {
+      "feature": "New",
+      "balance": "Balance",
+      "art": "Art",
+      "redesign": "Redesign",
+      "fix": "Fix"
+    }
+  },
   "mode": {
     "label": "Mode",
     "normal": "Normal",

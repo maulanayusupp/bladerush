@@ -1,0 +1,142 @@
+{
+  "entries": [
+    {
+      "date": "2026-07-16",
+      "tag": "balance",
+      "title": "Faster mid-game leveling",
+      "detail": "XP per kill now scales with the kill's value and the level curve is gentler (×1.55). Lvl 6→7 dropped from ~567 kills to ~80, so progression never flat-lines."
+    },
+    {
+      "date": "2026-07-16",
+      "tag": "feature",
+      "title": "4 new maps: Sakura, Cavern, Necropolis, Abyss",
+      "detail": "Sakura Garden, Crystal Cavern, Necropolis, and Abyssal Depths — each with a unique ground tile, props, themed obstacles, and ambient particles. The world now rolls one of 12 maps."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "feature",
+      "title": "3 new maps + themed obstacles",
+      "detail": "Sunken Marsh, Golden Savanna, and Celestial Ruins. Obstacles are now themed per map (gnarled tree, giant mushroom, cactus, ice spire, molten boulder, rune monolith)."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "art",
+      "title": "Redrawn Divine champions",
+      "detail": "Plague Lord, Abyssal Tyrant, Prism Archon, and Lunar Sovereign rebuilt on the armored god-figure base so they match the grandeur of the other Divine heroes."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "feature",
+      "title": "Skill cooldowns reset on hero change",
+      "detail": "Evolving or transforming your hero instantly refreshes every skill — including a freshly-unlocked Divine ultimate — so you can use it right away."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "redesign",
+      "title": "Revamped main menu",
+      "detail": "A command-console layout: eyebrow + title lockup, an icon-card mode picker, a prominent PLAY button, and a player stats rail (Playing as / Best / Coins)."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "feature",
+      "title": "Unlock heroes with coins",
+      "detail": "Locked heroes in the Codex show a coin price and can be unlocked directly — the practical way to play as high-tier and Divine champions."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "feature",
+      "title": "Game modes",
+      "detail": "Pick a mode on the menu: Normal, Endless (no Boss Rush), Boss Rush from the start, or Time Attack (5-minute score chase with a HUD countdown)."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "feature",
+      "title": "Audio & motion settings",
+      "detail": "Independent SFX volume slider and a Screen Shake toggle, with all audio preferences persisted between sessions."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "feature",
+      "title": "Cinematic ultimates & intense Boss Rush",
+      "detail": "Divine ultimates trigger an anime-style cut-in banner with a bespoke sound per ultimate, and Boss Rush adds a pulsing crimson vignette."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "feature",
+      "title": "20 Divine heroes",
+      "detail": "Ten more Divine champions (Verdant Titan, Tide Emperor, Solar Deity, and more), each with a totally unique look and a one-of-a-kind ultimate."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "feature",
+      "title": "How-to-Play guide",
+      "detail": "A new illustrated guide page walks through the core loop, power, leveling, hero evolution, skills, bosses, and Boss Rush as flowcharts."
+    },
+    {
+      "date": "2026-07-15",
+      "tag": "feature",
+      "title": "Boss Rush endgame",
+      "detail": "Reach Lvl 10 (in Normal) and the horde gives way to waves of bosses — one lead boss plus escorts, growing in count and toughness."
+    },
+    {
+      "date": "2026-07-14",
+      "tag": "feature",
+      "title": "Choose your hero before a run",
+      "detail": "Pick any discovered hero in the Codex to start as it; the menu shows who you'll play as, or Auto to evolve with your score."
+    },
+    {
+      "date": "2026-07-14",
+      "tag": "feature",
+      "title": "Bigger world + obstacles",
+      "detail": "The arena grew to 4800×4800 and now has solid boulders, pillars, crystals, and stumps to navigate around."
+    },
+    {
+      "date": "2026-07-14",
+      "tag": "feature",
+      "title": "Signature weapon effects",
+      "detail": "Every weapon carries a distinct on-hit effect — ignite, frostbite, venom, chain lightning, lifesteal, execute, and more."
+    },
+    {
+      "date": "2026-07-14",
+      "tag": "feature",
+      "title": "Live ranking + run summary",
+      "detail": "An .io-style live leaderboard shows your rank, and each run ends with a summary of kills, bosses, best combo, and unlocked achievements."
+    },
+    {
+      "date": "2026-07-14",
+      "tag": "feature",
+      "title": "500 monster variations",
+      "detail": "A roster of 500 procedurally-built monsters across 5 tiers — fiercer and bigger as you grow stronger."
+    },
+    {
+      "date": "2026-07-13",
+      "tag": "feature",
+      "title": "AI survivor NPCs",
+      "detail": "Ten AI heroes roam the world with their own sword rings — they fight the horde, duel each other and you, and can be absorbed for power."
+    },
+    {
+      "date": "2026-07-13",
+      "tag": "feature",
+      "title": "The Codex",
+      "detail": "A scrollable gallery of every hero, rival, monster, boss, and weapon — units are discovered by encountering or defeating them."
+    },
+    {
+      "date": "2026-07-13",
+      "tag": "feature",
+      "title": "Hero evolution & rarity",
+      "detail": "Your hero visibly transforms as your score climbs, from a humble footman up through six rarity tiers to a bespoke Divine champion."
+    },
+    {
+      "date": "2026-07-13",
+      "tag": "feature",
+      "title": "Meta shop & elemental builds",
+      "detail": "Spend coins on permanent upgrades between runs, and pick elemental status effects (burn / frost / venom) during a run."
+    },
+    {
+      "date": "2026-07-13",
+      "tag": "feature",
+      "title": "Controls, audio & pause",
+      "detail": "Added a floating touch joystick, procedural background music, and a Pause + Settings overlay."
+    }
+  ]
+}

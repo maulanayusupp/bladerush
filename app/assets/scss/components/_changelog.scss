@@ -1,0 +1,154 @@
+// =============================================================================
+// Changelog — a dated timeline of updates. Dark to match the rest of the app;
+// each entry carries a colored tag chip by change type.
+// =============================================================================
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.changelog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  color: $color-text;
+  background:
+    radial-gradient(1100px 560px at 50% -10%, rgba($color-primary, 0.14), transparent 60%),
+    #0d0c10;
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-3 $space-4;
+    background: rgba(#000, 0.5);
+    border-bottom: 1px solid rgba(#fff, 0.08);
+    backdrop-filter: blur(10px);
+  }
+
+  &__back {
+    @include flex-center;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    border-radius: $radius-md;
+    background: rgba($color-surface, 0.8);
+    border: 1px solid rgba(#fff, 0.08);
+    color: $color-text;
+    font-size: $font-size-lg;
+    text-decoration: none;
+    transition: border-color $transition-base, transform $transition-fast;
+
+    &:hover { border-color: rgba($color-warning, 0.6); transform: translateY(-1px); }
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+  }
+
+  &__subtitle {
+    margin: 2px 0 0;
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+  }
+
+  &__scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  &__inner {
+    width: min(100%, 760px);
+    margin: 0 auto;
+    padding: $space-6 $space-4 $space-8;
+  }
+
+  // --- Date group (timeline) ---
+  &__group {
+    position: relative;
+    padding-left: $space-5;
+    border-left: 2px solid rgba(#fff, 0.09);
+
+    &:last-child { border-left-color: transparent; }
+  }
+
+  &__date {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    margin: $space-4 0 $space-3;
+    font-size: 0.72rem;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba($color-text, 0.55);
+
+    &:first-child { margin-top: 0; }
+  }
+
+  &__date-dot {
+    position: absolute;
+    left: calc(-1 * #{$space-5} - 5px);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: $color-warning;
+    box-shadow: 0 0 12px rgba($color-warning, 0.6);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    margin: 0 0 $space-5;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__entry {
+    display: flex;
+    gap: $space-3;
+    padding: $space-4;
+    border-radius: $radius-md;
+    background: linear-gradient(180deg, rgba($color-surface-2, 0.5), rgba(#000, 0.32));
+    border: 1px solid rgba(#fff, 0.07);
+  }
+
+  &__tag {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    padding: 2px $space-2;
+    border-radius: $radius-pill;
+    font-size: 0.62rem;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: $color-text;
+    background: rgba(#fff, 0.1);
+
+    &--feature { background: rgba($color-primary, 0.24); color: #cbb6ff; }
+    &--balance { background: rgba($color-warning, 0.2); color: $color-warning; }
+    &--art { background: rgba(#00e0c8, 0.18); color: #6ff0e0; }
+    &--redesign { background: rgba(#4aa3ff, 0.2); color: #9bccff; }
+    &--fix { background: rgba($color-danger, 0.2); color: #ff9a9d; }
+  }
+
+  &__body { min-width: 0; }
+
+  &__entry-title {
+    margin: 0;
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    line-height: 1.25;
+  }
+
+  &__detail {
+    margin: $space-1 0 0;
+    font-size: $font-size-sm;
+    line-height: 1.5;
+    color: $color-text-muted;
+  }
+}
