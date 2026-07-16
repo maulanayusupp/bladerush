@@ -1733,7 +1733,8 @@ export class BattleScene extends Phaser.Scene {
     }
     if (x >= 0) this.spawnPopup(x, y, `+${formatCompact(gained)}`)
 
-    this.xp += LEVEL.xpPerKill * this.metaXpMul
+    // XP scales with the kill's value so late-game kills keep leveling moving.
+    this.xp += LEVEL.xpPerKill * (1 + LEVEL.valueScale * Math.log10(1 + gained)) * this.metaXpMul
     this.checkLevelUp()
   }
 

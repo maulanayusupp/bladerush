@@ -561,8 +561,13 @@ export const BOSS_RUSH = {
  */
 export const LEVEL = {
   baseXp: 30, // XP for the first level-up
-  growth: 1.8, // each level costs much more — climbs to 1k / 5k / 10k / 20k kills
+  // Each level costs more, but gently (×1.55) so mid-game leveling never stalls.
+  growth: 1.55,
   xpPerKill: 1,
+  // XP per kill also scales with the kill's VALUE: xp = xpPerKill * (1 +
+  // valueScale * log10(1 + reward)). Stronger/later enemies grant more XP, so
+  // income keeps pace with the rising curve instead of flat-lining.
+  valueScale: 1.1,
   xpPerBoss: 8,
 } as const
 
