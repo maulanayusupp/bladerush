@@ -74,6 +74,10 @@ export const MAPS = [
   { key: 'map5', name: 'Sunken Marsh', props: ['mangrove', 'lilyRock', 'reed'], obstacles: ['obsMushroom', 'obsTree', 'obs3', 'obs0'], ambient: { tint: 0xaee0c0, dir: 'drift' } },
   { key: 'map6', name: 'Golden Savanna', props: ['acacia', 'rockSand', 'grassTuft'], obstacles: ['obsTree', 'obs0', 'obs1'], ambient: { tint: 0xf0d78a, dir: 'side' } },
   { key: 'map7', name: 'Celestial Ruins', props: ['brokenPillar', 'runeStone', 'crystalVoid'], obstacles: ['obsMonolith', 'obs1', 'obs2'], ambient: { tint: 0xc9b0ff, dir: 'rise' } },
+  { key: 'map8', name: 'Sakura Garden', props: ['sakuraTree', 'stoneLantern', 'bushGreen'], obstacles: ['obsTorii', 'obs0', 'obsTree'], ambient: { tint: 0xffc0d8, dir: 'fall' } },
+  { key: 'map9', name: 'Crystal Cavern', props: ['crystalCyan', 'stalagmite', 'rockGray'], obstacles: ['obs2', 'obsStalagmite', 'obs0'], ambient: { tint: 0x8fe6ff, dir: 'drift' } },
+  { key: 'map10', name: 'Necropolis', props: ['tombstone', 'cross', 'deadTree'], obstacles: ['obsCrypt', 'obs1', 'obsMonolith'], ambient: { tint: 0xbfe0cf, dir: 'drift' } },
+  { key: 'map11', name: 'Abyssal Depths', props: ['coral', 'kelp', 'lilyRock'], obstacles: ['obsCoral', 'obs1', 'obs0'], ambient: { tint: 0x9fe0ff, dir: 'rise' } },
 ] as const
 
 export const PLAYER = {

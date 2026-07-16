@@ -357,6 +357,10 @@ export class BootScene extends Phaser.Scene {
     this.bake('obsIce', 72, 72, (g) => this.drawObsIce(g))
     this.bake('obsLava', 72, 72, (g) => this.drawObsLava(g))
     this.bake('obsMonolith', 72, 72, (g) => this.drawObsMonolith(g))
+    this.bake('obsTorii', 72, 72, (g) => this.drawObsTorii(g))
+    this.bake('obsStalagmite', 72, 72, (g) => this.drawObsStalagmite(g))
+    this.bake('obsCrypt', 72, 72, (g) => this.drawObsCrypt(g))
+    this.bake('obsCoral', 72, 72, (g) => this.drawObsCoral(g))
     this.bake('wScythe', 28, 56, (g) => this.drawScythe(g))
     this.bake('wHammer', 28, 56, (g) => this.drawHammer(g))
     this.bake('wTrident', 28, 56, (g) => this.drawTrident(g))
@@ -370,6 +374,10 @@ export class BootScene extends Phaser.Scene {
     this.bake('map5', MAP_TILE, MAP_TILE, (g) => this.drawMarsh(g))
     this.bake('map6', MAP_TILE, MAP_TILE, (g) => this.drawSavanna(g))
     this.bake('map7', MAP_TILE, MAP_TILE, (g) => this.drawRuins(g))
+    this.bake('map8', MAP_TILE, MAP_TILE, (g) => this.drawSakura(g))
+    this.bake('map9', MAP_TILE, MAP_TILE, (g) => this.drawCavern(g))
+    this.bake('map10', MAP_TILE, MAP_TILE, (g) => this.drawNecro(g))
+    this.bake('map11', MAP_TILE, MAP_TILE, (g) => this.drawAbyss(g))
     this.makeVignette()
     this.drawProps()
     this.bake('sword', 16, 46, (g) => this.drawSword(g))
@@ -1166,6 +1174,48 @@ export class BootScene extends Phaser.Scene {
     g.fillCircle(34, 22, 3); g.fillRect(30, 30, 10, 2.5); g.fillRect(34, 34, 2.5, 10); g.fillRect(28, 46, 14, 2.5)
   }
 
+  /** A vermilion torii gate. */
+  private drawObsTorii(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g, 58)
+    g.fillStyle(0xc2372f, 1) // vermilion posts
+    g.fillRect(14, 20, 6, 42)
+    g.fillRect(52, 20, 6, 42)
+    g.fillStyle(0x8a201a, 1) // top beams
+    g.fillRect(8, 10, 56, 7) // kasagi
+    g.fillRect(12, 22, 48, 5) // nuki
+    g.fillStyle(0xc2372f, 1); g.fillRect(31, 17, 10, 6) // center tablet
+  }
+
+  /** A big glowing cave stalagmite. */
+  private drawObsStalagmite(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g, 50)
+    g.fillStyle(0x3a3646, 1); g.fillPoints(this.pts([36, 4, 54, 60, 18, 60]), true)
+    g.fillStyle(0x54506a, 1); g.fillPoints(this.pts([36, 10, 44, 58, 30, 58]), true)
+    g.fillStyle(0x8fe6ff, 0.7); g.fillPoints(this.pts([36, 16, 40, 44, 33, 44]), true) // glowing vein
+  }
+
+  /** A stone crypt / mausoleum. */
+  private drawObsCrypt(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g, 58)
+    g.fillStyle(0x3a3d44, 1); g.fillRect(12, 26, 48, 36) // body
+    g.fillStyle(0x54585f, 1); g.fillRect(14, 28, 44, 8) // top band
+    g.fillStyle(0x1a1c20, 1); g.fillRoundedRect(28, 40, 16, 22, 3) // doorway
+    g.fillStyle(0x6b6f78, 1); g.fillPoints(this.pts([8, 26, 64, 26, 36, 10]), true) // roof
+    g.fillStyle(0x9be0b0, 0.6); g.fillCircle(36, 50, 3) // ghost glow within
+  }
+
+  /** A branching coral formation. */
+  private drawObsCoral(g: Phaser.GameObjects.Graphics): void {
+    this.obsShadow(g, 50)
+    g.lineStyle(7, 0xe0668a, 1); g.beginPath()
+    g.moveTo(36, 60); g.lineTo(36, 26)
+    g.moveTo(36, 40); g.lineTo(18, 22)
+    g.moveTo(36, 36); g.lineTo(54, 20)
+    g.strokePath()
+    g.fillStyle(0xff9ab8, 1); g.fillCircle(18, 20, 6); g.fillCircle(54, 18, 6); g.fillCircle(36, 24, 7)
+    g.fillStyle(0xffd0e0, 0.8); g.fillCircle(36, 24, 3)
+  }
+
   private drawScythe(g: Phaser.GameObjects.Graphics): void {
     g.fillStyle(0x3a2418, 1)
     g.fillRect(12.5, 6, 3, 48) // shaft
@@ -1333,6 +1383,46 @@ export class BootScene extends Phaser.Scene {
     for (let i = 0; i < 80; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.15 ? 1.6 : 0.8)
   }
 
+  private drawSakura(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xdcc6c2, 1) // pale rosy stone
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0xcdb0ac, 0.6) // raked zen lines
+    for (let i = 0; i < 8; i++) g.fillRect(0, rnd(MAP_TILE), MAP_TILE, 2)
+    g.fillStyle(0xf2a6c8, 0.8) // fallen petals
+    for (let i = 0; i < 45; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.3 ? 2 : 1.2)
+    this.grain(g, 0xe8d4d0, 0xc0a8a4, 90)
+  }
+
+  private drawCavern(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x1a1826, 1) // dark cave rock
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0x241f38, 0.8) // rock mottling
+    for (let i = 0; i < 40; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 12 + rnd(20), 8 + rnd(12))
+    g.fillStyle(0x8fe6ff, 0.5) // crystal glints
+    for (let i = 0; i < 45; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.2 ? 1.6 : 0.8)
+    this.grain(g, 0x2e2a44, 0x100e1a, 110)
+  }
+
+  private drawNecro(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x1c2224, 1) // dank graveyard earth
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0x24302c, 0.7) // fog patches
+    for (let i = 0; i < 40; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 14 + rnd(24), 8 + rnd(12))
+    g.fillStyle(0x9be0b0, 0.22) // eerie will-o'-wisp glow
+    for (let i = 0; i < 20; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), 3 + rnd(4))
+    this.grain(g, 0x2e3a34, 0x12181a, 120)
+  }
+
+  private drawAbyss(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x0e2a44, 1) // deep-sea blue
+    g.fillRect(0, 0, MAP_TILE, MAP_TILE)
+    g.fillStyle(0x143a5a, 0.7) // sand ripples
+    for (let i = 0; i < 30; i++) g.fillEllipse(rnd(MAP_TILE), rnd(MAP_TILE), 16 + rnd(24), 8 + rnd(12))
+    g.fillStyle(0x6fd0ff, 0.4) // caustic light specks
+    for (let i = 0; i < 45; i++) g.fillCircle(rnd(MAP_TILE), rnd(MAP_TILE), Math.random() < 0.2 ? 1.6 : 0.8)
+    this.grain(g, 0x1a4a6a, 0x0a2036, 110)
+  }
+
   // ---- Decoration props (scattered at random world positions) -------------
 
   private drawProps(): void {
@@ -1442,6 +1532,47 @@ export class BootScene extends Phaser.Scene {
     this.bake('runeStone', 30, 44, (g) => {
       g.fillStyle(0x2a2444, 1); g.fillPoints(this.pts([15, 2, 26, 10, 24, 40, 6, 40, 4, 10]), true)
       g.fillStyle(0x8a7aff, 0.9); g.fillCircle(15, 18, 2); g.fillRect(12, 24, 6, 2); g.fillRect(14, 28, 2, 6) // runes
+    })
+    // --- Sakura Garden props ---
+    this.bake('sakuraTree', 44, 52, (g) => {
+      g.lineStyle(2, 0x5c3b22, 1); g.beginPath(); g.moveTo(22, 38); g.lineTo(12, 30); g.moveTo(22, 38); g.lineTo(32, 30); g.strokePath()
+      g.fillStyle(0x5c3b22, 1); g.fillRect(19, 34, 6, 16) // trunk
+      g.fillStyle(0xf2a6c8, 1); g.fillCircle(14, 20, 10); g.fillCircle(30, 20, 11); g.fillCircle(22, 10, 11) // blossoms
+      g.fillStyle(0xffd0e4, 1); g.fillCircle(18, 14, 5); g.fillCircle(28, 16, 4)
+    })
+    this.bake('stoneLantern', 26, 48, (g) => {
+      g.fillStyle(0x8a8f9a, 1); g.fillRect(8, 42, 10, 6); g.fillRect(11, 26, 4, 16) // base + post
+      g.fillStyle(0x6b6f78, 1); g.fillRect(6, 20, 14, 8) // light box
+      g.fillStyle(0xffe14d, 0.9); g.fillRect(9, 22, 8, 4) // glow
+      g.fillStyle(0x8a8f9a, 1); g.fillPoints(this.pts([6, 20, 20, 20, 13, 10]), true); g.fillCircle(13, 8, 2) // roof + finial
+    })
+    // --- Crystal Cavern props ---
+    this.bake('crystalCyan', 30, 46, (g) => {
+      g.fillStyle(0x2a8fa0, 1); g.fillPoints(this.pts([15, 2, 25, 24, 15, 44, 5, 24]), true)
+      g.fillStyle(0x8fe6ff, 0.95); g.fillPoints(this.pts([15, 6, 21, 24, 15, 32]), true)
+    })
+    this.bake('stalagmite', 28, 50, (g) => {
+      g.fillStyle(0x4a4652, 1); g.fillPoints(this.pts([14, 2, 24, 48, 4, 48]), true)
+      g.fillStyle(0x6a6676, 1); g.fillPoints(this.pts([14, 6, 18, 48, 12, 48]), true)
+    })
+    // --- Necropolis props ---
+    this.bake('tombstone', 30, 40, (g) => {
+      g.fillStyle(0x3a3d44, 1); g.fillRect(5, 36, 20, 4) // base
+      g.fillStyle(0x6b6f78, 1); g.fillRoundedRect(7, 8, 16, 30, 8) // slab
+      g.fillStyle(0x54585f, 1); g.fillRect(13, 14, 4, 14); g.fillRect(9, 18, 12, 3) // engraved cross
+    })
+    this.bake('cross', 24, 42, (g) => {
+      g.fillStyle(0x5c4a3a, 1); g.fillRect(10, 6, 4, 34); g.fillRect(4, 14, 16, 4)
+    })
+    // --- Abyssal Depths props ---
+    this.bake('coral', 36, 40, (g) => {
+      g.lineStyle(4, 0xe0668a, 1); g.beginPath()
+      g.moveTo(18, 38); g.lineTo(18, 16); g.moveTo(18, 24); g.lineTo(8, 14); g.moveTo(18, 22); g.lineTo(28, 12); g.strokePath()
+      g.fillStyle(0xff9ab8, 1); g.fillCircle(8, 12, 3); g.fillCircle(28, 10, 3); g.fillCircle(18, 14, 3)
+    })
+    this.bake('kelp', 24, 52, (g) => {
+      g.lineStyle(3, 0x2f8a5a, 1); g.beginPath()
+      g.moveTo(8, 50); g.lineTo(6, 28); g.lineTo(10, 10); g.moveTo(15, 50); g.lineTo(17, 30); g.lineTo(13, 8); g.strokePath()
     })
   }
 
