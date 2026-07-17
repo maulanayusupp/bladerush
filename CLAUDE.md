@@ -104,6 +104,9 @@ Vue reactivity per-frame (demi performa).
 ## Sistem yang sudah ada (ringkas, untuk sesi berikutnya)
 
 Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
+Baking dilakukan **bertahap** (`collectBakeTasks` → antrean, di-drain time-boxed
+per frame di `update()` dengan progress bar) supaya tidak nge-freeze; semua
+tekstur tetap selesai sebelum scene berikutnya mulai.
 
 - **Hero**: `HERO.skins` skin, `HERO.divineCount` teratas = Divine (bespoke di
   `drawDivineHero`, pakai basis `divineCore`). Rarity via `heroRarity()`. Evolusi

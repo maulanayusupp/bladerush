@@ -323,76 +323,135 @@ interface BossSkin {
 const BOSS_SKINS: BossSkin[] = genBosses()
 
 export class BootScene extends Phaser.Scene {
+  private tasks: Array<() => void> = []
+  private taskIdx = 0
+  private taskTotal = 0
+  private started = false
+  private loadBar!: Phaser.GameObjects.Graphics
+  private loadPct!: Phaser.GameObjects.Text
+
   constructor() {
     super('BootScene')
   }
 
   create(): void {
+    // ~880 textures are baked at boot. Doing it all in one frame froze the page,
+    // so we queue every bake as a task and drain a time-boxed batch each frame,
+    // keeping the tab responsive and showing a progress bar. Everything is still
+    // fully baked before the next scene starts (no lazy-on-demand surprises).
+    this.tasks = this.collectBakeTasks()
+    this.taskTotal = this.tasks.length
+    this.taskIdx = 0
+    this.started = false
+    this.buildLoadingUI()
+  }
+
+  override update(): void {
+    if (this.started) return
+    // Time-box the batch so heavy textures (128px maps) and light ones share the
+    // frame budget without ever stalling long.
+    const budgetMs = 10
+    const start = performance.now()
+    while (this.taskIdx < this.tasks.length && performance.now() - start < budgetMs) {
+      ;(this.tasks[this.taskIdx] as () => void)()
+      this.taskIdx++
+    }
+    this.drawLoadBar(this.taskTotal > 0 ? this.taskIdx / this.taskTotal : 1)
+    if (this.taskIdx >= this.tasks.length) {
+      this.started = true
+      // Which scene to enter after baking (BattleScene by default; CodexScene for
+      // the collection gallery). Both reuse these exact baked textures.
+      const next = (this.game.registry.get('nextScene') as string) || 'BattleScene'
+      this.scene.start(next)
+    }
+  }
+
+  /** Build the queue of every texture-bake operation (one closure per texture). */
+  private collectBakeTasks(): Array<() => void> {
+    const t: Array<() => void> = []
     CHAMPION_SKINS.forEach((skin, i) => {
-      if (skin.special >= 0) {
-        // Divine champions have wings/halos beyond the 64 box — bake padded so
-        // nothing is clipped.
-        this.bake(`hero${i}`, 80, 80, (g) => { g.translateCanvas(8, 8); this.drawChampion(g, skin) })
-      } else {
-        this.bake(`hero${i}`, 64, 64, (g) => this.drawChampion(g, skin))
-      }
+      t.push(() => {
+        if (skin.special >= 0) this.bake(`hero${i}`, 80, 80, (g) => { g.translateCanvas(8, 8); this.drawChampion(g, skin) })
+        else this.bake(`hero${i}`, 64, 64, (g) => this.drawChampion(g, skin))
+      })
     })
-    RIVAL_SKINS.forEach((skin, i) => this.bake(`rivalHero${i}`, 56, 64, (g) => this.drawWarlord(g, skin)))
-    TROOP_SKINS.forEach((skin, i) => this.bake(`troop${i}`, 60, 60, (g) => this.drawTrooper(g, 60, skin)))
-    BOSS_SKINS.forEach((skin, i) => this.bake(`boss${i}`, 76, 76, (g) => this.drawBoss(g, skin)))
-    this.bake('bossOrb', 24, 24, (g) => this.drawBossOrb(g))
-    this.bake('meteor', 30, 44, (g) => this.drawMeteor(g))
-    this.bake('meteorWarn', 64, 64, (g) => this.drawMeteorWarn(g))
-    this.bake('heal', 30, 30, (g) => this.drawHeal(g))
-    this.bake('chest', 32, 30, (g) => this.drawChest(g))
-    this.bake('wMace', 28, 56, (g) => this.drawMace(g))
-    this.bake('wAxe', 28, 56, (g) => this.drawAxe(g))
-    this.bake('wSpear', 28, 56, (g) => this.drawSpear(g))
-    for (let i = 0; i < 4; i++) this.bake(`obs${i}`, 72, 72, (g) => this.drawObstacle(g, i))
-    // Themed obstacles (per-map, see MAPS[].obstacles). All 72x72 so the shared
-    // circular collision body offset stays correct.
-    this.bake('obsTree', 72, 72, (g) => this.drawObsTree(g))
-    this.bake('obsMushroom', 72, 72, (g) => this.drawObsMushroom(g))
-    this.bake('obsCactus', 72, 72, (g) => this.drawObsCactus(g))
-    this.bake('obsIce', 72, 72, (g) => this.drawObsIce(g))
-    this.bake('obsLava', 72, 72, (g) => this.drawObsLava(g))
-    this.bake('obsMonolith', 72, 72, (g) => this.drawObsMonolith(g))
-    this.bake('obsTorii', 72, 72, (g) => this.drawObsTorii(g))
-    this.bake('obsStalagmite', 72, 72, (g) => this.drawObsStalagmite(g))
-    this.bake('obsCrypt', 72, 72, (g) => this.drawObsCrypt(g))
-    this.bake('obsCoral', 72, 72, (g) => this.drawObsCoral(g))
-    this.bake('wScythe', 28, 56, (g) => this.drawScythe(g))
-    this.bake('wHammer', 28, 56, (g) => this.drawHammer(g))
-    this.bake('wTrident', 28, 56, (g) => this.drawTrident(g))
-    this.bake('wGreatsword', 28, 56, (g) => this.drawGreatsword(g))
-    this.bake('wHalberd', 28, 56, (g) => this.drawHalberd(g))
-    this.bake('map0', MAP_TILE, MAP_TILE, (g) => this.drawMeadow(g))
-    this.bake('map1', MAP_TILE, MAP_TILE, (g) => this.drawDesert(g))
-    this.bake('map2', MAP_TILE, MAP_TILE, (g) => this.drawTundra(g))
-    this.bake('map3', MAP_TILE, MAP_TILE, (g) => this.drawCaldera(g))
-    this.bake('map4', MAP_TILE, MAP_TILE, (g) => this.drawVoid(g))
-    this.bake('map5', MAP_TILE, MAP_TILE, (g) => this.drawMarsh(g))
-    this.bake('map6', MAP_TILE, MAP_TILE, (g) => this.drawSavanna(g))
-    this.bake('map7', MAP_TILE, MAP_TILE, (g) => this.drawRuins(g))
-    this.bake('map8', MAP_TILE, MAP_TILE, (g) => this.drawSakura(g))
-    this.bake('map9', MAP_TILE, MAP_TILE, (g) => this.drawCavern(g))
-    this.bake('map10', MAP_TILE, MAP_TILE, (g) => this.drawNecro(g))
-    this.bake('map11', MAP_TILE, MAP_TILE, (g) => this.drawAbyss(g))
-    this.makeVignette()
-    this.makeHazardDisc()
-    for (let i = 0; i < PET.forms; i++) this.bake(`pet${i}`, 44, 44, (g) => this.drawPet(g, i, PET.forms))
-    this.bake('petShot', 14, 14, (g) => this.drawPetShot(g))
-    this.drawProps()
-    this.bake('sword', 16, 46, (g) => this.drawSword(g))
-    SWORD_SHAPES.forEach((shape, i) => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape)))
-    this.bake('swordRing', 140, 140, (g) => this.drawSwordRing(g))
-    this.bake('aura', AURA.textureRadius * 2, AURA.textureRadius * 2, (g) => this.drawAura(g))
-    this.bake('spark', 10, 10, (g) => this.drawSpark(g))
-    this.bake('shock', 64, 64, (g) => this.drawShock(g))
-    // Which scene to enter after baking (BattleScene by default; CodexScene for
-    // the collection gallery). Both reuse these exact baked textures.
-    const next = (this.game.registry.get('nextScene') as string) || 'BattleScene'
-    this.scene.start(next)
+    RIVAL_SKINS.forEach((skin, i) => t.push(() => this.bake(`rivalHero${i}`, 56, 64, (g) => this.drawWarlord(g, skin))))
+    TROOP_SKINS.forEach((skin, i) => t.push(() => this.bake(`troop${i}`, 60, 60, (g) => this.drawTrooper(g, 60, skin))))
+    BOSS_SKINS.forEach((skin, i) => t.push(() => this.bake(`boss${i}`, 76, 76, (g) => this.drawBoss(g, skin))))
+    t.push(() => this.bake('bossOrb', 24, 24, (g) => this.drawBossOrb(g)))
+    t.push(() => this.bake('meteor', 30, 44, (g) => this.drawMeteor(g)))
+    t.push(() => this.bake('meteorWarn', 64, 64, (g) => this.drawMeteorWarn(g)))
+    t.push(() => this.bake('heal', 30, 30, (g) => this.drawHeal(g)))
+    t.push(() => this.bake('chest', 32, 30, (g) => this.drawChest(g)))
+    t.push(() => this.bake('wMace', 28, 56, (g) => this.drawMace(g)))
+    t.push(() => this.bake('wAxe', 28, 56, (g) => this.drawAxe(g)))
+    t.push(() => this.bake('wSpear', 28, 56, (g) => this.drawSpear(g)))
+    for (let i = 0; i < 4; i++) t.push(() => this.bake(`obs${i}`, 72, 72, (g) => this.drawObstacle(g, i)))
+    t.push(() => this.bake('obsTree', 72, 72, (g) => this.drawObsTree(g)))
+    t.push(() => this.bake('obsMushroom', 72, 72, (g) => this.drawObsMushroom(g)))
+    t.push(() => this.bake('obsCactus', 72, 72, (g) => this.drawObsCactus(g)))
+    t.push(() => this.bake('obsIce', 72, 72, (g) => this.drawObsIce(g)))
+    t.push(() => this.bake('obsLava', 72, 72, (g) => this.drawObsLava(g)))
+    t.push(() => this.bake('obsMonolith', 72, 72, (g) => this.drawObsMonolith(g)))
+    t.push(() => this.bake('obsTorii', 72, 72, (g) => this.drawObsTorii(g)))
+    t.push(() => this.bake('obsStalagmite', 72, 72, (g) => this.drawObsStalagmite(g)))
+    t.push(() => this.bake('obsCrypt', 72, 72, (g) => this.drawObsCrypt(g)))
+    t.push(() => this.bake('obsCoral', 72, 72, (g) => this.drawObsCoral(g)))
+    t.push(() => this.bake('wScythe', 28, 56, (g) => this.drawScythe(g)))
+    t.push(() => this.bake('wHammer', 28, 56, (g) => this.drawHammer(g)))
+    t.push(() => this.bake('wTrident', 28, 56, (g) => this.drawTrident(g)))
+    t.push(() => this.bake('wGreatsword', 28, 56, (g) => this.drawGreatsword(g)))
+    t.push(() => this.bake('wHalberd', 28, 56, (g) => this.drawHalberd(g)))
+    const maps: Array<[string, Draw]> = [
+      ['map0', (g) => this.drawMeadow(g)], ['map1', (g) => this.drawDesert(g)], ['map2', (g) => this.drawTundra(g)],
+      ['map3', (g) => this.drawCaldera(g)], ['map4', (g) => this.drawVoid(g)], ['map5', (g) => this.drawMarsh(g)],
+      ['map6', (g) => this.drawSavanna(g)], ['map7', (g) => this.drawRuins(g)], ['map8', (g) => this.drawSakura(g)],
+      ['map9', (g) => this.drawCavern(g)], ['map10', (g) => this.drawNecro(g)], ['map11', (g) => this.drawAbyss(g)],
+    ]
+    for (const [key, draw] of maps) t.push(() => this.bake(key, MAP_TILE, MAP_TILE, draw))
+    t.push(() => this.makeVignette())
+    t.push(() => this.makeHazardDisc())
+    for (let i = 0; i < PET.forms; i++) t.push(() => this.bake(`pet${i}`, 44, 44, (g) => this.drawPet(g, i, PET.forms)))
+    t.push(() => this.bake('petShot', 14, 14, (g) => this.drawPetShot(g)))
+    t.push(() => this.drawProps())
+    t.push(() => this.bake('sword', 16, 46, (g) => this.drawSword(g)))
+    SWORD_SHAPES.forEach((shape, i) => t.push(() => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape))))
+    t.push(() => this.bake('swordRing', 140, 140, (g) => this.drawSwordRing(g)))
+    t.push(() => this.bake('aura', AURA.textureRadius * 2, AURA.textureRadius * 2, (g) => this.drawAura(g)))
+    t.push(() => this.bake('spark', 10, 10, (g) => this.drawSpark(g)))
+    t.push(() => this.bake('shock', 64, 64, (g) => this.drawShock(g)))
+    return t
+  }
+
+  /** A minimal loading screen (title + progress bar) shown while baking. */
+  private buildLoadingUI(): void {
+    const w = this.scale.width
+    const h = this.scale.height
+    this.cameras.main.setBackgroundColor('#0d0c10')
+    this.add.text(w / 2, h / 2 - 46, 'BLADE RUSH', {
+      fontFamily: 'Segoe UI, sans-serif', fontSize: '34px', fontStyle: 'bold', color: '#f4f6f4',
+    }).setOrigin(0.5).setShadow(0, 0, '#7c4dff', 18, false, true)
+    this.loadPct = this.add.text(w / 2, h / 2 + 34, '0%', {
+      fontFamily: 'Segoe UI, sans-serif', fontSize: '13px', fontStyle: 'bold', color: '#9a93b0',
+    }).setOrigin(0.5)
+    this.loadBar = this.add.graphics()
+    this.drawLoadBar(0)
+  }
+
+  private drawLoadBar(p: number): void {
+    if (!this.loadBar) return
+    const w = this.scale.width
+    const h = this.scale.height
+    const bw = Math.min(320, w * 0.6)
+    const x = (w - bw) / 2
+    const y = h / 2 + 8
+    const g = this.loadBar
+    g.clear()
+    g.fillStyle(0x1a1726, 1)
+    g.fillRoundedRect(x, y, bw, 10, 5)
+    g.fillStyle(0x7c4dff, 1)
+    g.fillRoundedRect(x, y, Math.max(6, bw * Math.min(1, p)), 10, 5)
+    if (this.loadPct) this.loadPct.setText(`${Math.round(Math.min(1, p) * 100)}%`)
   }
 
   /** A small white sparkle for clash/death particle bursts. */

@@ -23,9 +23,6 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 - [ ] **Onboarding**: pop-up tutorial singkat saat pertama main (guide sudah ada
       di `/guide`, tinggal auto-show sekali).
 - [ ] **Audio/musik**: lebih banyak layer musik dinamis; SFX unik per elite affix.
-- [ ] **Performa**: bake tekstur secara lazy/async biar loading awal lebih cepat
-      (~ribuan tekstur saat boot) — berisiko, kerjakan hati-hati + verifikasi
-      ketersediaan tekstur.
 - [ ] **Aksesibilitas**: opsi colorblind, toggle reduce-flash (selain screen shake).
 - [ ] **Sosial**: papan skor lokal multi-entri + share skor.
 - [ ] **Daily Challenge** (ditunda, bukan prioritas) — RNG deterministik berbasis
@@ -37,6 +34,7 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- Performa: baking tekstur bertahap (per-frame) + progress bar (anti-freeze).
 - Musuh elite baru: Caster (penembak) & Splitter (pecah saat mati).
 - Companion pet evolvable (16 bentuk, zap musuh, ikut tier hero).
 - Session quests untuk koin (pool 40+, 4 per run, progress di HUD).
