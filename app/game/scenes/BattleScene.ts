@@ -63,6 +63,7 @@ export class BattleScene extends Phaser.Scene {
   private bossAngle = 0
   private bossClashAcc = 0
   // Boss archetype mechanics + multi-phase state.
+  private ringOuterRadius: number = SWORD.orbitRadius // actual outer extent of the sword ring
   private bossArchetype = 0
   private bossPhase = 1
   private bossMechAcc = 0
@@ -748,8 +749,9 @@ export class BattleScene extends Phaser.Scene {
    *  you ABSORB its power on the kill), while it strikes back at you. */
   private npcDuel(npc: NpcHero, deltaMs: number): void {
     const d = distance(npc.x, npc.y, this.player.x, this.player.y)
-    // Nothing happens until at least one ring's blades reach the other's body.
-    const playerReach = SWORD.orbitRadius * (0.85 + this.heroScale * 0.35) + 16 // your (grown) ring reaches the NPC
+    // Your blades reach as far as the ring is actually DRAWN (incl. every
+    // concentric ring), so any NPC the spinning blades visibly cover gets sliced.
+    const playerReach = this.ringOuterRadius + 12
     const npcReach = NPC.ringRadius + 16 // its blades touch YOU
     if (d >= Math.max(playerReach, npcReach)) {
       npc.duelAcc = 0
@@ -761,12 +763,11 @@ export class BattleScene extends Phaser.Scene {
     const ang = angleBetween(this.player.x, this.player.y, npc.x, npc.y)
     const canWin = this.power.power >= npc.power
 
-    // Your ring shreds the NPC only when your blades reach its body.
+    // Your ring shreds the NPC only when your blades reach its body — the clash
+    // spark appears on the NPC (where the blades actually meet it).
     if (d < playerReach && canWin) {
       npc.hp -= this.bossTickDamage()
-      const ex = this.player.x + Math.cos(ang) * SWORD.orbitRadius
-      const ey = this.player.y + Math.sin(ang) * SWORD.orbitRadius
-      this.clashBurst(ex, ey, 0xffe08a)
+      this.clashBurst(npc.x, npc.y, 0xffe08a)
       audioService.clash()
       if (npc.hp <= 0) {
         this.absorbNpc(npc)
@@ -2380,6 +2381,9 @@ export class BattleScene extends Phaser.Scene {
       }
       ring++
     }
+    // Remember the ring's true outer extent (incl. concentric rings + blade tip)
+    // so NPC/rival combat reach matches the blades you can actually SEE.
+    this.ringOuterRadius = (count > 0 ? radius + Math.max(0, ring - 1) * SWORD.ringGap : radius) + 22
     for (let i = placed; i < this.swordPool.length; i++) (this.swordPool[i] as Sword).deactivate()
 
     // Subtle per-ring glow trail (thin, not a heavy disc) — hints motion without
@@ -2422,7 +2426,9 @@ export class BattleScene extends Phaser.Scene {
     for (const rival of this.rivalPool) {
       if (!rival.active) continue
       rival.spin(deltaMs)
-      const near = distance(rival.x, rival.y, this.player.x, this.player.y) < RIVAL.clashDist
+      // Engage once your blades visibly reach the rival (whichever is larger:
+      // its base clash distance or your ring's true outer extent).
+      const near = distance(rival.x, rival.y, this.player.x, this.player.y) < Math.max(RIVAL.clashDist, this.ringOuterRadius)
 
       if (near) {
         // Lock in and trade blows over time (natural attrition, not instant).

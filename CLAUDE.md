@@ -137,6 +137,8 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
 - **Progres**: XP `LEVEL` (per-kill ikut nilai kill), achievements, Codex, ranking.
 - **Loadout** (`LoadoutService`), **Settings** (`SettingsService`: screenShake).
 - **Musik dinamis**: `audioService.setMusicIntensity(0|1|2)` (ambient/boss/rush).
+- **Ring reach**: `ringOuterRadius` (di `updateSwords`) = extent nyata ring pedang;
+  dipakai `npcDuel`/`updateRivals` supaya bilah mengiris hero yang tertutup ring.
 - **Halaman**: `/` (menu), `/play`, `/codex`, `/guide`, `/changelog`.
 - **Changelog**: `app/data/changelog.json` (WAJIB di-update tiap perubahan).
 - **To-do / roadmap**: `TODO.md` di root (pekerjaan berikutnya + backlog).

@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-17",
+      "tag": "fix",
+      "title": "Blades now cut heroes they overlap",
+      "detail": "Your spinning ring used to pass through rival & AI heroes standing among the outer blades without hitting them. Combat reach now matches the ring's true drawn extent (all concentric rings), so any hero your blades visibly cover is actually sliced — with the clash spark on the target."
+    },
+    {
+      "date": "2026-07-17",
       "tag": "feature",
       "title": "Boss archetypes + multi-phase fights",
       "detail": "Bosses now have unique mechanics by type — Summoner (add bursts), Teleporter (blinks next to you), Charger (telegraphed rush), Bomber (extra barrages), Shielder (a bubble that soaks most damage). Below half HP a boss enters Phase 2: a dramatic transition, then faster attacks, faster mechanics, and quicker movement."
