@@ -87,4 +87,5 @@ export interface GameEventMap {
   'timer:changed': { remainingMs: number }
   'meta:coins': { coins: number }
   'relic:gained': { id: string }
+  'map:set': { key: string }
 }

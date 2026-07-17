@@ -19,6 +19,7 @@ class AudioService {
   private musicTimer: number | null = null
   private nextNoteAt = 0
   private step = 0
+  private intensity = 0 // 0 = ambient, 1 = boss, 2 = boss rush — drives tempo & layers
 
   constructor() {
     // Restore persisted audio preferences (safe if localStorage is unavailable).
@@ -114,6 +115,11 @@ class AudioService {
     this.persist()
   }
 
+  /** Raise/lower musical intensity (0 ambient, 1 boss, 2 boss rush). */
+  setMusicIntensity(level: number): void {
+    this.intensity = Math.max(0, Math.min(2, Math.round(level)))
+  }
+
   // ---- Background music: a looping 16-step ambient battle groove -----------
 
   private startMusic(): void {
@@ -125,7 +131,8 @@ class AudioService {
 
   private scheduleMusic(): void {
     if (!this.ctx) return
-    const stepDur = 0.17 // ~ 88 BPM sixteenths
+    // Faster with intensity: ~88 BPM ambient → driving during boss / rush.
+    const stepDur = 0.17 / (1 + this.intensity * 0.16)
     while (this.nextNoteAt < this.ctx.currentTime + 0.12) {
       this.playStep(this.step, this.nextNoteAt)
       this.nextNoteAt += stepDur
@@ -141,6 +148,9 @@ class AudioService {
     if (bass[step]) this.musicTone(bass[step] as number, 0.36, 'triangle', 0.5, when)
     if (lead[step]) this.musicTone(lead[step] as number, 0.2, 'sine', 0.2, when)
     if (step % 4 === 2) this.musicNoise(0.03, 0.05, when, 8000)
+    // Intensity layers: a driving off-beat bass, then an urgent hi-hat pattern.
+    if (this.intensity >= 1 && step % 2 === 1) this.musicTone((bass[step - 1] as number || 110) * 2, 0.12, 'sawtooth', 0.16, when)
+    if (this.intensity >= 2 && step % 2 === 0) this.musicNoise(0.02, 0.06, when, 9000)
   }
 
   private musicTone(freq: number, dur: number, type: OscType, peak: number, when: number): void {

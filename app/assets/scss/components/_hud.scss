@@ -367,6 +367,36 @@
     text-shadow: 0 0 18px rgba(#00e0c8, 0.9), 0 0 40px rgba(#00e0c8, 0.5), 0 3px 8px rgba(#000, 0.8);
   }
 
+  // Map intro — the map name shown briefly as a run begins.
+  &__map {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-1;
+    pointer-events: none;
+    text-align: center;
+  }
+
+  &__map-eyebrow {
+    font-size: 0.66rem;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: rgba($color-warning, 0.9);
+  }
+
+  &__map-name {
+    font-size: clamp(1.6rem, 6vw, 2.8rem);
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.04em;
+    color: #fff;
+    text-shadow: 0 0 18px rgba($color-primary, 0.7), 0 2px 8px rgba(#000, 0.8);
+  }
+
   // Owned relics — a small row of glowing icons under the top bar.
   &__relics {
     position: absolute;
@@ -522,6 +552,12 @@
   from { opacity: 0; transform: scale(0.3); }
   to { opacity: 1; transform: scale(1); }
 }
+
+// Map intro banner: rise in, hold, fade.
+.hud-map-enter-active { transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.hud-map-leave-active { transition: opacity 0.6s ease, transform 0.6s ease; }
+.hud-map-enter-from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+.hud-map-leave-to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
 
 // Divine ultimate cut-in: band sweeps in, holds, then flashes out.
 .hud-ult-enter-active { transition: opacity 0.16s ease; }

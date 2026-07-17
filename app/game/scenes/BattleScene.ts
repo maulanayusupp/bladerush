@@ -286,6 +286,8 @@ export class BattleScene extends Phaser.Scene {
     // tracks the camera scroll (see update) so the terrain slides past as the
     // hero roams the open world.
     const map = MAPS[randomInt(0, MAPS.length - 1)] ?? MAPS[0]
+    gameEventBus.emit('map:set', { key: map.key })
+    audioService.setMusicIntensity(0)
     this.bg = this.add
       .tileSprite(0, 0, this.viewW, this.viewH, map.key)
       .setOrigin(0, 0)
@@ -1263,6 +1265,7 @@ export class BattleScene extends Phaser.Scene {
     this.bossAura.setVisible(true)
     this.shake(240, 0.008)
     audioService.nova()
+    audioService.setMusicIntensity(this.bossRush ? 2 : 1)
     gameEventBus.emit('boss:spawn', { maxHp: hp })
   }
 
@@ -1549,6 +1552,7 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.flash(260, 255, 220, 120)
     this.shake(300, 0.012)
     audioService.win()
+    if (!this.bossRush) audioService.setMusicIntensity(0)
     gameEventBus.emit('boss:end', undefined)
     this.hitStopUntil = this.frameTime + HITSTOP_MS
     this.spawnChest(x, y, 2) // bosses always drop an epic chest
@@ -1564,6 +1568,7 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.flash(400, 120, 0, 0)
     this.shake(360, 0.01)
     audioService.nova()
+    audioService.setMusicIntensity(2)
     gameEventBus.emit('rush:start', undefined)
   }
 

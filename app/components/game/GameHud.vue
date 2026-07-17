@@ -67,6 +67,10 @@ function flashRushBanner(text: string): void {
 const ultCast = ref<{ skill: string; hero: string } | null>(null)
 let ultTimer: ReturnType<typeof setTimeout> | null = null
 
+// ---- Map intro banner ----
+const mapName = ref('')
+let mapTimer: ReturnType<typeof setTimeout> | null = null
+
 // ---- Relics (passive run modifiers) ----
 const relics = ref<string[]>([])
 function relicIcon(id: string): string {
@@ -235,6 +239,11 @@ onMounted(() => {
     gameEventBus.on('relic:gained', ({ id }) => {
       if (!relics.value.includes(id)) relics.value = [...relics.value, id]
     }),
+    gameEventBus.on('map:set', ({ key }) => {
+      mapName.value = t('maps.' + key)
+      if (mapTimer) clearTimeout(mapTimer)
+      mapTimer = setTimeout(() => (mapName.value = ''), 2800)
+    }),
     gameEventBus.on('divine:cast', ({ index }) => {
       const s = DIVINE_SKILLS[index]
       if (!s) return
@@ -259,6 +268,7 @@ onUnmounted(() => {
   if (cooldownTimer) clearInterval(cooldownTimer)
   if (rushBannerTimer) clearTimeout(rushBannerTimer)
   if (ultTimer) clearTimeout(ultTimer)
+  if (mapTimer) clearTimeout(mapTimer)
 })
 
 function restart(): void {
@@ -326,6 +336,13 @@ function restart(): void {
         :title="$t('relic.' + id + '.name')"
       >{{ relicIcon(id) }}</span>
     </div>
+
+    <Transition name="hud-map">
+      <div v-if="mapName" class="hud__map" aria-hidden="true">
+        <span class="hud__map-eyebrow">{{ $t('maps.entering') }}</span>
+        <span class="hud__map-name">{{ mapName }}</span>
+      </div>
+    </Transition>
 
     <div v-if="bossRush" class="hud__rush-vignette" aria-hidden="true" />
 

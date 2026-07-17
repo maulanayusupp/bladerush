@@ -17,6 +17,21 @@
       "rivals": { "label": "Duel rival", "text": "Ungguli jumlah hero rival, atau habis" }
     }
   },
+  "maps": {
+    "entering": "Memasuki",
+    "map0": "Padang Rumput Hijau",
+    "map1": "Gurun Terik",
+    "map2": "Tundra Angin Beku",
+    "map3": "Kaldera Bara",
+    "map4": "Hamparan Kehampaan",
+    "map5": "Rawa Terendam",
+    "map6": "Sabana Emas",
+    "map7": "Reruntuhan Langit",
+    "map8": "Taman Sakura",
+    "map9": "Gua Kristal",
+    "map10": "Necropolis",
+    "map11": "Kedalaman Abyss"
+  },
   "changelog": {
     "title": "Yang Baru",
     "subtitle": "Semua pembaruan Blade Rush, terbaru dulu.",

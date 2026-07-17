@@ -99,4 +99,28 @@ Vue reactivity per-frame (demi performa).
 - [x] Fase 3 — Power & gate + auto-shoot
 - [x] Fase 4 — Musuh & tempur (pooling, collision)
 - [x] Fase 5 — HUD & progres (skor, game-over, high-score)
-- [ ] Polish — aset sprite nyata, audio, efek, tuning kurva power
+- [x] Polish — sprite prosedural (baked), audio prosedural, efek, tuning kurva
+
+## Sistem yang sudah ada (ringkas, untuk sesi berikutnya)
+
+Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
+
+- **Hero**: `HERO.skins` skin, `HERO.divineCount` teratas = Divine (bespoke di
+  `drawDivineHero`, pakai basis `divineCore`). Rarity via `heroRarity()`. Evolusi
+  ikut **skor** (`checkEvolve`), ganti hero me-reset cooldown skill.
+- **Divine ultimate**: `DIVINE_SKILLS` (satu per Divine), `castDivineSkill` +
+  cut-in sinematik (event `divine:cast`) + SFX `audioService.ultimate(id)`.
+- **Mode** (`ModeService`): normal / endless / bossrush / timeattack.
+- **Boss Rush** (`BOSS_RUSH`): gelombang bos (lead + escort) di Lvl 10 (normal).
+- **Maps** (`MAPS`, 12): tiap map punya `props`, `obstacles` bertema, `ambient`.
+  Ground/props/obstacles di-bake di BootScene. Banner nama map: event `map:set`.
+- **Relic** (`RELICS`): modifier pasif dari peti, di-`recomputeRelics()`.
+- **Meta shop** (`MetaService`, koin) + **unlock hero pakai koin** di Codex.
+- **Progres**: XP `LEVEL` (per-kill ikut nilai kill), achievements, Codex, ranking.
+- **Loadout** (`LoadoutService`), **Settings** (`SettingsService`: screenShake).
+- **Musik dinamis**: `audioService.setMusicIntensity(0|1|2)` (ambient/boss/rush).
+- **Halaman**: `/` (menu), `/play`, `/codex`, `/guide`, `/changelog`.
+- **Changelog**: `app/data/changelog.json` (WAJIB di-update tiap perubahan).
+
+> Setiap perubahan berarti: update `changelog.json` **dan** dokumen ini bila ada
+> sistem/konsep baru, lalu `npx nuxi typecheck` + jalankan dev + commit.

@@ -17,6 +17,21 @@
       "rivals": { "label": "Duel rivals", "text": "Out-number rival heroes, or get wiped" }
     }
   },
+  "maps": {
+    "entering": "Entering",
+    "map0": "Verdant Meadow",
+    "map1": "Sunscar Desert",
+    "map2": "Frostwind Tundra",
+    "map3": "Emberfall Caldera",
+    "map4": "The Void Expanse",
+    "map5": "Sunken Marsh",
+    "map6": "Golden Savanna",
+    "map7": "Celestial Ruins",
+    "map8": "Sakura Garden",
+    "map9": "Crystal Cavern",
+    "map10": "Necropolis",
+    "map11": "Abyssal Depths"
+  },
   "changelog": {
     "title": "What's New",
     "subtitle": "Every update to Blade Rush, newest first.",
