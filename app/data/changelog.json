@@ -1,6 +1,18 @@
 {
   "entries": [
     {
+      "date": "2026-07-17",
+      "tag": "feature",
+      "title": "Relics — passive run modifiers",
+      "detail": "Chests can now drop one of 10 unique relics (Iron Blades, Berserker's Rage, Aegis, Midas Touch, Ember Heart, and more). They stack with your upgrades, so every run builds differently. Owned relics show in the HUD."
+    },
+    {
+      "date": "2026-07-17",
+      "tag": "feature",
+      "title": "Changelog page",
+      "detail": "This page! A dated timeline of every update to Blade Rush, reachable from the menu."
+    },
+    {
       "date": "2026-07-16",
       "tag": "balance",
       "title": "Faster mid-game leveling",
