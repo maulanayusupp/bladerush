@@ -135,6 +135,8 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
 - **Musik dinamis**: `audioService.setMusicIntensity(0|1|2)` (ambient/boss/rush).
 - **Halaman**: `/` (menu), `/play`, `/codex`, `/guide`, `/changelog`.
 - **Changelog**: `app/data/changelog.json` (WAJIB di-update tiap perubahan).
+- **To-do / roadmap**: `TODO.md` di root (pekerjaan berikutnya + backlog).
 
-> Setiap perubahan berarti: update `changelog.json` **dan** dokumen ini bila ada
-> sistem/konsep baru, lalu `npx nuxi typecheck` + jalankan dev + commit.
+> Setiap perubahan berarti: update `changelog.json`, `TODO.md` (pindahkan item
+> yang selesai), **dan** dokumen ini bila ada sistem/konsep baru, lalu
+> `npx nuxi typecheck` + jalankan dev + commit.
