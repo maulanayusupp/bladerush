@@ -424,39 +424,70 @@
     text-shadow: 0 0 22px var(--rc), 0 0 46px var(--rc), 0 3px 8px rgba(#000, 0.8);
   }
 
-  // Session quest tracker (left side).
+  // Session quest tracker (left side) — compact + collapsible.
   &__quests {
     position: absolute;
-    top: 140px;
-    left: $space-3;
+    top: 134px;
+    left: $space-2;
     display: flex;
     flex-direction: column;
-    gap: $space-2;
-    width: min(42vw, 210px);
+    align-items: flex-start;
+    gap: $space-1;
+    width: min(56vw, 168px);
+  }
+
+  &__quests-toggle {
+    @include button-reset;
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    padding: 2px $space-2;
+    border-radius: $radius-pill;
+    font-size: 0.66rem;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+    background: rgba(#000, 0.5);
+    border: 1px solid rgba(#fff, 0.12);
+  }
+
+  &__quests-count {
+    color: $color-warning;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__quests-caret {
+    color: $color-text-muted;
+    font-size: 0.6rem;
+  }
+
+  &__quests-list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    width: 100%;
   }
 
   &__quest {
     display: flex;
     align-items: center;
-    gap: $space-2;
-    padding: $space-2;
+    gap: $space-1;
+    padding: 3px 5px;
     border-radius: $radius-sm;
-    background: rgba(#000, 0.42);
-    border: 1px solid rgba(#fff, 0.09);
+    background: rgba(#000, 0.4);
+    border: 1px solid rgba(#fff, 0.08);
     transition: opacity $transition-base;
 
     &--done {
-      opacity: 0.55;
-      border-color: rgba($color-success, 0.6);
+      opacity: 0.5;
+      border-color: rgba($color-success, 0.55);
     }
   }
 
   &__quest-icon {
     @include flex-center;
     flex: 0 0 auto;
-    width: 22px;
-    height: 22px;
-    font-size: 14px;
+    width: 15px;
+    font-size: 12px;
   }
 
   &__quest--done &__quest-icon {
@@ -472,23 +503,26 @@
   }
 
   &__quest-label {
-    font-size: 0.72rem;
+    display: flex;
+    justify-content: space-between;
+    gap: $space-1;
+    font-size: 0.62rem;
     font-weight: $font-weight-bold;
-    line-height: 1.1;
+    line-height: 1.05;
     color: $color-text;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
 
-  &__quest-meta {
-    font-size: 0.62rem;
+  &__quest-prog {
+    flex: 0 0 auto;
     color: $color-text-muted;
+    font-weight: $font-weight-regular;
     font-variant-numeric: tabular-nums;
   }
 
   &__quest-bar {
-    height: 3px;
+    height: 2.5px;
     border-radius: $radius-pill;
     background: rgba(#fff, 0.14);
     overflow: hidden;

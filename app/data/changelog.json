@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-17",
+      "tag": "fix",
+      "title": "Compact, collapsible quest tracker",
+      "detail": "The quest panel was eating too much of the screen on mobile. It's now much smaller (title + a thin progress bar) and has a show/hide toggle with a done-count, so it stays out of the way."
+    },
+    {
+      "date": "2026-07-17",
       "tag": "feature",
       "title": "New elite enemies: Caster & Splitter",
       "detail": "Two new elite types join the horde: Casters (pink) hang back and lob homing projectiles at you from range, and Splitters (green) burst into two smaller shards when killed. Adds real moment-to-moment variety to fights."

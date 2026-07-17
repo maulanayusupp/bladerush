@@ -85,6 +85,11 @@ let bossPhaseTimer: ReturnType<typeof setTimeout> | null = null
 
 // ---- Session quests ----
 const quests = ref<QuestState[]>([])
+const questsOpen = ref(true)
+const questsDoneCount = computed(() => quests.value.filter((q) => q.done).length)
+function toggleQuests(): void {
+  questsOpen.value = !questsOpen.value
+}
 const questToast = ref('')
 let questToastTimer: ReturnType<typeof setTimeout> | null = null
 function questLabel(q: QuestState): string {
@@ -435,17 +440,25 @@ function restart(): void {
     </Transition>
 
     <div v-if="quests.length && !isOver" class="hud__quests">
-      <div
-        v-for="q in quests"
-        :key="q.id"
-        class="hud__quest"
-        :class="{ 'hud__quest--done': q.done }"
-      >
-        <span class="hud__quest-icon" aria-hidden="true">{{ q.done ? '✓' : q.icon }}</span>
-        <div class="hud__quest-body">
-          <span class="hud__quest-label">{{ questLabel(q) }}</span>
-          <span class="hud__quest-meta">{{ questProgress(q) }} · 💰{{ q.coins }}</span>
-          <span class="hud__quest-bar"><span class="hud__quest-fill" :style="{ '--q': Math.min(1, q.value / q.target) }" /></span>
+      <button type="button" class="hud__quests-toggle" @click="toggleQuests">
+        🎯 <span class="hud__quests-count">{{ questsDoneCount }}/{{ quests.length }}</span>
+        <span class="hud__quests-caret">{{ questsOpen ? '▾' : '▸' }}</span>
+      </button>
+      <div v-if="questsOpen" class="hud__quests-list">
+        <div
+          v-for="q in quests"
+          :key="q.id"
+          class="hud__quest"
+          :class="{ 'hud__quest--done': q.done }"
+        >
+          <span class="hud__quest-icon" aria-hidden="true">{{ q.done ? '✓' : q.icon }}</span>
+          <div class="hud__quest-body">
+            <span class="hud__quest-label">
+              {{ questLabel(q) }}
+              <b class="hud__quest-prog">{{ questProgress(q) }}</b>
+            </span>
+            <span class="hud__quest-bar"><span class="hud__quest-fill" :style="{ '--q': Math.min(1, q.value / q.target) }" /></span>
+          </div>
         </div>
       </div>
     </div>
