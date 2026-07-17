@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -96,6 +96,8 @@ export class BattleScene extends Phaser.Scene {
   private relicDefenseMul = 1
   private relicBurn = false
   private relicFrost = false
+  // Evolved-elemental auto-cast timers (burn/frost/venom).
+  private evolveAcc: Record<string, number> = { burn: 0, frost: 0, venom: 0 }
   private dashUntil = 0
   private hitStopUntil = 0
   private frameTime = 0
@@ -274,6 +276,7 @@ export class BattleScene extends Phaser.Scene {
     this.relicDefenseMul = 1
     this.relicBurn = false
     this.relicFrost = false
+    this.evolveAcc = { burn: 0, frost: 0, venom: 0 }
     this.recomputeDefense()
     this.revivesLeft = metaService.reviveCount
     this.regenAcc = 0
@@ -622,6 +625,7 @@ export class BattleScene extends Phaser.Scene {
     this.updateChests()
     this.updateSwords(deltaMs)
     this.checkEvolve()
+    this.updateEvolutions(deltaMs)
     // Idle "breathing": a subtle scale + bob pulse so the hero never looks stiff.
     if (this.elapsedMs > this.heroPopUntil) {
       const t = this.elapsedMs
@@ -1878,6 +1882,14 @@ export class BattleScene extends Phaser.Scene {
       this.player.addMaxHp(UPGRADE_TUNE.maxHpPer)
       this.emitHp()
     }
+    // Elemental upgrades EVOLVE the moment they hit the threshold level.
+    if (id in EVOLUTIONS && this.upgrades.levelOf(id) === UPGRADE_EVOLVE_AT) {
+      gameEventBus.emit('upgrade:evolved', { id })
+      this.evolveFx()
+      this.cameras.main.flash(300, 255, 200, 80)
+      this.shake(220, 0.01)
+      audioService.win()
+    }
     this.leveling = false
     this.scene.resume()
     this.showLevelUpPop()
@@ -2983,6 +2995,41 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.flash(160, 255, 140, 40)
     audioService.nova()
     this.fxDamageArea(cx, cy, radius, dmg, numColor)
+  }
+
+  // ---- Evolved elemental upgrades (auto-cast skills) ----------------------
+
+  /** Once an elemental upgrade evolves, it auto-casts its FX skill on a timer. */
+  private updateEvolutions(deltaMs: number): void {
+    for (const id of Object.keys(EVOLUTIONS)) {
+      if (!this.upgrades.isEvolved(id)) continue
+      this.evolveAcc[id] = (this.evolveAcc[id] ?? 0) + deltaMs
+      if (this.evolveAcc[id]! < (EVOLUTIONS[id] as { intervalMs: number }).intervalMs) continue
+      this.evolveAcc[id] = 0
+      this.castEvolution(id)
+    }
+  }
+
+  private castEvolution(id: string): void {
+    const t = this.nearestEnemyPoint() ?? { x: this.player.x + randomRange(-160, 160), y: this.player.y + randomRange(-160, 160) }
+    if (id === 'burn') this.fxMeteors(t.x, t.y, 200, 3, this.skillDamage(4), '#ffb060', 0xff6a2a)
+    else if (id === 'frost') this.fxBlizzard(t.x, t.y, 240, this.skillDamage(3), '#dff4ff', 0.3)
+    else if (id === 'venom') this.fxPoisonCloud(t.x, t.y, 220, 3000, this.skillDamage(2), '#bfff6a', 0x8fff3a)
+  }
+
+  private nearestEnemyPoint(): { x: number; y: number } | null {
+    let best: Enemy | null = null
+    let bestD = 700 * 700
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active) continue
+      const d = (e.x - this.player.x) ** 2 + (e.y - this.player.y) ** 2
+      if (d < bestD) {
+        bestD = d
+        best = e
+      }
+    }
+    return best ? { x: best.x, y: best.y } : null
   }
 
   // ---- Divine ultimates (one per Divine hero) -----------------------------

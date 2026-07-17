@@ -121,6 +121,9 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
 - **Maps** (`MAPS`, 12): tiap map punya `props`, `obstacles` bertema, `ambient`.
   Ground/props/obstacles di-bake di BootScene. Banner nama map: event `map:set`.
 - **Relic** (`RELICS`): modifier pasif dari peti, di-`recomputeRelics()`.
+- **Evolusi upgrade** (`EVOLUTIONS`, `UPGRADE_EVOLVE_AT`): upgrade elemental
+  (burn/frost/venom) di level 5 berevolusi jadi skill auto-cast (`updateEvolutions`
+  → `castEvolution` pakai helper `fx*`). Event `upgrade:evolved`.
 - **Meta shop** (`MetaService`, koin) + **unlock hero pakai koin** di Codex.
 - **Progres**: XP `LEVEL` (per-kill ikut nilai kill), achievements, Codex, ranking.
 - **Loadout** (`LoadoutService`), **Settings** (`SettingsService`: screenShake).

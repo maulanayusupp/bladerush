@@ -224,6 +224,12 @@
     "holy": "Suci",
     "execute": "Eksekusi"
   },
+  "evolve": {
+    "title": "Berevolusi",
+    "burn": "Inferno",
+    "frost": "Beku Mutlak",
+    "venom": "Wabah"
+  },
   "relic": {
     "ironBlades": { "name": "Bilah Besi", "text": "+25% damage pedang" },
     "berserk": { "name": "Amukan Berserker", "text": "+30% damage pedang" },

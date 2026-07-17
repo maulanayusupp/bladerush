@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-17",
+      "tag": "feature",
+      "title": "Upgrade evolutions",
+      "detail": "Level an elemental upgrade to 5 and it EVOLVES into an auto-casting skill: Ignite → Inferno (meteor storm), Frostbite → Absolute Chill (blizzard), Venom → Plague (toxic cloud). Evolved elements periodically strike on their own, shown by an icon in the HUD."
+    },
+    {
+      "date": "2026-07-17",
       "tag": "art",
       "title": "Ultimates now have real, visible effects",
       "detail": "Every Divine ultimate got a bespoke effect you can actually see: falling meteors, forked lightning, a blizzard of snow, radiant light pillars, ground-shattering quakes with cracks, a lingering toxic virus cloud, black-hole vortices, and more — no more flat warning rings."

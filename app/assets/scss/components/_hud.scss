@@ -429,6 +429,10 @@
     max-width: 46vw;
   }
 
+  &__relics--evolved {
+    top: 106px;
+  }
+
   &__relic {
     @include flex-center;
     width: 26px;
@@ -439,6 +443,32 @@
     border: 1px solid rgba($color-warning, 0.4);
     box-shadow: 0 0 8px rgba($color-warning, 0.25);
     animation: hud-relic-pop 0.4s cubic-bezier(0.18, 0.9, 0.3, 1.4) both;
+
+    &--evolved {
+      background: rgba($color-primary, 0.2);
+      border-color: rgba($color-primary, 0.6);
+      box-shadow: 0 0 10px rgba($color-primary, 0.4);
+    }
+  }
+
+  &__evolve-banner {
+    position: absolute;
+    top: 34%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: $space-2 $space-5;
+    border-radius: $radius-pill;
+    font-size: clamp(1rem, 4vw, 1.6rem);
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #fff;
+    text-shadow: 0 0 12px rgba($color-warning, 0.9), 0 2px 6px rgba(#000, 0.8);
+    background: linear-gradient(90deg, transparent, rgba($color-warning, 0.28), transparent);
+    border-top: 2px solid rgba($color-warning, 0.7);
+    border-bottom: 2px solid rgba($color-warning, 0.7);
+    pointer-events: none;
   }
 
   &__timer {

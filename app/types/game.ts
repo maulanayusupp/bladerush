@@ -88,4 +88,5 @@ export interface GameEventMap {
   'meta:coins': { coins: number }
   'relic:gained': { id: string }
   'map:set': { key: string }
+  'upgrade:evolved': { id: string }
 }

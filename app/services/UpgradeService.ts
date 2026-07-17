@@ -2,7 +2,7 @@
 // UpgradeService — tracks chosen level-up upgrades and exposes the derived
 // combat modifiers. Framework-agnostic and unit-testable.
 // =============================================================================
-import { UPGRADES, UPGRADE_TUNE } from '~/game/constants'
+import { UPGRADES, UPGRADE_TUNE, UPGRADE_EVOLVE_AT, EVOLUTIONS } from '~/game/constants'
 
 export class UpgradeService {
   private levels: Record<string, number> = {}
@@ -66,5 +66,10 @@ export class UpgradeService {
 
   get venom(): number {
     return this.levelOf('venom')
+  }
+
+  /** An elemental upgrade has EVOLVED once it reaches the threshold level. */
+  isEvolved(id: string): boolean {
+    return id in EVOLUTIONS && this.levelOf(id) >= UPGRADE_EVOLVE_AT
   }
 }

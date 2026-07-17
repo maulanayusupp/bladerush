@@ -8,7 +8,7 @@ import { audioService } from '~/services/AudioService'
 import { settingsService } from '~/services/SettingsService'
 import { formatCompact } from '~/helpers/format.helper'
 import { useGameStore } from '~/stores/useGameStore'
-import { ACHIEVEMENTS, DIVINE_SKILLS, HERO, HERO_RARITIES, RELICS, heroName, heroRarity } from '~/game/constants'
+import { ACHIEVEMENTS, DIVINE_SKILLS, EVOLUTIONS, HERO, HERO_RARITIES, RELICS, heroName, heroRarity } from '~/game/constants'
 import type { RunStats } from '~/types/game'
 
 const store = useGameStore()
@@ -79,6 +79,14 @@ let bossWarnTimer: ReturnType<typeof setTimeout> | null = null
 const relics = ref<string[]>([])
 function relicIcon(id: string): string {
   return RELICS.find((r) => r.id === id)?.icon ?? '🔮'
+}
+
+// ---- Evolved elemental upgrades ----
+const evolved = ref<string[]>([])
+const evolveMsg = ref('')
+let evolveTimer: ReturnType<typeof setTimeout> | null = null
+function evolveIcon(id: string): string {
+  return EVOLUTIONS[id]?.icon ?? '✨'
 }
 
 // ---- Time-attack countdown ----
@@ -253,6 +261,12 @@ onMounted(() => {
       if (mapTimer) clearTimeout(mapTimer)
       mapTimer = setTimeout(() => (mapName.value = ''), 2800)
     }),
+    gameEventBus.on('upgrade:evolved', ({ id }) => {
+      if (!evolved.value.includes(id)) evolved.value = [...evolved.value, id]
+      evolveMsg.value = `${t('evolve.title')} · ${t('evolve.' + id)}`
+      if (evolveTimer) clearTimeout(evolveTimer)
+      evolveTimer = setTimeout(() => (evolveMsg.value = ''), 2600)
+    }),
     gameEventBus.on('divine:cast', ({ index }) => {
       const s = DIVINE_SKILLS[index]
       if (!s) return
@@ -267,6 +281,8 @@ onMounted(() => {
       ultCast.value = null
       showTimer.value = false
       relics.value = []
+      evolved.value = []
+      evolveMsg.value = ''
     }),
   )
   cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
@@ -279,6 +295,7 @@ onUnmounted(() => {
   if (ultTimer) clearTimeout(ultTimer)
   if (mapTimer) clearTimeout(mapTimer)
   if (bossWarnTimer) clearTimeout(bossWarnTimer)
+  if (evolveTimer) clearTimeout(evolveTimer)
 })
 
 function restart(): void {
@@ -346,6 +363,19 @@ function restart(): void {
         :title="$t('relic.' + id + '.name')"
       >{{ relicIcon(id) }}</span>
     </div>
+
+    <div v-if="evolved.length" class="hud__relics hud__relics--evolved">
+      <span
+        v-for="id in evolved"
+        :key="id"
+        class="hud__relic hud__relic--evolved"
+        :title="$t('evolve.' + id)"
+      >{{ evolveIcon(id) }}</span>
+    </div>
+
+    <Transition name="hud-rush">
+      <div v-if="evolveMsg" class="hud__evolve-banner">✦ {{ evolveMsg }}</div>
+    </Transition>
 
     <Transition name="hud-map">
       <div v-if="mapName" class="hud__map" aria-hidden="true">

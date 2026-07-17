@@ -224,6 +224,12 @@
     "holy": "Holy",
     "execute": "Execute"
   },
+  "evolve": {
+    "title": "Evolved",
+    "burn": "Inferno",
+    "frost": "Absolute Chill",
+    "venom": "Plague"
+  },
   "relic": {
     "ironBlades": { "name": "Iron Blades", "text": "+25% sword damage" },
     "berserk": { "name": "Berserker's Rage", "text": "+30% sword damage" },

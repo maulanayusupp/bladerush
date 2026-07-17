@@ -632,6 +632,18 @@ export const UPGRADE_TUNE = {
 } as const
 
 /**
+ * Upgrade EVOLUTION: the elemental upgrades (burn/frost/venom) evolve once
+ * they reach `UPGRADE_EVOLVE_AT`. Each evolved element auto-casts its own
+ * visible FX skill on an interval (meteor storm / blizzard / plague cloud).
+ */
+export const UPGRADE_EVOLVE_AT = 5
+export const EVOLUTIONS: Record<string, { icon: string; intervalMs: number }> = {
+  burn: { icon: '☄️', intervalMs: 4500 }, // → Inferno (meteor storm)
+  frost: { icon: '🌨️', intervalMs: 5200 }, // → Absolute Chill (blizzard)
+  venom: { icon: '☣️', intervalMs: 5600 }, // → Plague (toxic cloud)
+}
+
+/**
  * Elemental status effects applied by the sword ring when the matching upgrade
  * is owned. Damage-over-time scales with the hero's hit damage × level.
  * - burn: fire DoT for a short time.  - venom: poison DoT (longer).
