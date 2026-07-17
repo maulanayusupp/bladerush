@@ -281,6 +281,21 @@
     "close": "Close",
     "coins": "coins"
   },
+  "quest": {
+    "done": "Quest complete! +{coins} coins",
+    "kills": "Kill {n} enemies",
+    "bosses": "Defeat {n} bosses",
+    "combo": "Hit a {n}× combo",
+    "absorb": "Absorb {n} rivals",
+    "survive": "Survive {n}s",
+    "power": "Reach {n} power",
+    "level": "Reach Lvl {n}",
+    "relics": "Collect {n} relics",
+    "evolve": "Evolve {n} upgrades",
+    "gates": "Run {n} gates",
+    "ultimate": "Cast {n} ultimates",
+    "chest": "Open {n} chests"
+  },
   "prestige": {
     "bonus": "+{pct}% damage & coins forever",
     "none": "Reset your shop for permanent power",

@@ -762,6 +762,67 @@ export const ACHIEVEMENTS = [
   { id: 'champion', metric: 'rank1', value: 1, reward: 2500, icon: '👑' },
 ] as const
 
+/**
+ * Session quests — each run activates `SESSION_QUEST_COUNT` random objectives
+ * (one per distinct metric) from this pool. Completing one grants coins mid-run.
+ * Metrics: kills, bosses, combo, absorb, survive(s), power, level, relics,
+ * evolve, gates, ultimate, chest.
+ */
+export interface Quest {
+  id: string
+  icon: string
+  metric: string
+  target: number
+  coins: number
+}
+
+export const SESSION_QUEST_COUNT = 4
+
+export const QUESTS: Quest[] = [
+  { id: 'kills1', icon: '💀', metric: 'kills', target: 50, coins: 30 },
+  { id: 'kills2', icon: '💀', metric: 'kills', target: 250, coins: 80 },
+  { id: 'kills3', icon: '💀', metric: 'kills', target: 1000, coins: 200 },
+  { id: 'kills4', icon: '💀', metric: 'kills', target: 5000, coins: 600 },
+  { id: 'kills5', icon: '💀', metric: 'kills', target: 20000, coins: 1500 },
+  { id: 'boss1', icon: '👹', metric: 'bosses', target: 1, coins: 50 },
+  { id: 'boss2', icon: '👹', metric: 'bosses', target: 3, coins: 150 },
+  { id: 'boss3', icon: '👹', metric: 'bosses', target: 6, coins: 300 },
+  { id: 'boss4', icon: '👹', metric: 'bosses', target: 12, coins: 700 },
+  { id: 'boss5', icon: '👹', metric: 'bosses', target: 25, coins: 1600 },
+  { id: 'combo1', icon: '🔥', metric: 'combo', target: 25, coins: 40 },
+  { id: 'combo2', icon: '🔥', metric: 'combo', target: 75, coins: 110 },
+  { id: 'combo3', icon: '🔥', metric: 'combo', target: 200, coins: 300 },
+  { id: 'combo4', icon: '🔥', metric: 'combo', target: 500, coins: 800 },
+  { id: 'absorb1', icon: '🤝', metric: 'absorb', target: 1, coins: 40 },
+  { id: 'absorb2', icon: '🤝', metric: 'absorb', target: 3, coins: 120 },
+  { id: 'absorb3', icon: '🤝', metric: 'absorb', target: 8, coins: 350 },
+  { id: 'absorb4', icon: '🤝', metric: 'absorb', target: 15, coins: 800 },
+  { id: 'survive1', icon: '⏱️', metric: 'survive', target: 60, coins: 40 },
+  { id: 'survive2', icon: '⏱️', metric: 'survive', target: 180, coins: 120 },
+  { id: 'survive3', icon: '⏱️', metric: 'survive', target: 300, coins: 250 },
+  { id: 'survive4', icon: '⏱️', metric: 'survive', target: 600, coins: 600 },
+  { id: 'power1', icon: '⚡', metric: 'power', target: 1000, coins: 60 },
+  { id: 'power2', icon: '⚡', metric: 'power', target: 100000, coins: 150 },
+  { id: 'power3', icon: '⚡', metric: 'power', target: 10000000, coins: 400 },
+  { id: 'power4', icon: '⚡', metric: 'power', target: 1000000000, coins: 1000 },
+  { id: 'level1', icon: '⭐', metric: 'level', target: 5, coins: 50 },
+  { id: 'level2', icon: '⭐', metric: 'level', target: 10, coins: 150 },
+  { id: 'level3', icon: '⭐', metric: 'level', target: 15, coins: 400 },
+  { id: 'relic1', icon: '🔮', metric: 'relics', target: 1, coins: 50 },
+  { id: 'relic2', icon: '🔮', metric: 'relics', target: 3, coins: 180 },
+  { id: 'relic3', icon: '🔮', metric: 'relics', target: 6, coins: 500 },
+  { id: 'evolve1', icon: '✨', metric: 'evolve', target: 1, coins: 120 },
+  { id: 'evolve2', icon: '✨', metric: 'evolve', target: 2, coins: 300 },
+  { id: 'evolve3', icon: '✨', metric: 'evolve', target: 3, coins: 700 },
+  { id: 'gates1', icon: '🚪', metric: 'gates', target: 20, coins: 40 },
+  { id: 'gates2', icon: '🚪', metric: 'gates', target: 60, coins: 120 },
+  { id: 'gates3', icon: '🚪', metric: 'gates', target: 150, coins: 300 },
+  { id: 'ult1', icon: '🌟', metric: 'ultimate', target: 3, coins: 80 },
+  { id: 'ult2', icon: '🌟', metric: 'ultimate', target: 10, coins: 250 },
+  { id: 'chest1', icon: '🎁', metric: 'chest', target: 3, coins: 60 },
+  { id: 'chest2', icon: '🎁', metric: 'chest', target: 10, coins: 200 },
+]
+
 export const META_IDS = [
   'startPower', 'maxHp', 'damage', 'coin', 'moveSpeed', 'orbitSpeed', 'crit', 'xp',
   'lifesteal', 'defense', 'bossDmg', 'luck', 'heal', 'status', 'regen', 'magnet', 'revive',

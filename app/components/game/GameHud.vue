@@ -9,7 +9,7 @@ import { settingsService } from '~/services/SettingsService'
 import { formatCompact } from '~/helpers/format.helper'
 import { useGameStore } from '~/stores/useGameStore'
 import { ACHIEVEMENTS, DIVINE_SKILLS, EVOLUTIONS, HERO, HERO_RARITIES, RELICS, heroName, heroRarity } from '~/game/constants'
-import type { RunStats } from '~/types/game'
+import type { QuestState, RunStats } from '~/types/game'
 
 const store = useGameStore()
 const { t } = useI18n()
@@ -82,6 +82,18 @@ let rarityTimer: ReturnType<typeof setTimeout> | null = null
 // ---- Boss phase-2 banner ----
 const bossPhaseUp = ref(false)
 let bossPhaseTimer: ReturnType<typeof setTimeout> | null = null
+
+// ---- Session quests ----
+const quests = ref<QuestState[]>([])
+const questToast = ref('')
+let questToastTimer: ReturnType<typeof setTimeout> | null = null
+function questLabel(q: QuestState): string {
+  const n = q.metric === 'power' ? formatCompact(q.target) : q.target
+  return t('quest.' + q.metric, { n })
+}
+function questProgress(q: QuestState): string {
+  return `${formatCompact(Math.min(q.value, q.target))}/${formatCompact(q.target)}`
+}
 
 // ---- Relics (passive run modifiers) ----
 const relics = ref<string[]>([])
@@ -269,6 +281,14 @@ onMounted(() => {
       if (mapTimer) clearTimeout(mapTimer)
       mapTimer = setTimeout(() => (mapName.value = ''), 2800)
     }),
+    gameEventBus.on('quest:sync', ({ quests: list }) => {
+      quests.value = list
+    }),
+    gameEventBus.on('quest:done', ({ coins }) => {
+      questToast.value = t('quest.done', { coins })
+      if (questToastTimer) clearTimeout(questToastTimer)
+      questToastTimer = setTimeout(() => (questToast.value = ''), 2400)
+    }),
     gameEventBus.on('boss:phase', () => {
       bossPhaseUp.value = true
       if (bossPhaseTimer) clearTimeout(bossPhaseTimer)
@@ -308,6 +328,8 @@ onMounted(() => {
       evolveMsg.value = ''
       rarityUp.value = null
       bossPhaseUp.value = false
+      quests.value = []
+      questToast.value = ''
     }),
   )
   cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
@@ -323,6 +345,7 @@ onUnmounted(() => {
   if (evolveTimer) clearTimeout(evolveTimer)
   if (rarityTimer) clearTimeout(rarityTimer)
   if (bossPhaseTimer) clearTimeout(bossPhaseTimer)
+  if (questToastTimer) clearTimeout(questToastTimer)
 })
 
 function restart(): void {
@@ -409,6 +432,26 @@ function restart(): void {
         <span class="hud__map-eyebrow">{{ $t('maps.entering') }}</span>
         <span class="hud__map-name">{{ mapName }}</span>
       </div>
+    </Transition>
+
+    <div v-if="quests.length && !isOver" class="hud__quests">
+      <div
+        v-for="q in quests"
+        :key="q.id"
+        class="hud__quest"
+        :class="{ 'hud__quest--done': q.done }"
+      >
+        <span class="hud__quest-icon" aria-hidden="true">{{ q.done ? '✓' : q.icon }}</span>
+        <div class="hud__quest-body">
+          <span class="hud__quest-label">{{ questLabel(q) }}</span>
+          <span class="hud__quest-meta">{{ questProgress(q) }} · 💰{{ q.coins }}</span>
+          <span class="hud__quest-bar"><span class="hud__quest-fill" :style="{ '--q': Math.min(1, q.value / q.target) }" /></span>
+        </div>
+      </div>
+    </div>
+
+    <Transition name="hud-rush">
+      <div v-if="questToast" class="hud__quest-toast">🎯 {{ questToast }}</div>
     </Transition>
 
     <div v-if="bossRush" class="hud__rush-vignette" aria-hidden="true" />

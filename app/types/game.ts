@@ -91,4 +91,17 @@ export interface GameEventMap {
   'upgrade:evolved': { id: string }
   'hero:rarityup': { rarity: number }
   'boss:phase': { phase: number }
+  'quest:sync': { quests: QuestState[] }
+  'quest:done': { id: string; coins: number }
+}
+
+/** Live state of one active session quest, pushed to the HUD. */
+export interface QuestState {
+  id: string
+  icon: string
+  metric: string
+  target: number
+  value: number
+  done: boolean
+  coins: number
 }

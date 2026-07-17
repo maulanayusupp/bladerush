@@ -424,6 +424,101 @@
     text-shadow: 0 0 22px var(--rc), 0 0 46px var(--rc), 0 3px 8px rgba(#000, 0.8);
   }
 
+  // Session quest tracker (left side).
+  &__quests {
+    position: absolute;
+    top: 140px;
+    left: $space-3;
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    width: min(42vw, 210px);
+  }
+
+  &__quest {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-2;
+    border-radius: $radius-sm;
+    background: rgba(#000, 0.42);
+    border: 1px solid rgba(#fff, 0.09);
+    transition: opacity $transition-base;
+
+    &--done {
+      opacity: 0.55;
+      border-color: rgba($color-success, 0.6);
+    }
+  }
+
+  &__quest-icon {
+    @include flex-center;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    font-size: 14px;
+  }
+
+  &__quest--done &__quest-icon {
+    color: $color-success;
+  }
+
+  &__quest-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  &__quest-label {
+    font-size: 0.72rem;
+    font-weight: $font-weight-bold;
+    line-height: 1.1;
+    color: $color-text;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__quest-meta {
+    font-size: 0.62rem;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__quest-bar {
+    height: 3px;
+    border-radius: $radius-pill;
+    background: rgba(#fff, 0.14);
+    overflow: hidden;
+  }
+
+  &__quest-fill {
+    display: block;
+    height: 100%;
+    width: calc(var(--q, 0) * 100%);
+    background: linear-gradient(90deg, $color-warning, $color-success);
+  }
+
+  &__quest-toast {
+    position: absolute;
+    top: 44%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: $space-2 $space-5;
+    border-radius: $radius-pill;
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    white-space: nowrap;
+    color: #fff;
+    background: linear-gradient(90deg, transparent, rgba($color-success, 0.32), transparent);
+    border-top: 2px solid rgba($color-success, 0.7);
+    border-bottom: 2px solid rgba($color-success, 0.7);
+    text-shadow: 0 0 12px rgba($color-success, 0.8), 0 2px 6px rgba(#000, 0.8);
+    pointer-events: none;
+  }
+
   // Map intro — the map name shown briefly as a run begins.
   &__map {
     position: absolute;

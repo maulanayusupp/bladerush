@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-17",
+      "tag": "feature",
+      "title": "Session quests for coins",
+      "detail": "Every run now rolls 4 objectives from a pool of 40+ (kills, bosses, combos, absorbs, survive time, power, level, relics, evolutions, gates, ultimates, chests). Track them live in the HUD with progress bars; completing one pays out coins instantly with a toast."
+    },
+    {
+      "date": "2026-07-17",
       "tag": "fix",
       "title": "Blades now cut heroes they overlap",
       "detail": "Your spinning ring used to pass through rival & AI heroes standing among the outer blades without hitting them. Combat reach now matches the ring's true drawn extent (all concentric rings), so any hero your blades visibly cover is actually sliced — with the clash spark on the target."

@@ -281,6 +281,21 @@
     "close": "Tutup",
     "coins": "koin"
   },
+  "quest": {
+    "done": "Quest selesai! +{coins} koin",
+    "kills": "Bunuh {n} musuh",
+    "bosses": "Kalahkan {n} bos",
+    "combo": "Capai kombo {n}×",
+    "absorb": "Serap {n} rival",
+    "survive": "Bertahan {n}d",
+    "power": "Capai power {n}",
+    "level": "Capai Lvl {n}",
+    "relics": "Kumpulkan {n} relic",
+    "evolve": "Evolusikan {n} upgrade",
+    "gates": "Lewati {n} gerbang",
+    "ultimate": "Pakai {n} ultimate",
+    "chest": "Buka {n} peti"
+  },
   "prestige": {
     "bonus": "+{pct}% damage & koin selamanya",
     "none": "Reset toko untuk kekuatan permanen",

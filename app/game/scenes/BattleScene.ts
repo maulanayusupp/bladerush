@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, BOSS_MECH, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, BOSS_MECH, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, QUESTS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SESSION_QUEST_COUNT, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName, type Quest } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -64,6 +64,13 @@ export class BattleScene extends Phaser.Scene {
   private bossClashAcc = 0
   // Boss archetype mechanics + multi-phase state.
   private ringOuterRadius: number = SWORD.orbitRadius // actual outer extent of the sword ring
+  // ---- Session quests ----
+  private activeQuests: Quest[] = []
+  private questDone = new Set<string>()
+  private questAcc = 0
+  private gatesRun = 0
+  private ultimatesCast = 0
+  private chestsOpened = 0
   private bossArchetype = 0
   private bossPhase = 1
   private bossMechAcc = 0
@@ -228,6 +235,13 @@ export class BattleScene extends Phaser.Scene {
     this.bossRush = false
     this.rushWave = 0
     this.rushGapUntil = 0
+    // Session quests.
+    this.questDone = new Set<string>()
+    this.questAcc = 0
+    this.gatesRun = 0
+    this.ultimatesCast = 0
+    this.chestsOpened = 0
+    this.activeQuests = this.pickSessionQuests()
     this.rankAcc = 0
     this.curRank = 1
     this.curTotal = 1
@@ -573,6 +587,7 @@ export class BattleScene extends Phaser.Scene {
     // Boss Rush mode drops you straight into the gauntlet.
     if (this.mode === 'bossrush') this.enterBossRush()
     if (this.timeLimitMs > 0) gameEventBus.emit('timer:changed', { remainingMs: this.timeLimitMs })
+    this.syncQuests()
   }
 
   override update(time: number, deltaMs: number): void {
@@ -676,6 +691,12 @@ export class BattleScene extends Phaser.Scene {
     this.updateSwords(deltaMs)
     this.checkEvolve()
     this.updateEvolutions(deltaMs)
+    // Quests: check/complete + push progress to the HUD a few times a second.
+    this.questAcc += deltaMs
+    if (this.questAcc >= 400) {
+      this.questAcc = 0
+      this.syncQuests()
+    }
     // Idle "breathing": a subtle scale + bob pulse so the hero never looks stiff.
     if (this.elapsedMs > this.heroPopUntil) {
       const t = this.elapsedMs
@@ -2011,6 +2032,7 @@ export class BattleScene extends Phaser.Scene {
 
   private openChest(chest: Chest): void {
     chest.consumed = true
+    this.chestsOpened++
     const powerReward = Math.max(
       CHEST.basePower * chest.mul,
       Math.round(this.power.power * CHEST.powerFromCurrent * chest.mul),
@@ -2324,6 +2346,7 @@ export class BattleScene extends Phaser.Scene {
       if (!gate.consumed && this.gateOverlapsPlayer(gate)) {
         gate.consumed = true
         this.power.applyGate(gate.config)
+        this.gatesRun++
         this.emitPower()
         audioService.pickup()
         gate.deactivate()
@@ -3315,6 +3338,7 @@ export class BattleScene extends Phaser.Scene {
     // Cinematic cut-in + bespoke sound, then a brief beat of hit-stop for punch.
     gameEventBus.emit('divine:cast', { index: idx })
     audioService.ultimate(skill.id)
+    this.ultimatesCast++
     this.hitStopUntil = this.frameTime + 90
     this.castDivineSkill(idx)
   }
@@ -3464,6 +3488,60 @@ export class BattleScene extends Phaser.Scene {
     let n = 0
     for (const obj of this.enemies.getChildren()) if ((obj as Enemy).active) n++
     return n
+  }
+
+  // ---- Session quests -----------------------------------------------------
+
+  /** Pick SESSION_QUEST_COUNT quests, each from a distinct metric, for variety. */
+  private pickSessionQuests(): Quest[] {
+    const metrics = [...new Set(QUESTS.map((q) => q.metric))]
+    for (let i = metrics.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      const tmp = metrics[i] as string
+      metrics[i] = metrics[j] as string
+      metrics[j] = tmp
+    }
+    const picked: Quest[] = []
+    for (const m of metrics.slice(0, SESSION_QUEST_COUNT)) {
+      const pool = QUESTS.filter((q) => q.metric === m)
+      const q = pool[Math.floor(Math.random() * pool.length)]
+      if (q) picked.push(q)
+    }
+    return picked
+  }
+
+  private questMetric(metric: string): number {
+    switch (metric) {
+      case 'kills': return this.statKills
+      case 'bosses': return this.statBosses
+      case 'combo': return this.statTopCombo
+      case 'absorb': return this.statNpcAbsorbed
+      case 'survive': return Math.floor(this.elapsedMs / 1000)
+      case 'power': return this.power.power
+      case 'level': return this.level
+      case 'relics': return this.relics.size
+      case 'evolve': return Object.keys(EVOLUTIONS).filter((id) => this.upgrades.isEvolved(id)).length
+      case 'gates': return this.gatesRun
+      case 'ultimate': return this.ultimatesCast
+      case 'chest': return this.chestsOpened
+      default: return 0
+    }
+  }
+
+  /** Award any newly-completed quests + push live progress to the HUD. */
+  private syncQuests(): void {
+    const list = this.activeQuests.map((q) => {
+      const value = this.questMetric(q.metric)
+      if (!this.questDone.has(q.id) && value >= q.target) {
+        this.questDone.add(q.id)
+        metaService.addCoins(q.coins)
+        this.spawnPopup(this.player.x, this.player.y - 46, `+${q.coins}💰`)
+        audioService.win()
+        gameEventBus.emit('quest:done', { id: q.id, coins: q.coins })
+      }
+      return { id: q.id, icon: q.icon, metric: q.metric, target: q.target, value, done: this.questDone.has(q.id), coins: q.coins }
+    })
+    gameEventBus.emit('quest:sync', { quests: list })
   }
 
   private gameOver(force = false): void {

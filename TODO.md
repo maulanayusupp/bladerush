@@ -10,11 +10,6 @@ sistem yang sudah ada di `CLAUDE.md`.
 
 ## 🔜 Berikutnya (prioritas)
 
-- [ ] **Objective/quest untuk koin** — 2-3 target per sesi (bunuh N bos, capai
-      Divine, bertahan X menit, serap N NPC) yang memberi koin saat tercapai.
-      Bisa reuse `RunStats`/achievement infra. Tampilkan progress ringkas di HUD
-      + reward di layar game-over.
-
 - [ ] **Companion/pet evolvable** — sekutu panggilan yang mengorbit/mengikuti
       hero, menyerang musuh terdekat, dan **berevolusi** ikut tier hero. Entity
       baru (`entities/Companion.ts`) + sprite baked + kontribusi damage kecil.
@@ -45,6 +40,7 @@ sistem yang sudah ada di `CLAUDE.md`.
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- Session quests untuk koin (pool 40+, 4 per run, progress di HUD).
 - Mekanik bos unik (summoner/teleporter/charger/bomber/shielder) + fase 2.
 - Hazard per map (lava/pasir hisap/es/pusaran/toxic).
 - Prestige (reset koin+upgrade → bintang permanen).
