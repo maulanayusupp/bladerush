@@ -146,7 +146,8 @@
     }
   },
   "levelup": {
-    "title": "Level Up! Choose an upgrade"
+    "title": "Level Up! Choose an upgrade",
+    "evolves": "Evolves → {name}"
   },
   "rush": {
     "start": "BOSS RUSH!",

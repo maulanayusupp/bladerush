@@ -146,7 +146,8 @@
     }
   },
   "levelup": {
-    "title": "Naik Level! Pilih upgrade"
+    "title": "Naik Level! Pilih upgrade",
+    "evolves": "Berevolusi → {name}"
   },
   "rush": {
     "start": "BOSS RUSH!",

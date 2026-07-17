@@ -3,6 +3,12 @@
     {
       "date": "2026-07-17",
       "tag": "feature",
+      "title": "Level-up cards show evolutions",
+      "detail": "When an elemental upgrade is one pick away from evolving, its level-up card now glows gold with an 'Evolves → Inferno/Absolute Chill/Plague' badge, so you can see the payoff before choosing."
+    },
+    {
+      "date": "2026-07-17",
+      "tag": "feature",
       "title": "XP gems + magnet",
       "detail": "Kills now drop XP gems (bigger gem = more XP) that are drawn to your hero — fast within magnet range (boosted by the Magnet upgrade), with a gentle homing drift otherwise so nothing is left behind. Collecting fills your XP bar smoothly."
     },

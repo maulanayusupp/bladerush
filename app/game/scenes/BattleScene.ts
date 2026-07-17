@@ -2230,7 +2230,11 @@ export class BattleScene extends Phaser.Scene {
     if (this.mode === 'normal' && !this.bossRush && this.level >= BOSS_RUSH.triggerLevel) this.enterBossRush()
     this.leveling = true
     this.emitXp()
-    gameEventBus.emit('levelup:offer', { ids: this.upgrades.roll(3) })
+    // Flag any offered elemental upgrade that would EVOLVE if picked now, so the
+    // card can advertise it (e.g. Ignite → Inferno).
+    const ids = this.upgrades.roll(3)
+    const evolving = ids.filter((id) => id in EVOLUTIONS && this.upgrades.levelOf(id) + 1 === UPGRADE_EVOLVE_AT)
+    gameEventBus.emit('levelup:offer', { ids, evolving })
     this.scene.pause()
   }
 

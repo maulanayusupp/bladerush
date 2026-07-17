@@ -14,8 +14,6 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 ## 🧩 Backlog / ide
 
-- [ ] **Kartu level-up**: tandai elemental yang "akan berevolusi" saat di level 4
-      (butuh overlay tahu level upgrade saat ini).
 - [ ] **Prestige lanjutan**: milestone bintang (mis. tiap 10 bintang buka bonus
       spesial), atau prestige per-hero.
 - [ ] **Onboarding**: pop-up tutorial singkat saat pertama main (guide sudah ada
@@ -32,6 +30,7 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- Kartu level-up menandai upgrade yang "akan berevolusi" (badge emas).
 - XP gem + magnet (kill drop gem, ditarik ke hero).
 - Performa: baking tekstur bertahap (per-frame) + progress bar (anti-freeze).
 - Musuh elite baru: Caster (penembak) & Splitter (pecah saat mati).

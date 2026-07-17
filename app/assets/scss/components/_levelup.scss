@@ -40,6 +40,7 @@
 
   &__card {
     @include button-reset;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -56,6 +57,35 @@
       border-color: $color-primary;
       background-color: rgba($color-primary, 0.18);
     }
+
+    // An upgrade that will EVOLVE if picked now gets a golden, glowing frame.
+    &--evolve {
+      border-color: rgba($color-warning, 0.85);
+      background: linear-gradient(180deg, rgba($color-warning, 0.16), $color-surface-2);
+      box-shadow: 0 0 18px rgba($color-warning, 0.35);
+
+      &:hover {
+        border-color: $color-warning;
+        background: linear-gradient(180deg, rgba($color-warning, 0.26), rgba($color-primary, 0.14));
+      }
+    }
+  }
+
+  &__evolve {
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1px $space-2;
+    border-radius: $radius-pill;
+    font-size: 0.62rem;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: $color-text-inverse;
+    background: $color-warning;
+    box-shadow: 0 0 10px rgba($color-warning, 0.6);
   }
 
   &__icon {
