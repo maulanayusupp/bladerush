@@ -904,6 +904,20 @@ export class BattleScene extends Phaser.Scene {
     npc.deactivate()
   }
 
+  /** A boss crushes any NPC hero that strays into its reach (over ~0.5s). */
+  private bossSlayNearbyNpcs(bx: number, by: number, radius: number, deltaMs: number): void {
+    for (const npc of this.npcs) {
+      if (!npc.active) continue
+      if (distance(npc.x, npc.y, bx, by) > radius) continue
+      npc.hp -= npc.maxHp * 2 * (deltaMs / 1000)
+      if (Math.random() < 0.25) this.sparks.explode(2, npc.x, npc.y)
+      if (npc.hp <= 0) {
+        this.playClashFx(npc.x, npc.y, 0xff3b3b)
+        this.npcDie(npc)
+      }
+    }
+  }
+
   /** NPCs also grab gates / chests / hearts they reach (competing with you). */
   private npcPickups(npc: NpcHero): void {
     for (const gate of this.gatePool) {
@@ -1266,7 +1280,19 @@ export class BattleScene extends Phaser.Scene {
     this.shake(240, 0.008)
     audioService.nova()
     audioService.setMusicIntensity(this.bossRush ? 2 : 1)
-    gameEventBus.emit('boss:spawn', { maxHp: hp })
+    // Telegraph: pulsing red warning rings bloom where the boss lands.
+    for (let k = 0; k < 3; k++) {
+      const ring = this.add.image(x, y, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(0xff2020).setScale(0.2).setDepth(6).setAlpha(0)
+      this.tweens.add({
+        targets: ring,
+        scale: 3.4,
+        alpha: { from: 0.9, to: 0 },
+        delay: k * 160,
+        duration: 620,
+        onComplete: () => ring.destroy(),
+      })
+    }
+    gameEventBus.emit('boss:spawn', { maxHp: hp, warn: !this.bossRush })
   }
 
   private hideBossExtras(): void {
@@ -1361,6 +1387,8 @@ export class BattleScene extends Phaser.Scene {
     }
     this.updateBossOrbs(deltaMs)
     this.updateBossArrow()
+    // The boss also butchers any AI hero that wanders into its reach.
+    this.bossSlayNearbyNpcs(this.boss.x, this.boss.y, this.boss.displayWidth * 0.6, deltaMs)
   }
 
   /** Point a screen-edge arrow at the boss when it's off-screen. */

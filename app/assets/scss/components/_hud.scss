@@ -287,6 +287,27 @@
     text-align: center;
   }
 
+  &__boss-warn {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: $space-2 $space-6;
+    border-radius: $radius-pill;
+    font-size: clamp(1.2rem, 4.5vw, 2rem);
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #fff;
+    text-shadow: 0 0 14px rgba($color-danger, 1), 0 2px 6px rgba(#000, 0.8);
+    background: linear-gradient(90deg, transparent, rgba($color-danger, 0.4), transparent);
+    border-top: 2px solid rgba($color-danger, 0.8);
+    border-bottom: 2px solid rgba($color-danger, 0.8);
+    pointer-events: none;
+    animation: hud-rush-pulse 0.5s ease-in-out infinite;
+  }
+
   &__rush-wave {
     position: absolute;
     top: 40px;

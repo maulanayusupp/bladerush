@@ -3,6 +3,12 @@
     {
       "date": "2026-07-17",
       "tag": "feature",
+      "title": "Boss warnings + bosses hunt NPCs",
+      "detail": "A boss now announces itself with a pulsing 'Boss Incoming' banner and telegraph rings where it lands — and it butchers any AI hero that strays into its reach."
+    },
+    {
+      "date": "2026-07-17",
+      "tag": "feature",
       "title": "Map intro banner + dynamic music",
       "detail": "Each run now announces the map name as it begins (one of 12), and the music intensifies — faster tempo and driving layers — when a boss appears or Boss Rush starts."
     },

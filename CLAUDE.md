@@ -112,6 +112,8 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
   cut-in sinematik (event `divine:cast`) + SFX `audioService.ultimate(id)`.
 - **Mode** (`ModeService`): normal / endless / bossrush / timeattack.
 - **Boss Rush** (`BOSS_RUSH`): gelombang bos (lead + escort) di Lvl 10 (normal).
+  Bos muncul dengan warning (banner + telegraph) & membantai NPC yang mendekat
+  (`bossSlayNearbyNpcs`).
 - **Maps** (`MAPS`, 12): tiap map punya `props`, `obstacles` bertema, `ambient`.
   Ground/props/obstacles di-bake di BootScene. Banner nama map: event `map:set`.
 - **Relic** (`RELICS`): modifier pasif dari peti, di-`recomputeRelics()`.

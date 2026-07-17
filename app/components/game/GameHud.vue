@@ -71,6 +71,10 @@ let ultTimer: ReturnType<typeof setTimeout> | null = null
 const mapName = ref('')
 let mapTimer: ReturnType<typeof setTimeout> | null = null
 
+// ---- Boss incoming warning ----
+const bossWarn = ref(false)
+let bossWarnTimer: ReturnType<typeof setTimeout> | null = null
+
 // ---- Relics (passive run modifiers) ----
 const relics = ref<string[]>([])
 function relicIcon(id: string): string {
@@ -194,10 +198,15 @@ onMounted(() => {
     gameEventBus.on('skill:divine', ({ index }) => (divineIndex.value = index)),
     gameEventBus.on('hero:changed', ({ index }) => (heroIndex.value = index)),
     gameEventBus.on('weapon:set', (w) => (weaponInfo.value = w)),
-    gameEventBus.on('boss:spawn', ({ maxHp }) => {
+    gameEventBus.on('boss:spawn', ({ maxHp, warn }) => {
       bossActive.value = true
       bossMax.value = maxHp
       bossHp.value = maxHp
+      if (warn) {
+        bossWarn.value = true
+        if (bossWarnTimer) clearTimeout(bossWarnTimer)
+        bossWarnTimer = setTimeout(() => (bossWarn.value = false), 2400)
+      }
     }),
     gameEventBus.on('boss:hp', ({ current, max }) => {
       bossHp.value = current
@@ -269,6 +278,7 @@ onUnmounted(() => {
   if (rushBannerTimer) clearTimeout(rushBannerTimer)
   if (ultTimer) clearTimeout(ultTimer)
   if (mapTimer) clearTimeout(mapTimer)
+  if (bossWarnTimer) clearTimeout(bossWarnTimer)
 })
 
 function restart(): void {
@@ -353,6 +363,10 @@ function restart(): void {
           <span class="hud__ult-name">{{ ultCast.skill }}</span>
         </div>
       </div>
+    </Transition>
+
+    <Transition name="hud-rush">
+      <div v-if="bossWarn" class="hud__boss-warn">⚠ {{ $t('hud.bossIncoming') }}</div>
     </Transition>
 
     <Transition name="hud-rush">
