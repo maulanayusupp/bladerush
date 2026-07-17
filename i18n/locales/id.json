@@ -208,6 +208,18 @@
     "holy": "Suci",
     "execute": "Eksekusi"
   },
+  "relic": {
+    "ironBlades": { "name": "Bilah Besi", "text": "+25% damage pedang" },
+    "berserk": { "name": "Amukan Berserker", "text": "+30% damage pedang" },
+    "whirlwind": { "name": "Jimat Puyuh", "text": "+20% kecepatan putar ring" },
+    "arsenal": { "name": "Gudang Senjata", "text": "+3 bilah" },
+    "vampire": { "name": "Taring Vampir", "text": "+2 HP pulih tiap bunuh" },
+    "aegis": { "name": "Aegis", "text": "-15% damage diterima" },
+    "midas": { "name": "Sentuhan Midas", "text": "+35% skor & power tiap bunuh" },
+    "titanHeart": { "name": "Jantung Titan", "text": "+80 HP maks" },
+    "emberHeart": { "name": "Jantung Bara", "text": "Bilah selalu membakar" },
+    "frostCore": { "name": "Inti Beku", "text": "Bilah selalu membekukan" }
+  },
   "rarity": {
     "common": "Biasa",
     "rare": "Langka",

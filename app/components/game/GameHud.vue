@@ -8,7 +8,7 @@ import { audioService } from '~/services/AudioService'
 import { settingsService } from '~/services/SettingsService'
 import { formatCompact } from '~/helpers/format.helper'
 import { useGameStore } from '~/stores/useGameStore'
-import { ACHIEVEMENTS, DIVINE_SKILLS, HERO, HERO_RARITIES, heroName, heroRarity } from '~/game/constants'
+import { ACHIEVEMENTS, DIVINE_SKILLS, HERO, HERO_RARITIES, RELICS, heroName, heroRarity } from '~/game/constants'
 import type { RunStats } from '~/types/game'
 
 const store = useGameStore()
@@ -66,6 +66,12 @@ function flashRushBanner(text: string): void {
 // ---- Divine ultimate cinematic cut-in ----
 const ultCast = ref<{ skill: string; hero: string } | null>(null)
 let ultTimer: ReturnType<typeof setTimeout> | null = null
+
+// ---- Relics (passive run modifiers) ----
+const relics = ref<string[]>([])
+function relicIcon(id: string): string {
+  return RELICS.find((r) => r.id === id)?.icon ?? '🔮'
+}
 
 // ---- Time-attack countdown ----
 const timerMs = ref(0)
@@ -226,6 +232,9 @@ onMounted(() => {
       showTimer.value = true
       timerMs.value = remainingMs
     }),
+    gameEventBus.on('relic:gained', ({ id }) => {
+      if (!relics.value.includes(id)) relics.value = [...relics.value, id]
+    }),
     gameEventBus.on('divine:cast', ({ index }) => {
       const s = DIVINE_SKILLS[index]
       if (!s) return
@@ -239,6 +248,7 @@ onMounted(() => {
       rushBanner.value = ''
       ultCast.value = null
       showTimer.value = false
+      relics.value = []
     }),
   )
   cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
@@ -306,6 +316,15 @@ function restart(): void {
 
     <div class="hud__xp">
       <div class="hud__xp-fill" :style="{ '--xp-ratio': xpRatio }" />
+    </div>
+
+    <div v-if="relics.length" class="hud__relics">
+      <span
+        v-for="id in relics"
+        :key="id"
+        class="hud__relic"
+        :title="$t('relic.' + id + '.name')"
+      >{{ relicIcon(id) }}</span>
     </div>
 
     <div v-if="bossRush" class="hud__rush-vignette" aria-hidden="true" />

@@ -208,6 +208,18 @@
     "holy": "Holy",
     "execute": "Execute"
   },
+  "relic": {
+    "ironBlades": { "name": "Iron Blades", "text": "+25% sword damage" },
+    "berserk": { "name": "Berserker's Rage", "text": "+30% sword damage" },
+    "whirlwind": { "name": "Whirlwind Charm", "text": "+20% ring spin speed" },
+    "arsenal": { "name": "Arsenal", "text": "+3 blades" },
+    "vampire": { "name": "Vampire Fang", "text": "+2 HP healed per kill" },
+    "aegis": { "name": "Aegis", "text": "-15% damage taken" },
+    "midas": { "name": "Midas Touch", "text": "+35% score & power per kill" },
+    "titanHeart": { "name": "Titan Heart", "text": "+80 max HP" },
+    "emberHeart": { "name": "Ember Heart", "text": "Blades always ignite" },
+    "frostCore": { "name": "Frost Core", "text": "Blades always chill" }
+  },
   "rarity": {
     "common": "Common",
     "rare": "Rare",

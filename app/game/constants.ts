@@ -571,6 +571,41 @@ export const LEVEL = {
   xpPerBoss: 8,
 } as const
 
+/**
+ * Relics — powerful PASSIVE run-modifiers dropped by chests (roguelike style).
+ * Each is unique per run (granted once) and stacks with upgrades/meta, so every
+ * run builds differently. Effect fields map directly to combat multipliers.
+ */
+export interface Relic {
+  id: string
+  icon: string
+  dmg?: number // +fraction sword damage
+  orbit?: number // +fraction ring spin
+  swords?: number // +N blades
+  lifesteal?: number // +HP per kill
+  defense?: number // damage-taken multiplier (<1 = tougher)
+  reward?: number // +fraction score/power per kill
+  maxHp?: number // one-time +max HP on pickup
+  burn?: boolean // blades always ignite
+  frost?: boolean // blades always chill
+}
+
+export const RELICS: Relic[] = [
+  { id: 'ironBlades', icon: '🗡️', dmg: 0.25 },
+  { id: 'berserk', icon: '⚔️', dmg: 0.3 },
+  { id: 'whirlwind', icon: '🌀', orbit: 0.2 },
+  { id: 'arsenal', icon: '➕', swords: 3 },
+  { id: 'vampire', icon: '🩸', lifesteal: 2 },
+  { id: 'aegis', icon: '🛡️', defense: 0.85 },
+  { id: 'midas', icon: '💰', reward: 0.35 },
+  { id: 'titanHeart', icon: '❤️', maxHp: 80 },
+  { id: 'emberHeart', icon: '🔥', burn: true },
+  { id: 'frostCore', icon: '❄️', frost: true },
+]
+
+/** Chance a chest also grants a (random un-owned) relic. */
+export const RELIC_CHEST_CHANCE = 0.45
+
 /** Pickable upgrades (icon here; name/description via i18n `upgrades.<id>`). */
 export const UPGRADES = [
   { id: 'damage', icon: '🗡️' },

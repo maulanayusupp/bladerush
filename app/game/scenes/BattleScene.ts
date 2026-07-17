@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -86,6 +86,16 @@ export class BattleScene extends Phaser.Scene {
   private revivesLeft = 0
   private regenAcc = 0
   private playerDefenseMul = 1
+  // ---- Relics (passive run modifiers dropped by chests) ----
+  private relics = new Set<string>()
+  private relicDamageMul = 1
+  private relicOrbitMul = 1
+  private relicExtraSwords = 0
+  private relicLifesteal = 0
+  private relicRewardMul = 1
+  private relicDefenseMul = 1
+  private relicBurn = false
+  private relicFrost = false
   private dashUntil = 0
   private hitStopUntil = 0
   private frameTime = 0
@@ -254,7 +264,17 @@ export class BattleScene extends Phaser.Scene {
     this.metaRegen = metaService.regenPerSec
     this.metaMagnet = metaService.magnetRange
     this.metaDefenseBase = metaService.defenseMul
-    this.playerDefenseMul = this.metaDefenseBase
+    // Relics start empty each run.
+    this.relics.clear()
+    this.relicDamageMul = 1
+    this.relicOrbitMul = 1
+    this.relicExtraSwords = 0
+    this.relicLifesteal = 0
+    this.relicRewardMul = 1
+    this.relicDefenseMul = 1
+    this.relicBurn = false
+    this.relicFrost = false
+    this.recomputeDefense()
     this.revivesLeft = metaService.reviveCount
     this.regenAcc = 0
     if (metaService.startPower > 0) this.power.addEnemyValue(metaService.startPower)
@@ -1001,8 +1021,8 @@ export class BattleScene extends Phaser.Scene {
     this.heroScale = HERO.minScale + (HERO.maxScale - HERO.minScale) * (tier / (HERO.skins - 1))
     this.player.setScale(this.heroScale)
     codexService.mark('hero', tier)
-    // Shield gear stacks with the meta Aegis defense (reduced incoming damage).
-    this.playerDefenseMul = this.metaDefenseBase * (gearOf(tier) === 3 ? GEAR.shieldDefenseMul : 1)
+    // Shield gear stacks with meta Aegis + relic defense (reduced incoming damage).
+    this.recomputeDefense()
     // Aura color tracks the prestige theme; brighter/hotter as tier climbs.
     const rk = tier / (HERO.skins - 1)
     this.heroAuraColor =
@@ -1708,6 +1728,68 @@ export class BattleScene extends Phaser.Scene {
     this.spawnPopup(chest.x, chest.y, `+${formatCompact(powerReward)}⚔  +${coins}💰`)
     audioService.win()
     chest.deactivate()
+    this.maybeGrantRelic(chest.x, chest.y)
+  }
+
+  // ---- Relics -------------------------------------------------------------
+
+  /** Chests may drop a random un-owned relic (a permanent run modifier). */
+  private maybeGrantRelic(x: number, y: number): void {
+    if (this.relics.size >= RELICS.length) return
+    if (Math.random() > RELIC_CHEST_CHANCE) return
+    const pool = RELICS.filter((r) => !this.relics.has(r.id))
+    const relic = pool[Math.floor(Math.random() * pool.length)]
+    if (relic) this.grantRelic(relic.id, x, y)
+  }
+
+  private grantRelic(id: string, x = this.player.x, y = this.player.y): void {
+    if (this.relics.has(id)) return
+    this.relics.add(id)
+    const relic = RELICS.find((r) => r.id === id)
+    if (relic?.maxHp) {
+      this.player.addMaxHp(relic.maxHp)
+      this.emitHp()
+    }
+    this.recomputeRelics()
+    gameEventBus.emit('relic:gained', { id })
+    // A golden flourish so the pickup reads as a big moment.
+    this.sparks.explode(24, x, y)
+    this.playClashFx(x, y, 0xffd700)
+    this.cameras.main.flash(200, 255, 220, 120)
+    audioService.win()
+  }
+
+  /** Recompute all relic-derived combat modifiers from the owned set. */
+  private recomputeRelics(): void {
+    let dmg = 1, orbit = 1, defense = 1, reward = 1, swords = 0, lifesteal = 0
+    let burn = false, frost = false
+    for (const id of this.relics) {
+      const r = RELICS.find((x) => x.id === id)
+      if (!r) continue
+      if (r.dmg) dmg *= 1 + r.dmg
+      if (r.orbit) orbit *= 1 + r.orbit
+      if (r.defense) defense *= r.defense
+      if (r.reward) reward *= 1 + r.reward
+      if (r.swords) swords += r.swords
+      if (r.lifesteal) lifesteal += r.lifesteal
+      if (r.burn) burn = true
+      if (r.frost) frost = true
+    }
+    this.relicDamageMul = dmg
+    this.relicOrbitMul = orbit
+    this.relicDefenseMul = defense
+    this.relicRewardMul = reward
+    this.relicExtraSwords = swords
+    this.relicLifesteal = lifesteal
+    this.relicBurn = burn
+    this.relicFrost = frost
+    this.recomputeDefense()
+  }
+
+  /** Player damage-taken multiplier = meta Aegis × shield gear × relic defense. */
+  private recomputeDefense(): void {
+    const shield = this.playerSkin >= 0 && gearOf(this.playerSkin) === 3 ? GEAR.shieldDefenseMul : 1
+    this.playerDefenseMul = this.metaDefenseBase * shield * this.relicDefenseMul
   }
 
   // ---- Combo --------------------------------------------------------------
@@ -1715,7 +1797,7 @@ export class BattleScene extends Phaser.Scene {
   /** Register a kill: greed-boosted power reward, combo-multiplied score, XP,
    *  lifesteal, and a floating popup. */
   private registerKill(reward: number, x = -1, y = -1): void {
-    const gained = Math.max(1, Math.round(reward * this.upgrades.rewardMul))
+    const gained = Math.max(1, Math.round(reward * this.upgrades.rewardMul * this.relicRewardMul))
     this.statKills++
     this.comboCount++
     this.statTopCombo = Math.max(this.statTopCombo, this.comboCount)
@@ -1726,7 +1808,7 @@ export class BattleScene extends Phaser.Scene {
     this.emitScore()
     this.emitCombo()
 
-    const lifesteal = this.upgrades.lifesteal + this.metaLifesteal
+    const lifesteal = this.upgrades.lifesteal + this.metaLifesteal + this.relicLifesteal
     if (lifesteal > 0) {
       this.player.heal(lifesteal)
       this.emitHp()
@@ -1955,13 +2037,13 @@ export class BattleScene extends Phaser.Scene {
     // capped (SWORD.maxVisible) so the ring stays readable — power keeps scaling
     // damage regardless of how many blades are shown.
     const count = this.power.hasWeapon
-      ? Math.min(this.swordPool.length, SWORD.maxVisible, stats.swordCount + this.upgrades.extraSwords)
+      ? Math.min(this.swordPool.length, SWORD.maxVisible, stats.swordCount + this.upgrades.extraSwords + this.relicExtraSwords)
       : 0
 
-    // Fury skill + upgrades: faster spin, harder hits, bigger blades.
+    // Fury skill + upgrades + relics: faster spin, harder hits, bigger blades.
     const fury = this.elapsedMs < this.furyUntil
-    this.swordDamageMul = (fury ? SKILLS.fury.damageMul : 1) * this.upgrades.damageMul * this.metaDamageMul
-    const orbitSpeed = stats.orbitSpeed * (fury ? SKILLS.fury.orbitMul : 1) * this.upgrades.orbitMul * this.metaOrbitMul
+    this.swordDamageMul = (fury ? SKILLS.fury.damageMul : 1) * this.upgrades.damageMul * this.metaDamageMul * this.relicDamageMul
+    const orbitSpeed = stats.orbitSpeed * (fury ? SKILLS.fury.orbitMul : 1) * this.upgrades.orbitMul * this.metaOrbitMul * this.relicOrbitMul
     // Ring grows with the hero (bigger ring = stronger) instead of shrinking the
     // hero to fit — keeps big champions readable.
     const radius = SWORD.orbitRadius * (fury ? SKILLS.fury.radiusMul : 1) * (0.85 + this.heroScale * 0.35)
@@ -2291,17 +2373,20 @@ export class BattleScene extends Phaser.Scene {
   /** Apply owned elemental status upgrades to an enemy on a sword hit. */
   private applyStatusOnHit(enemy: Enemy): void {
     const dmg = this.power.stats.damage * this.swordDamageMul * this.metaStatusMul
-    if (this.upgrades.burn > 0) {
+    // Relics (emberHeart / frostCore) grant a base level even without the upgrade.
+    const burnLvl = this.upgrades.burn + (this.relicBurn ? 1 : 0)
+    const frostLvl = this.upgrades.frost + (this.relicFrost ? 1 : 0)
+    if (burnLvl > 0) {
       enemy.burnUntil = this.elapsedMs + STATUS.burnMs
-      enemy.burnDps = this.upgrades.burn * STATUS.burnDpsPer * dmg
+      enemy.burnDps = burnLvl * STATUS.burnDpsPer * dmg
     }
     if (this.upgrades.venom > 0) {
       enemy.poisonUntil = this.elapsedMs + STATUS.poisonMs
       enemy.poisonDps = this.upgrades.venom * STATUS.poisonDpsPer * dmg
     }
-    if (this.upgrades.frost > 0) {
+    if (frostLvl > 0) {
       enemy.chillUntil = this.elapsedMs + STATUS.chillMs
-      enemy.chillMul = Math.max(STATUS.chillFloor, 1 - this.upgrades.frost * STATUS.chillPer)
+      enemy.chillMul = Math.max(STATUS.chillFloor, 1 - frostLvl * STATUS.chillPer)
     }
   }
 

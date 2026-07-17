@@ -86,4 +86,5 @@ export interface GameEventMap {
   'divine:cast': { index: number }
   'timer:changed': { remainingMs: number }
   'meta:coins': { coins: number }
+  'relic:gained': { id: string }
 }
