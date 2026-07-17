@@ -10,18 +10,6 @@ sistem yang sudah ada di `CLAUDE.md`.
 
 ## 🔜 Berikutnya (prioritas)
 
-- [ ] **Daily Challenge** — RNG deterministik berbasis seed tanggal (map,
-      spawn, gate sama untuk semua orang di hari yang sama). Simpan skor harian
-      terbaik + streak berapa hari berturut main. Butuh: seeded PRNG yang di-
-      thread ke `SpawnService`/pemilihan map/gate (ganti `Math.random` di jalur
-      yang relevan saat mode daily).
-
-- [ ] **Mekanik bos unik + multi-fase** — tiap arketipe bos (dari `bossName`/
-      skin) dapat gimmick sendiri: teleport, summon lebih agresif, perisai fase,
-      pola enrage berbeda. Tambah **fase kedua** saat HP < ambang (ganti pola +
-      efek transisi). Sentuh `updateBoss`/`castFan`/`castMeteors` + state fase.
-
-
 - [ ] **Objective/quest untuk koin** — 2-3 target per sesi (bunuh N bos, capai
       Divine, bertahan X menit, serap N NPC) yang memberi koin saat tercapai.
       Bisa reuse `RunStats`/achievement infra. Tampilkan progress ringkas di HUD
@@ -48,11 +36,16 @@ sistem yang sudah ada di `CLAUDE.md`.
       ketersediaan tekstur.
 - [ ] **Aksesibilitas**: opsi colorblind, toggle reduce-flash (selain screen shake).
 - [ ] **Sosial**: papan skor lokal multi-entri + share skor.
+- [ ] **Daily Challenge** (ditunda, bukan prioritas) — RNG deterministik berbasis
+      seed tanggal (map/spawn/gate sama untuk semua orang di hari yang sama) +
+      skor harian & streak. Butuh seeded PRNG di-thread ke jalur `Math.random`
+      saat mode daily.
 
 ## ✅ Selesai (highlight sesi terakhir)
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- Mekanik bos unik (summoner/teleporter/charger/bomber/shielder) + fase 2.
 - Hazard per map (lava/pasir hisap/es/pusaran/toxic).
 - Prestige (reset koin+upgrade → bintang permanen).
 - Evolusi hero: cadence lebih pelan + spektakel mewah per tier rarity.

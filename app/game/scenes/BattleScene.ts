@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, BOSS_MECH, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -59,8 +59,16 @@ export class BattleScene extends Phaser.Scene {
   private bossWeapons: Phaser.GameObjects.Image[] = []
   private bossLabel!: Phaser.GameObjects.Text
   private bossAura!: Phaser.GameObjects.Image
+  private bossShield!: Phaser.GameObjects.Image
   private bossAngle = 0
   private bossClashAcc = 0
+  // Boss archetype mechanics + multi-phase state.
+  private bossArchetype = 0
+  private bossPhase = 1
+  private bossMechAcc = 0
+  private bossChargeUntil = 0
+  private bossChargeAngle = 0
+  private bossShieldUntil = 0
 
   private readonly power = new PowerService()
   private readonly spawner = new SpawnService()
@@ -455,6 +463,13 @@ export class BattleScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD)
       .setTint(0xff3020)
       .setDepth(-1)
+      .setVisible(false)
+    // Shielder-archetype bubble (shown only while a boss shield is up).
+    this.bossShield = this.add
+      .image(0, 0, 'shock')
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0x8adfff)
+      .setDepth(5)
       .setVisible(false)
     // Pooled boss fireballs (fan attack).
     this.bossOrbs = Array.from({ length: BOSS_ATTACK.projectilePool }, () => ({
@@ -1368,6 +1383,13 @@ export class BattleScene extends Phaser.Scene {
     this.bossClashAcc = 0
     this.bossFanAcc = 0
     this.bossMeteorAcc = 0
+    // Multi-phase + archetype state (archetype is deterministic per skin).
+    this.bossArchetype = idx % BOSS_MECH.archetypes
+    this.bossPhase = 1
+    this.bossMechAcc = 0
+    this.bossChargeUntil = 0
+    this.bossShieldUntil = 0
+    this.bossShield.setVisible(false)
     this.boss.clearTint()
     // Each boss skin has a signature weapon (deterministic variety across the 8).
     const weapons = ['wMace', 'wAxe', 'wSpear', 'wScythe', 'wHammer', 'wTrident', 'wGreatsword', 'wHalberd']
@@ -1399,15 +1421,30 @@ export class BattleScene extends Phaser.Scene {
     this.bossWeapons.forEach((wpn) => wpn.setVisible(false))
     this.bossLabel.setVisible(false)
     this.bossAura.setVisible(false)
+    this.bossShield.setVisible(false)
     this.boss.clearTint()
   }
 
   private updateBoss(deltaMs: number, elapsedSec: number): void {
+    // Archetype signature moves + phase transitions.
+    this.updateBossMechanics(deltaMs, elapsedSec)
     const enraged = this.boss.hp < this.boss.maxHp * BOSS.enrageAt
-    const angle = angleBetween(this.boss.x, this.boss.y, this.player.x, this.player.y)
-    const speed = this.boss.speed * (enraged ? 1.35 : 1)
+    const charging = this.elapsedMs < this.bossChargeUntil
+    // Movement: normally homes on the hero; a charger locks its angle and rockets.
+    const angle = charging ? this.bossChargeAngle : angleBetween(this.boss.x, this.boss.y, this.player.x, this.player.y)
+    const speed = this.boss.speed * (charging ? BOSS_MECH.chargeSpeedMul : this.bossPhase >= 2 ? 1.18 : 1) * (enraged ? 1.35 : 1)
     this.boss.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed)
-    this.boss.setTint(enraged ? 0xff7a5a : 0xffffff)
+    this.boss.setTint(charging ? 0xffd23a : this.bossShieldUntil > this.elapsedMs ? 0x8adfff : enraged ? 0xff7a5a : this.bossPhase >= 2 ? 0xffb0a0 : 0xffffff)
+    // Shield bubble follows the boss while raised.
+    if (this.bossShieldUntil > this.elapsedMs) {
+      this.bossShield
+        .setVisible(true)
+        .setPosition(this.boss.x, this.boss.y)
+        .setScale((this.boss.displayWidth * 1.7) / 64)
+        .setAlpha(0.3 + 0.12 * Math.sin(this.elapsedMs / 90))
+    } else if (this.bossShield.visible) {
+      this.bossShield.setVisible(false)
+    }
 
     // Menacing aura that pulses (faster when enraged).
     const auraScale = (this.boss.displayWidth * 1.35) / (AURA.textureRadius * 2)
@@ -1472,7 +1509,7 @@ export class BattleScene extends Phaser.Scene {
     }
 
     // Attack patterns — faster & denser when enraged.
-    const rageMul = enraged ? BOSS_ATTACK.enrageRateMul : 1
+    const rageMul = enraged ? BOSS_ATTACK.enrageRateMul : this.bossPhase >= 2 ? 0.8 : 1
     this.bossFanAcc += deltaMs
     if (this.bossFanAcc >= BOSS_ATTACK.fanIntervalMs * rageMul) {
       this.bossFanAcc = 0
@@ -1487,6 +1524,81 @@ export class BattleScene extends Phaser.Scene {
     this.updateBossArrow()
     // The boss also butchers any AI hero that wanders into its reach.
     this.bossSlayNearbyNpcs(this.boss.x, this.boss.y, this.boss.displayWidth * 0.6, deltaMs)
+  }
+
+  /** Multi-phase transition + the archetype's signature move on a timer. */
+  private updateBossMechanics(deltaMs: number, elapsedSec: number): void {
+    // Enter phase 2 once, below the HP threshold — a dramatic escalation.
+    if (this.bossPhase === 1 && this.boss.hp < this.boss.maxHp * BOSS_MECH.phase2Frac) {
+      this.bossPhase = 2
+      this.hitStopUntil = this.frameTime + 120
+      this.cameras.main.flash(300, 255, 60, 40)
+      this.shake(360, 0.014)
+      this.fxRing(this.boss.x, this.boss.y, this.boss.displayWidth * 1.4, 0xff3b3b, 620)
+      this.fxBurst(this.boss.x, this.boss.y, 28, 0xff5a3a)
+      audioService.nova()
+      gameEventBus.emit('boss:phase', { phase: 2 })
+    }
+    // Signature move cadence (faster in phase 2). Charging pauses new moves.
+    if (this.elapsedMs < this.bossChargeUntil) return
+    this.bossMechAcc += deltaMs
+    const interval = BOSS_MECH.mechIntervalMs * (this.bossPhase >= 2 ? BOSS_MECH.phase2RateMul : 1)
+    if (this.bossMechAcc < interval) return
+    this.bossMechAcc = 0
+    this.runBossMechanic(elapsedSec)
+  }
+
+  private runBossMechanic(elapsedSec: number): void {
+    const bx = this.boss.x
+    const by = this.boss.y
+    switch (this.bossArchetype) {
+      case 0: { // Summoner — spit out a burst of adds
+        const n = BOSS_MECH.summonBurst + (this.bossPhase >= 2 ? 4 : 0)
+        for (let i = 0; i < n; i++) {
+          const enemy = this.enemies.get(0, 0) as Enemy | null
+          if (!enemy) break
+          const a = (i / n) * TAU
+          enemy.spawn(bx + Math.cos(a) * 40, by + Math.sin(a) * 40, this.spawner.createEnemy(elapsedSec, this.power.power))
+        }
+        this.fxRing(bx, by, this.boss.displayWidth, 0xb06bff, 420)
+        this.fxBurst(bx, by, 16, 0xb06bff)
+        break
+      }
+      case 1: { // Teleporter — blink next to the hero
+        this.fxBurst(bx, by, 16, 0x9d3cff)
+        this.fxRing(bx, by, 90, 0x9d3cff, 320)
+        const a = Math.random() * TAU
+        const r = randomRange(140, BOSS_MECH.teleportNearby)
+        const nx = clamp(this.player.x + Math.cos(a) * r, 80, this.worldW - 80)
+        const ny = clamp(this.player.y + Math.sin(a) * r, 80, this.worldH - 80)
+        this.boss.setPosition(nx, ny)
+        this.fxBurst(nx, ny, 18, 0xff5aff)
+        this.fxRing(nx, ny, 100, 0xff5aff, 360)
+        break
+      }
+      case 2: { // Charger — telegraph, then rocket through the hero
+        this.boss.setTint(0xffd23a)
+        this.fxRing(bx, by, this.boss.displayWidth * 1.1, 0xffd23a, BOSS_MECH.chargeTelegraphMs)
+        this.time.delayedCall(BOSS_MECH.chargeTelegraphMs, () => {
+          if (this.isOver || !this.boss.active) return
+          this.bossChargeAngle = angleBetween(this.boss.x, this.boss.y, this.player.x, this.player.y)
+          this.bossChargeUntil = this.elapsedMs + BOSS_MECH.chargeMs
+          this.shake(180, 0.008)
+          audioService.skill()
+        })
+        break
+      }
+      case 3: // Bomber — an immediate extra barrage of fans + meteors
+        this.castFan(this.bossPhase >= 2)
+        this.castMeteors(this.bossPhase >= 2)
+        this.time.delayedCall(220, () => { if (!this.isOver && this.boss.active) this.castFan(this.bossPhase >= 2) })
+        break
+      default: // Shielder — raise a damage-reducing bubble
+        this.bossShieldUntil = this.elapsedMs + BOSS_MECH.shieldMs
+        this.fxRing(bx, by, this.boss.displayWidth * 1.3, 0x8adfff, 420)
+        this.fxBurst(bx, by, 14, 0x8adfff)
+        audioService.clash()
+    }
   }
 
   /** Point a screen-edge arrow at the boss when it's off-screen. */
@@ -2637,8 +2749,14 @@ export class BattleScene extends Phaser.Scene {
     if (this.elapsedMs - boss.lastHitAt < BOSS.hitTickMs) return
     boss.lastHitAt = this.elapsedMs
     this.sparks.explode(6, boss.x, boss.y)
-    const dmg = Math.min(this.bossTickDamage(), Math.ceil(boss.maxHp * BOSS.maxHitFraction))
-    this.damageNumber(boss.x, boss.y - boss.displayHeight * 0.3, dmg, '#ffd24a')
+    let dmg = Math.min(this.bossTickDamage(), Math.ceil(boss.maxHp * BOSS.maxHitFraction))
+    // Shielder archetype: a raised bubble soaks most sword damage (cyan sparks).
+    const shielded = this.bossShieldUntil > this.elapsedMs
+    if (shielded) {
+      dmg = Math.max(1, Math.round(dmg * BOSS_MECH.shieldDamageMul))
+      this.sparks.explode(3, boss.x, boss.y)
+    }
+    this.damageNumber(boss.x, boss.y - boss.displayHeight * 0.3, dmg, shielded ? '#8adfff' : '#ffd24a')
     if (boss.takeDamage(dmg)) {
       this.bossDefeat()
     } else {

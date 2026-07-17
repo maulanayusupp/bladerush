@@ -90,4 +90,5 @@ export interface GameEventMap {
   'map:set': { key: string }
   'upgrade:evolved': { id: string }
   'hero:rarityup': { rarity: number }
+  'boss:phase': { phase: number }
 }

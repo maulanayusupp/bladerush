@@ -79,6 +79,10 @@ let bossWarnTimer: ReturnType<typeof setTimeout> | null = null
 const rarityUp = ref<{ name: string; color: string } | null>(null)
 let rarityTimer: ReturnType<typeof setTimeout> | null = null
 
+// ---- Boss phase-2 banner ----
+const bossPhaseUp = ref(false)
+let bossPhaseTimer: ReturnType<typeof setTimeout> | null = null
+
 // ---- Relics (passive run modifiers) ----
 const relics = ref<string[]>([])
 function relicIcon(id: string): string {
@@ -265,6 +269,11 @@ onMounted(() => {
       if (mapTimer) clearTimeout(mapTimer)
       mapTimer = setTimeout(() => (mapName.value = ''), 2800)
     }),
+    gameEventBus.on('boss:phase', () => {
+      bossPhaseUp.value = true
+      if (bossPhaseTimer) clearTimeout(bossPhaseTimer)
+      bossPhaseTimer = setTimeout(() => (bossPhaseUp.value = false), 2200)
+    }),
     gameEventBus.on('hero:rarityup', ({ rarity }) => {
       const r = HERO_RARITIES[rarity]
       if (!r) return
@@ -298,6 +307,7 @@ onMounted(() => {
       evolved.value = []
       evolveMsg.value = ''
       rarityUp.value = null
+      bossPhaseUp.value = false
     }),
   )
   cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
@@ -312,6 +322,7 @@ onUnmounted(() => {
   if (bossWarnTimer) clearTimeout(bossWarnTimer)
   if (evolveTimer) clearTimeout(evolveTimer)
   if (rarityTimer) clearTimeout(rarityTimer)
+  if (bossPhaseTimer) clearTimeout(bossPhaseTimer)
 })
 
 function restart(): void {
@@ -420,6 +431,10 @@ function restart(): void {
 
     <Transition name="hud-rush">
       <div v-if="bossWarn" class="hud__boss-warn">⚠ {{ $t('hud.bossIncoming') }}</div>
+    </Transition>
+
+    <Transition name="hud-rush">
+      <div v-if="bossPhaseUp" class="hud__boss-warn">☠ {{ $t('hud.bossPhase') }}</div>
     </Transition>
 
     <Transition name="hud-rush">

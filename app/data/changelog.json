@@ -3,6 +3,12 @@
     {
       "date": "2026-07-17",
       "tag": "feature",
+      "title": "Boss archetypes + multi-phase fights",
+      "detail": "Bosses now have unique mechanics by type — Summoner (add bursts), Teleporter (blinks next to you), Charger (telegraphed rush), Bomber (extra barrages), Shielder (a bubble that soaks most damage). Below half HP a boss enters Phase 2: a dramatic transition, then faster attacks, faster mechanics, and quicker movement."
+    },
+    {
+      "date": "2026-07-17",
+      "tag": "feature",
       "title": "Map hazards",
       "detail": "Maps now have environmental hazards you must play around: lava and toxic pools drain your HP, quicksand and toxic mud slow you, ice makes you slide (faster, harder to stop), and void whirlpools drag you toward their center. Each hazardous map scatters its own themed zones."
     },

@@ -119,7 +119,9 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
 - **Mode** (`ModeService`): normal / endless / bossrush / timeattack.
 - **Boss Rush** (`BOSS_RUSH`): gelombang bos (lead + escort) di Lvl 10 (normal).
   Bos muncul dengan warning (banner + telegraph) & membantai NPC yang mendekat
-  (`bossSlayNearbyNpcs`).
+  (`bossSlayNearbyNpcs`). **Arketipe** per skin (`BOSS_MECH`, `bossArchetype`):
+  summoner/teleporter/charger/bomber/shielder (`runBossMechanic`), + **fase 2**
+  di bawah `phase2Frac` HP (`updateBossMechanics`, event `boss:phase`).
 - **Maps** (`MAPS`, 12): tiap map punya `props`, `obstacles` bertema, `ambient`,
   dan `hazard` (`HAZARD`). Ground/props/obstacles di-bake di BootScene. Banner
   nama map: event `map:set`. Hazard = zona lantai non-solid (`applyHazards`):

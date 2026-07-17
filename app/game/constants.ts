@@ -559,6 +559,25 @@ export const BOSS_ATTACK = {
 } as const
 
 /**
+ * Boss mechanics & phases. Each boss has an ARCHETYPE (by skin) with a signature
+ * move, and enters a second phase below `phase2Frac` HP (faster + amplified).
+ * Archetypes: 0 summoner, 1 teleporter, 2 charger, 3 bomber, 4 shielder.
+ */
+export const BOSS_MECH = {
+  archetypes: 5,
+  phase2Frac: 0.5, // enter phase 2 below this HP fraction
+  mechIntervalMs: 5200, // base cadence of the signature move
+  phase2RateMul: 0.6, // move + attack cadence × this in phase 2 (faster)
+  teleportNearby: 260, // teleporter lands within this of the hero
+  chargeMs: 620, // how long a charge lasts
+  chargeTelegraphMs: 420, // wind-up before a charge
+  chargeSpeedMul: 4.4, // boss speed × this while charging
+  shieldMs: 2600, // shielder bubble duration
+  shieldDamageMul: 0.22, // sword damage × this vs a shielded boss
+  summonBurst: 6, // extra adds a summoner spits out
+} as const
+
+/**
  * Boss Rush — the endgame. Once the player reaches `triggerLevel`, the normal
  * horde/rival spawns stop and bosses arrive in waves: one "lead" boss (full
  * attack kit) plus several "escort" bosses (chase + contact) so the screen is
