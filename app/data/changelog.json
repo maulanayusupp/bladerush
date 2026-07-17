@@ -3,6 +3,12 @@
     {
       "date": "2026-07-17",
       "tag": "feature",
+      "title": "Companion pet (evolvable)",
+      "detail": "A little pet now trails your hero and zaps nearby enemies with homing bolts. It evolves through 16 distinct forms — growing bigger and fiercer (horns, wings, a crown) — as your hero climbs tiers."
+    },
+    {
+      "date": "2026-07-17",
+      "tag": "feature",
       "title": "Session quests for coins",
       "detail": "Every run now rolls 4 objectives from a pool of 40+ (kills, bosses, combos, absorbs, survive time, power, level, relics, evolutions, gates, ultimates, chests). Track them live in the HUD with progress bars; completing one pays out coins instantly with a toast."
     },

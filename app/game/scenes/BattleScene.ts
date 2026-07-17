@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, BOSS_MECH, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, QUESTS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SESSION_QUEST_COUNT, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName, type Quest } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, BOSS_MECH, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PET, PLAYER, POWER_LAYERS, QUESTS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SESSION_QUEST_COUNT, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName, type Quest } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -20,6 +20,7 @@ import { Enemy } from '../entities/Enemy'
 import { Gate } from '../entities/Gate'
 import { Heal } from '../entities/Heal'
 import { NpcHero } from '../entities/NpcHero'
+import { Companion } from '../entities/Companion'
 import { Player } from '../entities/Player'
 import { Rival } from '../entities/Rival'
 import { Sword } from '../entities/Sword'
@@ -159,6 +160,8 @@ export class BattleScene extends Phaser.Scene {
   private rushWave = 0
   private rushGapUntil = 0
   private npcs: NpcHero[] = []
+  private companion!: Companion
+  private petAttackAcc = 0
   private obstacles!: Phaser.Physics.Arcade.StaticGroup
   // Environmental hazard zones (non-solid floor effects) for the current map.
   private hazards: { x: number; y: number; r: number; type: string }[] = []
@@ -500,6 +503,12 @@ export class BattleScene extends Phaser.Scene {
       npc.spawn(x, y, this.npcSpawnPower(), NPC.colors[i % NPC.colors.length] as number)
     })
 
+    // Companion pet: trails the hero and zaps nearby foes, evolving with tiers.
+    this.companion = new Companion(this)
+    this.companion.spawnAt(this.player.x - PET.followDist, this.player.y)
+    this.companion.setForm(0)
+    this.petAttackAcc = 0
+
     // Pooled floating reward popups shown on kills.
     this.popupPool = Array.from({ length: 24 }, () =>
       this.add
@@ -691,6 +700,7 @@ export class BattleScene extends Phaser.Scene {
     this.updateSwords(deltaMs)
     this.checkEvolve()
     this.updateEvolutions(deltaMs)
+    this.updateCompanion(deltaMs)
     // Quests: check/complete + push progress to the HUD a few times a second.
     this.questAcc += deltaMs
     if (this.questAcc >= 400) {
@@ -1112,6 +1122,11 @@ export class BattleScene extends Phaser.Scene {
     this.heroScale = HERO.minScale + (HERO.maxScale - HERO.minScale) * (tier / (HERO.skins - 1))
     this.player.setScale(this.heroScale)
     codexService.mark('hero', tier)
+    // The companion pet evolves through its forms alongside the hero's tiers.
+    const petForm = clamp(Math.floor((tier / (HERO.skins - 1)) * (PET.forms - 1)), 0, PET.forms - 1)
+    if (this.companion?.setForm(petForm) && !first) {
+      this.fxBurst(this.companion.x, this.companion.y, 12, 0x8fe6ff, 160, 500)
+    }
     // Shield gear stacks with meta Aegis + relic defense (reduced incoming damage).
     this.recomputeDefense()
     // Aura color tracks the prestige theme; brighter/hotter as tier climbs.
@@ -3308,6 +3323,55 @@ export class BattleScene extends Phaser.Scene {
     if (id === 'burn') this.fxMeteors(t.x, t.y, 200, 3, this.skillDamage(4), '#ffb060', 0xff6a2a)
     else if (id === 'frost') this.fxBlizzard(t.x, t.y, 240, this.skillDamage(3), '#dff4ff', 0.3)
     else if (id === 'venom') this.fxPoisonCloud(t.x, t.y, 220, 3000, this.skillDamage(2), '#bfff6a', 0x8fff3a)
+  }
+
+  // ---- Companion pet ------------------------------------------------------
+
+  private updateCompanion(deltaMs: number): void {
+    this.companion.follow(this.player.x, this.player.y, this.elapsedMs)
+    this.petAttackAcc += deltaMs
+    if (this.petAttackAcc < PET.attackMs) return
+    const target = this.nearestEnemyToPet(PET.range)
+    if (!target) return
+    this.petAttackAcc = 0
+    this.petZap(target)
+  }
+
+  /** Nearest active enemy within `range` of the companion (or null). */
+  private nearestEnemyToPet(range: number): Enemy | null {
+    let best: Enemy | null = null
+    let bestD = range * range
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active) continue
+      const d = (e.x - this.companion.x) ** 2 + (e.y - this.companion.y) ** 2
+      if (d < bestD) {
+        bestD = d
+        best = e
+      }
+    }
+    return best
+  }
+
+  /** Fire a homing zap orb from the pet to a target enemy, damaging on arrival. */
+  private petZap(target: Enemy): void {
+    const tint = 0x8fe6ff
+    const tx = target.x
+    const ty = target.y
+    const orb = this.add.image(this.companion.x, this.companion.y, 'petShot').setTint(tint).setBlendMode(Phaser.BlendModes.ADD).setDepth(6)
+    const dmg = Math.max(1, Math.round(this.power.stats.damage * this.swordDamageMul * PET.damageMul))
+    this.tweens.add({
+      targets: orb,
+      x: tx,
+      y: ty,
+      duration: PET.projMs,
+      onComplete: () => {
+        orb.destroy()
+        this.fxBurst(tx, ty, 6, tint, 140, 380)
+        if (target.active && distance(target.x, target.y, tx, ty) < 60) this.skillHitEnemy(target, dmg, '#bfefff')
+        else this.fxDamageArea(tx, ty, 44, dmg, '#bfefff')
+      },
+    })
   }
 
   private nearestEnemyPoint(): { x: number; y: number } | null {

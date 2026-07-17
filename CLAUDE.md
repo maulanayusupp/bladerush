@@ -134,6 +134,9 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
 - **Session quests** (`QUESTS`, 40+): tiap run pilih `SESSION_QUEST_COUNT` quest
   (`pickSessionQuests`), progress via `questMetric`/`syncQuests` (events
   `quest:sync`/`quest:done`) → koin instan + panel HUD.
+- **Companion pet** (`PET`, `entities/Companion.ts`): 16 bentuk (`pet0..15`,
+  parametric `drawPet`), mengikuti hero + zap musuh (`updateCompanion`/`petZap`),
+  berevolusi bentuk mengikuti tier hero di `checkEvolve`.
 - **Prestige** (`PRESTIGE`, `MetaService.prestige()`): reset koin+upgrade →
   Prestige Star permanen (+5% damage & koin/star, folded ke `damageMul`/`coinMul`).
   UI di `MenuShop`; bintang tampil di menu.

@@ -150,6 +150,20 @@ export const HERO = {
  * Hero rarity tiers by rank (index / skins). Purely a classification for the
  * Codex + evolve flourish — the actual look already escalates continuously.
  */
+/**
+ * Companion pet — a little ally that trails the hero, zaps nearby enemies, and
+ * EVOLVES through many forms (pet0..pet{forms-1}) as the hero climbs tiers.
+ */
+export const PET = {
+  forms: 16, // number of baked pet forms (evolution chain)
+  followDist: 52, // trails this far behind the hero
+  followLerp: 0.11,
+  attackMs: 850, // fires this often
+  range: 340, // only targets enemies within this
+  damageMul: 2.4, // pet zap damage relative to base sword damage
+  projMs: 170, // projectile travel time to target
+} as const
+
 export const HERO_RARITIES = [
   { id: 'common', min: 0, color: 0x9aa0ac },
   { id: 'rare', min: 0.35, color: 0x4aa3ff },

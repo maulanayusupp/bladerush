@@ -5,7 +5,7 @@
 // Swap these for real sprite sheets in the polish phase.
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, MAP_TILE, SWORD_SHAPES, TROOP, gearOf } from '../constants'
+import { AURA, MAP_TILE, PET, SWORD_SHAPES, TROOP, gearOf } from '../constants'
 
 type Draw = (g: Phaser.GameObjects.Graphics) => void
 
@@ -380,6 +380,8 @@ export class BootScene extends Phaser.Scene {
     this.bake('map11', MAP_TILE, MAP_TILE, (g) => this.drawAbyss(g))
     this.makeVignette()
     this.makeHazardDisc()
+    for (let i = 0; i < PET.forms; i++) this.bake(`pet${i}`, 44, 44, (g) => this.drawPet(g, i, PET.forms))
+    this.bake('petShot', 14, 14, (g) => this.drawPetShot(g))
     this.drawProps()
     this.bake('sword', 16, 46, (g) => this.drawSword(g))
     SWORD_SHAPES.forEach((shape, i) => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape)))
@@ -1106,6 +1108,68 @@ export class BootScene extends Phaser.Scene {
         g.fillStyle(0x585c64, 1)
         g.fillRect(16, 46, 40, 3) // crack
     }
+  }
+
+  /** A parametric companion pet (44×44). Archetype by index; grandeur by rank. */
+  private drawPet(g: Phaser.GameObjects.Graphics, idx: number, count: number): void {
+    const rank = idx / (count - 1)
+    const hue = (idx * 47) % 360
+    const body = hsl(hue, 0.7, 0.55)
+    const dark = hsl(hue, 0.6, 0.32)
+    const hi = hsl(hue, 0.85, 0.74)
+    g.fillStyle(0x000000, 0.22) // ground shadow
+    g.fillEllipse(22, 40, 24, 6)
+    if (rank > 0.62) this.bakedGlow(g, 22, 24, body, 20) // radiant at high tiers
+    const arch = idx % 4
+    if (arch === 1) { // quadruped
+      g.fillStyle(dark, 1)
+      for (const lx of [13, 19, 25, 31]) g.fillRect(lx, 33, 3, 6)
+      g.fillStyle(body, 1)
+      g.fillEllipse(22, 26, 32, 20)
+      g.fillStyle(dark, 1) // ears
+      g.fillTriangle(14, 16, 12, 6, 20, 14)
+      g.fillTriangle(30, 16, 32, 6, 24, 14)
+    } else if (arch === 2) { // winged
+      g.fillStyle(dark, 1)
+      g.fillPoints(this.pts([12, 24, 0, 12, 5, 30, 13, 28]), true)
+      g.fillPoints(this.pts([32, 24, 44, 12, 39, 30, 31, 28]), true)
+      g.fillStyle(body, 1)
+      g.fillEllipse(22, 26, 22, 24)
+    } else if (arch === 3) { // serpent (coiled)
+      g.fillStyle(dark, 1)
+      for (const s of [[14, 34], [18, 31], [26, 31], [30, 34]]) g.fillCircle(s[0] as number, s[1] as number, 4)
+      g.fillStyle(body, 1)
+      g.fillCircle(22, 30, 7)
+      g.fillCircle(22, 21, 9)
+    } else { // blob
+      g.fillStyle(body, 1)
+      g.fillEllipse(22, 26, 30, 28)
+    }
+    g.fillStyle(hi, 0.75) // sheen
+    g.fillEllipse(17, 20, 9, 7)
+    g.fillStyle(0x0c0a12, 1) // eyes
+    g.fillCircle(18, 24, 2.6)
+    g.fillCircle(27, 24, 2.6)
+    g.fillStyle(0xffffff, 1)
+    g.fillCircle(18.7, 23.3, 1)
+    g.fillCircle(27.7, 23.3, 1)
+    if (rank > 0.4) { // horns
+      g.fillStyle(dark, 1)
+      g.fillTriangle(15, 13, 12, 3, 19, 12)
+      g.fillTriangle(29, 13, 32, 3, 25, 12)
+    }
+    if (rank > 0.82) { // little crown for the final forms
+      g.fillStyle(0xffe14d, 1)
+      for (const cx of [16, 22, 28]) g.fillTriangle(cx - 2, 8, cx, 1, cx + 2, 8)
+    }
+  }
+
+  /** The pet's little zap projectile (tinted at runtime). */
+  private drawPetShot(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0xffffff, 0.4)
+    g.fillCircle(7, 7, 6)
+    g.fillStyle(0xffffff, 1)
+    g.fillCircle(7, 7, 3.4)
   }
 
   // ---- Themed obstacles (all 72x72; shared circular collision body) --------
