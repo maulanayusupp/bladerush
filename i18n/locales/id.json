@@ -302,7 +302,17 @@
     "none": "Reset toko untuk kekuatan permanen",
     "action": "Prestige +{stars}⭐",
     "confirm": "Reset semua? Ketuk untuk konfirmasi +{stars}⭐",
-    "locked": "Beli lebih banyak upgrade untuk buka"
+    "locked": "Beli lebih banyak upgrade untuk buka",
+    "ms": {
+      "xp": "+15% XP",
+      "vigor": "+40 HP maks",
+      "relic": "Mulai tiap run bawa 1 relic",
+      "crit": "+8% peluang kritikal",
+      "revive": "+1 Napas Kedua",
+      "power": "+8 pedang awal",
+      "magnet": "+140 jangkauan magnet",
+      "damage": "+25% damage dasar"
+    }
   },
   "meta": {
     "startPower": { "name": "Pemanasan", "text": "Mulai run dengan pedang lebih banyak" },

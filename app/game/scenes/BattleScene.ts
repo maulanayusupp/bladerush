@@ -609,6 +609,7 @@ export class BattleScene extends Phaser.Scene {
     // Boss Rush mode drops you straight into the gauntlet.
     if (this.mode === 'bossrush') this.enterBossRush()
     if (this.timeLimitMs > 0) gameEventBus.emit('timer:changed', { remainingMs: this.timeLimitMs })
+    this.grantStartingRelics()
     this.syncQuests()
   }
 
@@ -2087,6 +2088,17 @@ export class BattleScene extends Phaser.Scene {
     const pool = RELICS.filter((r) => !this.relics.has(r.id))
     const relic = pool[Math.floor(Math.random() * pool.length)]
     if (relic) this.grantRelic(relic.id, x, y)
+  }
+
+  /** Prestige milestone: begin the run already holding some random relics. */
+  private grantStartingRelics(): void {
+    const n = metaService.startRelics
+    for (let i = 0; i < n; i++) {
+      const pool = RELICS.filter((r) => !this.relics.has(r.id))
+      if (!pool.length) break
+      const r = pool[randomInt(0, pool.length - 1)]
+      if (r) this.grantRelic(r.id)
+    }
   }
 
   private grantRelic(id: string, x = this.player.x, y = this.player.y): void {

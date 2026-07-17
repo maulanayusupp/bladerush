@@ -145,7 +145,9 @@ tekstur tetap selesai sebelum scene berikutnya mulai.
   `killEnemy`). Di-roll di `SpawnService.createEnemy`.
 - **Prestige** (`PRESTIGE`, `MetaService.prestige()`): reset koin+upgrade →
   Prestige Star permanen (+5% damage & koin/star, folded ke `damageMul`/`coinMul`).
-  UI di `MenuShop`; bintang tampil di menu.
+  UI di `MenuShop`; bintang tampil di menu. **Milestone** (`PRESTIGE_MILESTONES`,
+  `milestoneSum`): perk permanen di ambang bintang, di-fold ke getter run-start
+  (xp/maxHp/crit/revive/startPower/magnet/dmg + `startRelics`).
 - **Progres**: XP `LEVEL` (per-kill ikut nilai kill) — kill drop **XP gem**
   (`XP_GEM`, `spawnGem`/`updateGems`) yang ditarik magnet ke hero. Achievements,
   Codex, ranking.

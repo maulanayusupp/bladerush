@@ -86,6 +86,47 @@
     }
   }
 
+  // --- Prestige milestones strip ---
+  &__milestones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
+
+  &__ms {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    width: 46px;
+    padding: $space-1 2px;
+    border-radius: $radius-sm;
+    background: rgba(#000, 0.3);
+    border: 1px solid rgba(#fff, 0.08);
+    opacity: 0.45;
+    filter: grayscale(0.6);
+
+    &--on {
+      opacity: 1;
+      filter: none;
+      border-color: rgba($color-warning, 0.7);
+      background: rgba($color-warning, 0.14);
+      box-shadow: 0 0 10px rgba($color-warning, 0.3);
+    }
+  }
+
+  &__ms-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  &__ms-req {
+    font-size: 0.56rem;
+    font-weight: $font-weight-bold;
+    color: $color-warning;
+    font-variant-numeric: tabular-nums;
+  }
+
   &__title {
     margin: 0;
     font-size: $font-size-xl;

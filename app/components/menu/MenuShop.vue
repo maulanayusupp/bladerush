@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { metaService } from '~/services/MetaService'
-import { META, META_IDS } from '~/game/constants'
+import { META, META_IDS, PRESTIGE_MILESTONES } from '~/game/constants'
 import { formatCompact } from '~/helpers/format.helper'
 
 const emit = defineEmits<{ close: [] }>()
@@ -19,6 +19,11 @@ const stars = computed(() => { void tick.value; return metaService.prestigeStars
 const canPrestige = computed(() => { void tick.value; return metaService.canPrestige() })
 const starsGain = computed(() => { void tick.value; return metaService.prestigeStarsPreview() })
 const bonusPct = computed(() => { void tick.value; return Math.round((metaService.prestigeMul - 1) * 100) })
+const milestones = computed(() => {
+  void tick.value
+  const s = metaService.prestigeStars
+  return PRESTIGE_MILESTONES.map((m) => ({ id: m.id, icon: m.icon, stars: m.stars, unlocked: s >= m.stars }))
+})
 const confirming = ref(false)
 function doPrestige(): void {
   if (!canPrestige.value) return
@@ -77,6 +82,19 @@ function buy(id: (typeof META_IDS)[number]): void {
           <template v-else-if="confirming">{{ $t('prestige.confirm', { stars: starsGain }) }}</template>
           <template v-else>{{ $t('prestige.action', { stars: starsGain }) }}</template>
         </button>
+      </div>
+
+      <div class="shop__milestones">
+        <div
+          v-for="m in milestones"
+          :key="m.id"
+          class="shop__ms"
+          :class="{ 'shop__ms--on': m.unlocked }"
+          :title="$t('prestige.ms.' + m.id)"
+        >
+          <span class="shop__ms-icon" aria-hidden="true">{{ m.icon }}</span>
+          <span class="shop__ms-req">{{ m.stars }}⭐</span>
+        </div>
       </div>
 
       <div class="shop__list">

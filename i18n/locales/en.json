@@ -302,7 +302,17 @@
     "none": "Reset your shop for permanent power",
     "action": "Prestige +{stars}⭐",
     "confirm": "Reset everything? Tap to confirm +{stars}⭐",
-    "locked": "Buy more upgrades to unlock"
+    "locked": "Buy more upgrades to unlock",
+    "ms": {
+      "xp": "+15% XP",
+      "vigor": "+40 max HP",
+      "relic": "Start each run with a relic",
+      "crit": "+8% crit chance",
+      "revive": "+1 Second Wind",
+      "power": "+8 starting swords",
+      "magnet": "+140 magnet range",
+      "damage": "+25% base damage"
+    }
   },
   "meta": {
     "startPower": { "name": "Warmup", "text": "Start each run with more swords" },

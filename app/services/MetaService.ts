@@ -3,7 +3,7 @@
 // A plain localStorage-backed singleton shared by the Vue shop and the Phaser
 // scene, so neither has to depend on the other.
 // =============================================================================
-import { META, META_COST_GROWTH, META_IDS, PRESTIGE } from '~/game/constants'
+import { META, META_COST_GROWTH, META_IDS, PRESTIGE, PRESTIGE_MILESTONES, type MilestoneEffect } from '~/game/constants'
 
 type MetaId = (typeof META_IDS)[number]
 
@@ -121,6 +121,23 @@ class MetaService {
     return 1 + PRESTIGE.perStar * this.prestigeStars
   }
 
+  /** Sum a milestone effect across every unlocked (stars ≥ threshold) milestone. */
+  private milestoneSum(field: MilestoneEffect): number {
+    const stars = this.prestigeStars
+    let sum = 0
+    for (const m of PRESTIGE_MILESTONES) {
+      if (stars < m.stars) continue
+      const v = m[field]
+      if (typeof v === 'number') sum += v
+    }
+    return sum
+  }
+
+  /** Relics granted at the start of each run (prestige milestone). */
+  get startRelics(): number {
+    return this.milestoneSum('startRelic')
+  }
+
   // ---- Derived bonuses applied at run start ----
   /** Flat total for a per-level additive upgrade. */
   private add(id: MetaId): number {
@@ -132,13 +149,13 @@ class MetaService {
   }
 
   get startPower(): number {
-    return this.add('startPower')
+    return this.add('startPower') + this.milestoneSum('startPower')
   }
   get bonusMaxHp(): number {
-    return this.add('maxHp')
+    return this.add('maxHp') + this.milestoneSum('maxHp')
   }
   get damageMul(): number {
-    return this.up('damage') * this.prestigeMul
+    return this.up('damage') * this.prestigeMul * (1 + this.milestoneSum('dmgMul'))
   }
   get coinMul(): number {
     return this.up('coin') * this.prestigeMul
@@ -150,10 +167,10 @@ class MetaService {
     return this.up('orbitSpeed')
   }
   get critChance(): number {
-    return Math.min(0.75, this.add('crit'))
+    return Math.min(0.75, this.add('crit') + this.milestoneSum('crit'))
   }
   get xpMul(): number {
-    return this.up('xp')
+    return this.up('xp') * (1 + this.milestoneSum('xpMul'))
   }
   get startLifesteal(): number {
     return this.add('lifesteal')
@@ -178,10 +195,10 @@ class MetaService {
     return this.add('regen')
   }
   get magnetRange(): number {
-    return this.add('magnet')
+    return this.add('magnet') + this.milestoneSum('magnet')
   }
   get reviveCount(): number {
-    return this.levelOf('revive')
+    return this.levelOf('revive') + this.milestoneSum('revive')
   }
 }
 

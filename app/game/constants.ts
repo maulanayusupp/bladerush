@@ -701,6 +701,37 @@ export const PRESTIGE = {
   perStar: 0.05, // +5% damage & +5% coins per star
 } as const
 
+/**
+ * Prestige MILESTONES — reaching a total star count permanently unlocks a
+ * special perk (cumulative). Effects fold into MetaService's run-start getters.
+ */
+export interface PrestigeMilestone {
+  stars: number
+  id: string
+  icon: string
+  xpMul?: number // +fraction XP
+  maxHp?: number // +start max HP
+  startRelic?: number // begin each run with N random relics
+  crit?: number // +crit chance
+  revive?: number // +Second Wind charges
+  startPower?: number // +starting swords
+  magnet?: number // +XP/pickup magnet range
+  dmgMul?: number // +fraction base damage
+}
+
+export const PRESTIGE_MILESTONES: PrestigeMilestone[] = [
+  { stars: 3, id: 'xp', icon: '📖', xpMul: 0.15 },
+  { stars: 6, id: 'vigor', icon: '❤️', maxHp: 40 },
+  { stars: 10, id: 'relic', icon: '🔮', startRelic: 1 },
+  { stars: 15, id: 'crit', icon: '🎯', crit: 0.08 },
+  { stars: 22, id: 'revive', icon: '🕊️', revive: 1 },
+  { stars: 30, id: 'power', icon: '💪', startPower: 8 },
+  { stars: 42, id: 'magnet', icon: '🧲', magnet: 140 },
+  { stars: 60, id: 'damage', icon: '🗡️', dmgMul: 0.25 },
+]
+
+export type MilestoneEffect = 'xpMul' | 'maxHp' | 'startRelic' | 'crit' | 'revive' | 'startPower' | 'magnet' | 'dmgMul'
+
 /** Pickable upgrades (icon here; name/description via i18n `upgrades.<id>`). */
 export const UPGRADES = [
   { id: 'damage', icon: '🗡️' },

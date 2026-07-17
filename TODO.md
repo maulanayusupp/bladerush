@@ -14,8 +14,6 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 ## 🧩 Backlog / ide
 
-- [ ] **Prestige lanjutan**: milestone bintang (mis. tiap 10 bintang buka bonus
-      spesial), atau prestige per-hero.
 - [ ] **Onboarding**: pop-up tutorial singkat saat pertama main (guide sudah ada
       di `/guide`, tinggal auto-show sekali).
 - [ ] **Audio/musik**: lebih banyak layer musik dinamis; SFX unik per elite affix.
@@ -30,6 +28,7 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- Prestige milestones (perk permanen di ambang bintang) + strip di Shop.
 - Kartu level-up menandai upgrade yang "akan berevolusi" (badge emas).
 - XP gem + magnet (kill drop gem, ditarik ke hero).
 - Performa: baking tekstur bertahap (per-frame) + progress bar (anti-freeze).

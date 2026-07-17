@@ -3,6 +3,12 @@
     {
       "date": "2026-07-17",
       "tag": "feature",
+      "title": "Prestige milestones",
+      "detail": "Prestige Stars now unlock permanent milestone perks at thresholds (3/6/10/15/22/30/42/60 stars): +15% XP, +40 max HP, start with a relic, +8% crit, +1 Second Wind, +8 starting swords, +140 magnet range, and +25% base damage. The Shop shows the milestone track (lit as you reach each)."
+    },
+    {
+      "date": "2026-07-17",
+      "tag": "feature",
       "title": "Level-up cards show evolutions",
       "detail": "When an elemental upgrade is one pick away from evolving, its level-up card now glows gold with an 'Evolves → Inferno/Absolute Chill/Plague' badge, so you can see the payoff before choosing."
     },
