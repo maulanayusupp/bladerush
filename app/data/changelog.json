@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-17",
+      "tag": "feature",
+      "title": "Prestige",
+      "detail": "Once you've bought enough shop upgrades you can Prestige: reset your coins and all upgrades for permanent Prestige Stars. Each star is +5% base damage AND +5% coins forever, and stars never reset. Manage it from the Shop; your star count shows on the menu."
+    },
+    {
+      "date": "2026-07-17",
       "tag": "art",
       "title": "Grand hero rarity-up spectacle",
       "detail": "Hero evolution is now more deliberate (no blur), and crossing into a new rarity tier plays a unique, escalating spectacle — blue for Rare, violet for Epic, gold for Legendary, crimson for Mythic, prismatic for Divine — with tier-colored rings, light beams, a full-screen banner, and a bigger flash/shake the higher you go."

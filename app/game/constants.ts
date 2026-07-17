@@ -606,6 +606,17 @@ export const RELICS: Relic[] = [
 /** Chance a chest also grants a (random un-owned) relic. */
 export const RELIC_CHEST_CHANCE = 0.45
 
+/**
+ * Prestige — spend your whole meta run (coins reset to 0, all shop upgrades back
+ * to 0) for permanent Prestige Stars. Each star is +5% base damage AND +5% coins
+ * forever. Stars never reset. Requires enough total investment first.
+ */
+export const PRESTIGE = {
+  require: 15, // total meta-upgrade levels needed before you may prestige
+  starsPer: 8, // one star per this many total levels spent (min 1 when eligible)
+  perStar: 0.05, // +5% damage & +5% coins per star
+} as const
+
 /** Pickable upgrades (icon here; name/description via i18n `upgrades.<id>`). */
 export const UPGRADES = [
   { id: 'damage', icon: '🗡️' },

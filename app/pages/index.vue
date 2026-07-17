@@ -16,6 +16,7 @@ const store = useGameStore()
 
 const shopOpen = ref(false)
 const coins = ref(0)
+const stars = ref(0)
 // The hero chosen in the Codex (or "auto"), shown so the player knows who they play as.
 const heroChoice = ref('')
 // Selected game mode (persisted).
@@ -46,6 +47,7 @@ onMounted(() => {
   store.loadHighScore()
   metaService.load()
   coins.value = metaService.coins
+  stars.value = metaService.prestigeStars
   codexService.load()
   loadoutService.load()
   const chosen = loadoutService.selectedHero
@@ -65,6 +67,7 @@ function openShop(): void {
 function closeShop(): void {
   shopOpen.value = false
   coins.value = metaService.coins
+  stars.value = metaService.prestigeStars
 }
 
 // Unlock audio on this user gesture; the singleton persists into /play.
@@ -161,6 +164,13 @@ function startGame(): void {
             <span class="stat__body">
               <b class="stat__label">{{ $t('menu.coinsLabel') }}</b>
               <span class="stat__value">{{ formatCompact(coins) }}</span>
+            </span>
+          </button>
+          <button v-if="stars > 0" type="button" class="stat stat--action stat--star" @click="openShop">
+            <span class="stat__icon" aria-hidden="true">⭐</span>
+            <span class="stat__body">
+              <b class="stat__label">{{ $t('menu.prestigeLabel') }}</b>
+              <span class="stat__value">{{ stars }}</span>
             </span>
           </button>
         </div>

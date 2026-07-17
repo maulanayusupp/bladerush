@@ -321,7 +321,7 @@
 // --- Player stats rail -----------------------------------------------------
 .console__stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
   gap: $space-2;
 }
 
@@ -359,6 +359,12 @@ button.stat {
 
 .stat--hero {
   border-color: rgba($color-primary, 0.3);
+}
+
+.stat--star {
+  border-color: rgba($color-warning, 0.4);
+
+  .stat__value { color: $color-warning; }
 }
 
 .stat__icon {

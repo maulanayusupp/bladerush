@@ -127,6 +127,9 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
   (burn/frost/venom) di level 5 berevolusi jadi skill auto-cast (`updateEvolutions`
   → `castEvolution` pakai helper `fx*`). Event `upgrade:evolved`.
 - **Meta shop** (`MetaService`, koin) + **unlock hero pakai koin** di Codex.
+- **Prestige** (`PRESTIGE`, `MetaService.prestige()`): reset koin+upgrade →
+  Prestige Star permanen (+5% damage & koin/star, folded ke `damageMul`/`coinMul`).
+  UI di `MenuShop`; bintang tampil di menu.
 - **Progres**: XP `LEVEL` (per-kill ikut nilai kill), achievements, Codex, ranking.
 - **Loadout** (`LoadoutService`), **Settings** (`SettingsService`: screenShake).
 - **Musik dinamis**: `audioService.setMusicIntensity(0|1|2)` (ambient/boss/rush).

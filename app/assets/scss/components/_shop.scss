@@ -29,6 +29,63 @@
     align-items: center;
   }
 
+  // --- Prestige panel ---
+  &__prestige {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    flex-wrap: wrap;
+    padding: $space-3 $space-4;
+    border-radius: $radius-md;
+    background: linear-gradient(135deg, rgba($color-primary, 0.18), rgba($color-warning, 0.1));
+    border: 1px solid rgba($color-warning, 0.35);
+  }
+
+  &__prestige-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__prestige-stars {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-warning;
+  }
+
+  &__prestige-bonus {
+    font-size: $font-size-sm;
+    color: rgba($color-text, 0.7);
+  }
+
+  &__prestige-btn {
+    @include button-reset;
+    flex: 0 0 auto;
+    padding: $space-2 $space-5;
+    border-radius: $radius-pill;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.04em;
+    color: $color-text;
+    background: linear-gradient(135deg, rgba($color-primary, 0.9), rgba($color-primary-dark, 0.9));
+    border: 1px solid rgba(#fff, 0.16);
+    transition: transform $transition-fast, box-shadow $transition-base, background $transition-base;
+
+    &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba($color-primary, 0.4); }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: rgba($color-surface-2, 0.8);
+    }
+
+    &--armed {
+      background: linear-gradient(135deg, $color-danger, #a01818);
+      animation: shop-prestige-pulse 0.6s ease-in-out infinite;
+    }
+  }
+
   &__title {
     margin: 0;
     font-size: $font-size-xl;
@@ -107,4 +164,9 @@
       cursor: default;
     }
   }
+}
+
+@keyframes shop-prestige-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(229, 72, 77, 0.5); }
+  50% { box-shadow: 0 0 18px rgba(229, 72, 77, 0.8); }
 }

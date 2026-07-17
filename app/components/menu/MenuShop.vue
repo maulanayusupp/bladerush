@@ -14,6 +14,23 @@ const coins = computed(() => {
   return metaService.coins
 })
 
+// ---- Prestige ----
+const stars = computed(() => { void tick.value; return metaService.prestigeStars })
+const canPrestige = computed(() => { void tick.value; return metaService.canPrestige() })
+const starsGain = computed(() => { void tick.value; return metaService.prestigeStarsPreview() })
+const bonusPct = computed(() => { void tick.value; return Math.round((metaService.prestigeMul - 1) * 100) })
+const confirming = ref(false)
+function doPrestige(): void {
+  if (!canPrestige.value) return
+  if (!confirming.value) {
+    confirming.value = true
+    return
+  }
+  metaService.prestige()
+  confirming.value = false
+  tick.value++
+}
+
 const rows = computed(() =>
   META_IDS.map((id) => {
     void tick.value
@@ -40,6 +57,26 @@ function buy(id: (typeof META_IDS)[number]): void {
       <div class="shop__head">
         <h2 class="shop__title">{{ $t('shop.title') }}</h2>
         <span class="shop__coins">💰 {{ formatCompact(coins) }}</span>
+      </div>
+
+      <div class="shop__prestige">
+        <div class="shop__prestige-info">
+          <span class="shop__prestige-stars">⭐ {{ stars }}</span>
+          <span class="shop__prestige-bonus">
+            {{ stars > 0 ? $t('prestige.bonus', { pct: bonusPct }) : $t('prestige.none') }}
+          </span>
+        </div>
+        <button
+          class="shop__prestige-btn"
+          :class="{ 'shop__prestige-btn--armed': confirming }"
+          type="button"
+          :disabled="!canPrestige"
+          @click="doPrestige"
+        >
+          <template v-if="!canPrestige">🔒 {{ $t('prestige.locked') }}</template>
+          <template v-else-if="confirming">{{ $t('prestige.confirm', { stars: starsGain }) }}</template>
+          <template v-else>{{ $t('prestige.action', { stars: starsGain }) }}</template>
+        </button>
       </div>
 
       <div class="shop__list">
