@@ -379,6 +379,7 @@ export class BootScene extends Phaser.Scene {
     this.bake('map10', MAP_TILE, MAP_TILE, (g) => this.drawNecro(g))
     this.bake('map11', MAP_TILE, MAP_TILE, (g) => this.drawAbyss(g))
     this.makeVignette()
+    this.makeHazardDisc()
     this.drawProps()
     this.bake('sword', 16, 46, (g) => this.drawSword(g))
     SWORD_SHAPES.forEach((shape, i) => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape)))
@@ -1287,6 +1288,21 @@ export class BootScene extends Phaser.Scene {
   }
 
   // ---- Arena backgrounds (tileable 128x128) -------------------------------
+
+  /** Soft radial floor disc, tinted per hazard type at runtime. */
+  private makeHazardDisc(): void {
+    const s = 128
+    const tex = this.textures.createCanvas('hazardDisc', s, s)
+    if (!tex) return
+    const c = tex.getContext()
+    const g = c.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2)
+    g.addColorStop(0, 'rgba(255,255,255,0.6)')
+    g.addColorStop(0.62, 'rgba(255,255,255,0.34)')
+    g.addColorStop(1, 'rgba(255,255,255,0)')
+    c.fillStyle = g
+    c.fillRect(0, 0, s, s)
+    tex.refresh()
+  }
 
   /** Soft radial vignette (dark edges) stretched over the arena for depth. */
   private makeVignette(): void {

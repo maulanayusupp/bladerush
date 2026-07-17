@@ -66,19 +66,45 @@ export const MINIMAP = {
 export const MAP_TILE = 256
 export const DECOR_COUNT = 380
 export const MAPS = [
-  { key: 'map0', name: 'Verdant Meadow', props: ['treePine', 'rockGray', 'bushGreen'], obstacles: ['obs0', 'obs3', 'obsTree', 'obsMushroom'], ambient: { tint: 0xdff3b0, dir: 'drift' } },
-  { key: 'map1', name: 'Sunscar Desert', props: ['cactus', 'rockSand', 'deadBush'], obstacles: ['obs0', 'obs1', 'obsCactus'], ambient: { tint: 0xe8cf96, dir: 'side' } },
-  { key: 'map2', name: 'Frostwind Tundra', props: ['treeSnow', 'rockIce', 'snowMound'], obstacles: ['obs0', 'obsIce', 'obs2'], ambient: { tint: 0xffffff, dir: 'fall' } },
-  { key: 'map3', name: 'Emberfall Caldera', props: ['deadTree', 'rockChar', 'lavaCrystal'], obstacles: ['obsLava', 'obs1', 'obs2'], ambient: { tint: 0xff9a4a, dir: 'rise' } },
-  { key: 'map4', name: 'The Void Expanse', props: ['crystalVoid', 'asteroid', 'starCluster'], obstacles: ['obs2', 'obs1', 'obsMonolith'], ambient: { tint: 0xc9b0ff, dir: 'drift' } },
-  { key: 'map5', name: 'Sunken Marsh', props: ['mangrove', 'lilyRock', 'reed'], obstacles: ['obsMushroom', 'obsTree', 'obs3', 'obs0'], ambient: { tint: 0xaee0c0, dir: 'drift' } },
-  { key: 'map6', name: 'Golden Savanna', props: ['acacia', 'rockSand', 'grassTuft'], obstacles: ['obsTree', 'obs0', 'obs1'], ambient: { tint: 0xf0d78a, dir: 'side' } },
-  { key: 'map7', name: 'Celestial Ruins', props: ['brokenPillar', 'runeStone', 'crystalVoid'], obstacles: ['obsMonolith', 'obs1', 'obs2'], ambient: { tint: 0xc9b0ff, dir: 'rise' } },
-  { key: 'map8', name: 'Sakura Garden', props: ['sakuraTree', 'stoneLantern', 'bushGreen'], obstacles: ['obsTorii', 'obs0', 'obsTree'], ambient: { tint: 0xffc0d8, dir: 'fall' } },
-  { key: 'map9', name: 'Crystal Cavern', props: ['crystalCyan', 'stalagmite', 'rockGray'], obstacles: ['obs2', 'obsStalagmite', 'obs0'], ambient: { tint: 0x8fe6ff, dir: 'drift' } },
-  { key: 'map10', name: 'Necropolis', props: ['tombstone', 'cross', 'deadTree'], obstacles: ['obsCrypt', 'obs1', 'obsMonolith'], ambient: { tint: 0xbfe0cf, dir: 'drift' } },
-  { key: 'map11', name: 'Abyssal Depths', props: ['coral', 'kelp', 'lilyRock'], obstacles: ['obsCoral', 'obs1', 'obs0'], ambient: { tint: 0x9fe0ff, dir: 'rise' } },
+  { key: 'map0', name: 'Verdant Meadow', props: ['treePine', 'rockGray', 'bushGreen'], obstacles: ['obs0', 'obs3', 'obsTree', 'obsMushroom'], hazard: 'none', ambient: { tint: 0xdff3b0, dir: 'drift' } },
+  { key: 'map1', name: 'Sunscar Desert', props: ['cactus', 'rockSand', 'deadBush'], obstacles: ['obs0', 'obs1', 'obsCactus'], hazard: 'quicksand', ambient: { tint: 0xe8cf96, dir: 'side' } },
+  { key: 'map2', name: 'Frostwind Tundra', props: ['treeSnow', 'rockIce', 'snowMound'], obstacles: ['obs0', 'obsIce', 'obs2'], hazard: 'ice', ambient: { tint: 0xffffff, dir: 'fall' } },
+  { key: 'map3', name: 'Emberfall Caldera', props: ['deadTree', 'rockChar', 'lavaCrystal'], obstacles: ['obsLava', 'obs1', 'obs2'], hazard: 'lava', ambient: { tint: 0xff9a4a, dir: 'rise' } },
+  { key: 'map4', name: 'The Void Expanse', props: ['crystalVoid', 'asteroid', 'starCluster'], obstacles: ['obs2', 'obs1', 'obsMonolith'], hazard: 'whirlpool', ambient: { tint: 0xc9b0ff, dir: 'drift' } },
+  { key: 'map5', name: 'Sunken Marsh', props: ['mangrove', 'lilyRock', 'reed'], obstacles: ['obsMushroom', 'obsTree', 'obs3', 'obs0'], hazard: 'toxic', ambient: { tint: 0xaee0c0, dir: 'drift' } },
+  { key: 'map6', name: 'Golden Savanna', props: ['acacia', 'rockSand', 'grassTuft'], obstacles: ['obsTree', 'obs0', 'obs1'], hazard: 'none', ambient: { tint: 0xf0d78a, dir: 'side' } },
+  { key: 'map7', name: 'Celestial Ruins', props: ['brokenPillar', 'runeStone', 'crystalVoid'], obstacles: ['obsMonolith', 'obs1', 'obs2'], hazard: 'none', ambient: { tint: 0xc9b0ff, dir: 'rise' } },
+  { key: 'map8', name: 'Sakura Garden', props: ['sakuraTree', 'stoneLantern', 'bushGreen'], obstacles: ['obsTorii', 'obs0', 'obsTree'], hazard: 'none', ambient: { tint: 0xffc0d8, dir: 'fall' } },
+  { key: 'map9', name: 'Crystal Cavern', props: ['crystalCyan', 'stalagmite', 'rockGray'], obstacles: ['obs2', 'obsStalagmite', 'obs0'], hazard: 'none', ambient: { tint: 0x8fe6ff, dir: 'drift' } },
+  { key: 'map10', name: 'Necropolis', props: ['tombstone', 'cross', 'deadTree'], obstacles: ['obsCrypt', 'obs1', 'obsMonolith'], hazard: 'toxic', ambient: { tint: 0xbfe0cf, dir: 'drift' } },
+  { key: 'map11', name: 'Abyssal Depths', props: ['coral', 'kelp', 'lilyRock'], obstacles: ['obsCoral', 'obs1', 'obs0'], hazard: 'whirlpool', ambient: { tint: 0x9fe0ff, dir: 'rise' } },
 ] as const
+
+/**
+ * Environmental hazards scattered across a map's floor (non-solid). Each map
+ * declares one `hazard` type (or 'none'). Effects apply while the hero stands in
+ * a hazard zone: lava/toxic drain HP, quicksand/toxic slow, ice speeds you up
+ * (slippery), whirlpool drags you toward its center.
+ */
+export const HAZARD = {
+  count: 12,
+  minRadius: 66,
+  maxRadius: 120,
+  minFromCenter: 380, // keep the spawn area clear
+  lavaDpsFrac: 0.06, // maxHp fraction drained per second on lava
+  toxicDpsFrac: 0.035, // …on toxic (also slows)
+  slowMul: 0.55, // quicksand / toxic move speed
+  slipMul: 1.4, // ice: slippery = faster, harder to stop
+  pullPerSec: 150, // whirlpool pull toward center (px/s)
+  colors: {
+    lava: 0xff5a1a,
+    quicksand: 0xc9a86a,
+    ice: 0x9fd8ff,
+    whirlpool: 0x9d5cff,
+    toxic: 0x6aff2a,
+  } as Record<string, number>,
+  glow: ['lava', 'toxic', 'whirlpool'], // these render with additive blend
+} as const
 
 export const PLAYER = {
   size: 44, // texture footprint in px

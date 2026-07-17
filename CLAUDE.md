@@ -120,8 +120,10 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
 - **Boss Rush** (`BOSS_RUSH`): gelombang bos (lead + escort) di Lvl 10 (normal).
   Bos muncul dengan warning (banner + telegraph) & membantai NPC yang mendekat
   (`bossSlayNearbyNpcs`).
-- **Maps** (`MAPS`, 12): tiap map punya `props`, `obstacles` bertema, `ambient`.
-  Ground/props/obstacles di-bake di BootScene. Banner nama map: event `map:set`.
+- **Maps** (`MAPS`, 12): tiap map punya `props`, `obstacles` bertema, `ambient`,
+  dan `hazard` (`HAZARD`). Ground/props/obstacles di-bake di BootScene. Banner
+  nama map: event `map:set`. Hazard = zona lantai non-solid (`applyHazards`):
+  lava/toxic (DoT), quicksand/toxic (slow), ice (slip cepat), whirlpool (tarik).
 - **Relic** (`RELICS`): modifier pasif dari peti, di-`recomputeRelics()`.
 - **Evolusi upgrade** (`EVOLUTIONS`, `UPGRADE_EVOLVE_AT`): upgrade elemental
   (burn/frost/venom) di level 5 berevolusi jadi skill auto-cast (`updateEvolutions`

@@ -3,6 +3,12 @@
     {
       "date": "2026-07-17",
       "tag": "feature",
+      "title": "Map hazards",
+      "detail": "Maps now have environmental hazards you must play around: lava and toxic pools drain your HP, quicksand and toxic mud slow you, ice makes you slide (faster, harder to stop), and void whirlpools drag you toward their center. Each hazardous map scatters its own themed zones."
+    },
+    {
+      "date": "2026-07-17",
+      "tag": "feature",
       "title": "Prestige",
       "detail": "Once you've bought enough shop upgrades you can Prestige: reset your coins and all upgrades for permanent Prestige Stars. Each star is +5% base damage AND +5% coins forever, and stars never reset. Manage it from the Shop; your star count shows on the menu."
     },

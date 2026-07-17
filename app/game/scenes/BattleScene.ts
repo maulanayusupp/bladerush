@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PLAYER, POWER_LAYERS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -144,6 +144,10 @@ export class BattleScene extends Phaser.Scene {
   private rushGapUntil = 0
   private npcs: NpcHero[] = []
   private obstacles!: Phaser.Physics.Arcade.StaticGroup
+  // Environmental hazard zones (non-solid floor effects) for the current map.
+  private hazards: { x: number; y: number; r: number; type: string }[] = []
+  private hazardDmgAcc = 0
+  private lastHazardFxAt = 0
   // Live ranking + run stats.
   private rankAcc = 0
   private curRank = 1
@@ -391,6 +395,34 @@ export class BattleScene extends Phaser.Scene {
     }
     this.physics.add.collider(this.player, this.obstacles)
     this.physics.add.collider(this.enemies, this.obstacles)
+
+    // Environmental hazards (non-solid floor zones) themed per map.
+    this.hazards = []
+    this.hazardDmgAcc = 0
+    if (map.hazard !== 'none') {
+      const color = HAZARD.colors[map.hazard] ?? 0xffffff
+      const glow = (HAZARD.glow as readonly string[]).includes(map.hazard)
+      for (let i = 0; i < HAZARD.count; i++) {
+        let hx = 0
+        let hy = 0
+        for (let tries = 0; tries < 12; tries++) {
+          hx = randomRange(180, this.worldW - 180)
+          hy = randomRange(180, this.worldH - 180)
+          if (distance(hx, hy, cx0, cy0) >= HAZARD.minFromCenter) break
+        }
+        const r = randomRange(HAZARD.minRadius, HAZARD.maxRadius)
+        const img = this.add
+          .image(hx, hy, 'hazardDisc')
+          .setDepth(-8)
+          .setTint(color)
+          .setDisplaySize(r * 2, r * 2)
+          .setAlpha(0.5)
+        if (glow) img.setBlendMode(Phaser.BlendModes.ADD)
+        this.tweens.add({ targets: img, alpha: { from: 0.36, to: 0.62 }, duration: 1100 + Math.random() * 900, yoyo: true, repeat: -1, ease: 'Sine.InOut' })
+        this.hazards.push({ x: hx, y: hy, r, type: map.hazard })
+      }
+    }
+
     this.gatePool = Array.from({ length: GATE.poolSize }, () => new Gate(this, 0, 0))
     this.swordPool = Array.from({ length: SWORD.poolSize }, () => new Sword(this, 0, 0))
     // Pick one of the 10 blade skins for this run.
@@ -548,8 +580,10 @@ export class BattleScene extends Phaser.Scene {
       }
     }
 
+    const hazardMoveMul = this.applyHazards(deltaMs)
+    if (this.isOver) return
     const dashing = this.elapsedMs < this.dashUntil
-    const speedMul = (dashing ? SKILLS.dash.speedMul : 1) * this.metaMoveMul
+    const speedMul = (dashing ? SKILLS.dash.speedMul : 1) * this.metaMoveMul * hazardMoveMul
     const bounds = { width: this.worldW, height: this.worldH }
     // Passive HP regeneration (meta upgrade).
     if (this.metaRegen > 0 && this.player.hp < this.player.maxHp) {
@@ -1596,6 +1630,58 @@ export class BattleScene extends Phaser.Scene {
   }
 
   /** Apply damage to the hero (respecting i-frames) with feedback. */
+  /**
+   * Apply environmental hazard effects while the hero stands in a zone.
+   * @returns a movement-speed multiplier (slow in quicksand/toxic, fast on ice).
+   */
+  private applyHazards(deltaMs: number): number {
+    if (!this.hazards.length) return 1
+    const px = this.player.x
+    const py = this.player.y
+    let moveMul = 1
+    let dmgFrac = 0
+    for (const h of this.hazards) {
+      if (distance(px, py, h.x, h.y) > h.r) continue
+      switch (h.type) {
+        case 'quicksand':
+          moveMul = Math.min(moveMul, HAZARD.slowMul)
+          break
+        case 'ice':
+          moveMul = Math.max(moveMul, HAZARD.slipMul)
+          break
+        case 'toxic':
+          moveMul = Math.min(moveMul, HAZARD.slowMul)
+          dmgFrac = Math.max(dmgFrac, HAZARD.toxicDpsFrac)
+          break
+        case 'lava':
+          dmgFrac = Math.max(dmgFrac, HAZARD.lavaDpsFrac)
+          break
+        case 'whirlpool': {
+          const a = angleBetween(px, py, h.x, h.y)
+          const pull = HAZARD.pullPerSec * (deltaMs / 1000)
+          this.player.x += Math.cos(a) * pull
+          this.player.y += Math.sin(a) * pull
+          break
+        }
+      }
+    }
+    if (dmgFrac > 0) {
+      this.hazardDmgAcc += this.player.maxHp * dmgFrac * (deltaMs / 1000)
+      if (this.hazardDmgAcc >= 1) {
+        const whole = Math.floor(this.hazardDmgAcc)
+        this.hazardDmgAcc -= whole
+        const dead = this.player.takeDamage(whole) // raw environmental drain
+        this.emitHp()
+        if (this.elapsedMs - this.lastHazardFxAt > 260) {
+          this.lastHazardFxAt = this.elapsedMs
+          this.cameras.main.flash(120, 255, 90, 40)
+        }
+        if (dead) this.gameOver()
+      }
+    }
+    return moveMul
+  }
+
   /** Camera shake, gated by the player's "screen shake" accessibility setting. */
   private shake(duration: number, intensity: number): void {
     if (!settingsService.screenShake) return

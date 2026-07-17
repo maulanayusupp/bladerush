@@ -21,10 +21,6 @@ sistem yang sudah ada di `CLAUDE.md`.
       pola enrage berbeda. Tambah **fase kedua** saat HP < ambang (ganti pola +
       efek transisi). Sentuh `updateBoss`/`castFan`/`castMeteors` + state fase.
 
-- [ ] **Hazard per map** — bahaya lingkungan khas tiap map: genangan lava
-      (Caldera, damage berkala), pasir hisap (Desert, memperlambat), es licin
-      (Tundra, gerak meluncur), pusaran (Abyss, menyeret). Tambah field `hazard`
-      di `MAPS`, spawn zona hazard + cek overlap player/enemy di `update`.
 
 - [ ] **Objective/quest untuk koin** — 2-3 target per sesi (bunuh N bos, capai
       Divine, bertahan X menit, serap N NPC) yang memberi koin saat tercapai.
@@ -57,6 +53,7 @@ sistem yang sudah ada di `CLAUDE.md`.
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- Hazard per map (lava/pasir hisap/es/pusaran/toxic).
 - Prestige (reset koin+upgrade → bintang permanen).
 - Evolusi hero: cadence lebih pelan + spektakel mewah per tier rarity.
 - Evolusi upgrade elemental (Ignite→Inferno, Frostbite→Absolute Chill, Venom→Plague).
