@@ -388,6 +388,42 @@
     text-shadow: 0 0 18px rgba(#00e0c8, 0.9), 0 0 40px rgba(#00e0c8, 0.5), 0 3px 8px rgba(#000, 0.8);
   }
 
+  // Hero rarity-up — a grand tier-colored banner as the hero ascends a rarity.
+  &__rarity {
+    --rc: #fff;
+    position: absolute;
+    top: 24%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-1;
+    padding: $space-3 $space-8;
+    pointer-events: none;
+    text-align: center;
+    background: radial-gradient(120% 140% at 50% 50%, color-mix(in srgb, var(--rc) 30%, transparent), transparent 72%);
+    border-top: 2px solid var(--rc);
+    border-bottom: 2px solid var(--rc);
+  }
+
+  &__rarity-eyebrow {
+    font-size: 0.7rem;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(#fff, 0.85);
+  }
+
+  &__rarity-name {
+    font-size: clamp(2rem, 8vw, 3.8rem);
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 22px var(--rc), 0 0 46px var(--rc), 0 3px 8px rgba(#000, 0.8);
+  }
+
   // Map intro — the map name shown briefly as a run begins.
   &__map {
     position: absolute;
@@ -603,6 +639,12 @@
   from { opacity: 0; transform: scale(0.3); }
   to { opacity: 1; transform: scale(1); }
 }
+
+// Hero rarity-up: a bold zoom-in that settles, then fades.
+.hud-rarity-enter-active { transition: opacity 0.2s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1.2); }
+.hud-rarity-leave-active { transition: opacity 0.5s ease, transform 0.5s ease; }
+.hud-rarity-enter-from { opacity: 0; transform: translateX(-50%) scale(1.5); }
+.hud-rarity-leave-to { opacity: 0; transform: translateX(-50%) scale(0.9); }
 
 // Map intro banner: rise in, hold, fade.
 .hud-map-enter-active { transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }

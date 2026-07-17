@@ -75,6 +75,10 @@ let mapTimer: ReturnType<typeof setTimeout> | null = null
 const bossWarn = ref(false)
 let bossWarnTimer: ReturnType<typeof setTimeout> | null = null
 
+// ---- Hero rarity-up spectacle ----
+const rarityUp = ref<{ name: string; color: string } | null>(null)
+let rarityTimer: ReturnType<typeof setTimeout> | null = null
+
 // ---- Relics (passive run modifiers) ----
 const relics = ref<string[]>([])
 function relicIcon(id: string): string {
@@ -261,6 +265,16 @@ onMounted(() => {
       if (mapTimer) clearTimeout(mapTimer)
       mapTimer = setTimeout(() => (mapName.value = ''), 2800)
     }),
+    gameEventBus.on('hero:rarityup', ({ rarity }) => {
+      const r = HERO_RARITIES[rarity]
+      if (!r) return
+      rarityUp.value = {
+        name: t('rarity.' + r.id),
+        color: `#${r.color.toString(16).padStart(6, '0')}`,
+      }
+      if (rarityTimer) clearTimeout(rarityTimer)
+      rarityTimer = setTimeout(() => (rarityUp.value = null), 2200)
+    }),
     gameEventBus.on('upgrade:evolved', ({ id }) => {
       if (!evolved.value.includes(id)) evolved.value = [...evolved.value, id]
       evolveMsg.value = `${t('evolve.title')} · ${t('evolve.' + id)}`
@@ -283,6 +297,7 @@ onMounted(() => {
       relics.value = []
       evolved.value = []
       evolveMsg.value = ''
+      rarityUp.value = null
     }),
   )
   cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
@@ -296,6 +311,7 @@ onUnmounted(() => {
   if (mapTimer) clearTimeout(mapTimer)
   if (bossWarnTimer) clearTimeout(bossWarnTimer)
   if (evolveTimer) clearTimeout(evolveTimer)
+  if (rarityTimer) clearTimeout(rarityTimer)
 })
 
 function restart(): void {
@@ -392,6 +408,13 @@ function restart(): void {
           <span class="hud__ult-hero">{{ ultCast.hero }}</span>
           <span class="hud__ult-name">{{ ultCast.skill }}</span>
         </div>
+      </div>
+    </Transition>
+
+    <Transition name="hud-rarity">
+      <div v-if="rarityUp" class="hud__rarity" :style="{ '--rc': rarityUp.color }" aria-hidden="true">
+        <span class="hud__rarity-eyebrow">{{ $t('evolve.title') }}</span>
+        <span class="hud__rarity-name">{{ rarityUp.name }}</span>
       </div>
     </Transition>
 

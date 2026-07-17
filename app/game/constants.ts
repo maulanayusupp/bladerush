@@ -116,8 +116,8 @@ export const HERO = {
   minScale: 0.6,
   maxScale: 1.85,
   // Evolution climbs ONE tier at a time on this cadence, so even a big score
-  // jump plays as a visible step-by-step transformation montage.
-  evolveStepMs: 260,
+  // jump plays as a deliberate step-by-step transformation montage (not a blur).
+  evolveStepMs: 650,
 } as const
 
 /**

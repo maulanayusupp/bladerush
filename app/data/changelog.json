@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-17",
+      "tag": "art",
+      "title": "Grand hero rarity-up spectacle",
+      "detail": "Hero evolution is now more deliberate (no blur), and crossing into a new rarity tier plays a unique, escalating spectacle — blue for Rare, violet for Epic, gold for Legendary, crimson for Mythic, prismatic for Divine — with tier-colored rings, light beams, a full-screen banner, and a bigger flash/shake the higher you go."
+    },
+    {
+      "date": "2026-07-17",
       "tag": "feature",
       "title": "Upgrade evolutions",
       "detail": "Level an elemental upgrade to 5 and it EVOLVES into an auto-casting skill: Ignite → Inferno (meteor storm), Frostbite → Absolute Chill (blizzard), Venom → Plague (toxic cloud). Evolved elements periodically strike on their own, shown by an icon in the HUD."

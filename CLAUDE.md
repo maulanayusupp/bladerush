@@ -107,7 +107,9 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
 
 - **Hero**: `HERO.skins` skin, `HERO.divineCount` teratas = Divine (bespoke di
   `drawDivineHero`, pakai basis `divineCore`). Rarity via `heroRarity()`. Evolusi
-  ikut **skor** (`checkEvolve`), ganti hero me-reset cooldown skill.
+  ikut **skor** (`checkEvolve`, cadence `HERO.evolveStepMs`), ganti hero me-reset
+  cooldown skill. Naik tier rarity = spektakel khas per-tier (`rarityEvolveFx` +
+  event `hero:rarityup` → banner HUD).
 - **Divine ultimate**: `DIVINE_SKILLS` (satu per Divine), `castDivineSkill` +
   cut-in sinematik (event `divine:cast`) + SFX `audioService.ultimate(id)`.
   Efek visual bespoke lewat helper `fx*` (`fxMeteors`, `fxLightning`,

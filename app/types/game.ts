@@ -89,4 +89,5 @@ export interface GameEventMap {
   'relic:gained': { id: string }
   'map:set': { key: string }
   'upgrade:evolved': { id: string }
+  'hero:rarityup': { rarity: number }
 }

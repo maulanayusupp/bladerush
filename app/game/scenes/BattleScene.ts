@@ -1050,11 +1050,16 @@ export class BattleScene extends Phaser.Scene {
     // Announce crossing into a new rarity tier.
     const rarity = heroRarity(rk)
     const raritiedUp = rarity > this.heroRarityIdx
-    if (raritiedUp && !first) this.announceRarity(rarity)
     this.heroRarityIdx = Math.max(this.heroRarityIdx, rarity)
-    // Full flourish only when catching up to the target or crossing a rarity —
-    // otherwise a light pop, so rapid catch-up isn't a flash storm.
-    if (!first && (reachedTarget || raritiedUp)) {
+    // Crossing a RARITY is a grand, escalating spectacle unique to that tier;
+    // reaching the target (same tier) gets a lighter flourish; mid-catch-up steps
+    // just pop — so rapid climbs aren't a flash storm.
+    if (!first && raritiedUp) {
+      this.announceRarity(rarity)
+      this.rarityEvolveFx(rarity)
+      gameEventBus.emit('hero:rarityup', { rarity })
+      this.heroPopUntil = this.elapsedMs + 520
+    } else if (!first && reachedTarget) {
       this.evolveFx()
       this.heroPopUntil = this.elapsedMs + 360
     } else if (!first) {
@@ -1076,13 +1081,14 @@ export class BattleScene extends Phaser.Scene {
     const text = this.add
       .text(this.player.x, this.player.y - 60, info.id.toUpperCase(), {
         fontFamily: 'Segoe UI, sans-serif',
-        fontSize: '34px',
+        fontSize: `${28 + rarity * 7}px`, // grander name for higher tiers
         fontStyle: 'bold',
         color,
       })
       .setOrigin(0.5)
       .setDepth(21)
     text.setStroke('#000000', 6)
+    text.setShadow(0, 0, color, 12, false, true)
     this.tweens.add({
       targets: text,
       y: text.y - 40,
@@ -1143,6 +1149,60 @@ export class BattleScene extends Phaser.Scene {
     this.shake(220, 0.006)
     audioService.skill()
     audioService.win()
+  }
+
+  /**
+   * A grand, ESCALATING transformation spectacle unique to each rarity tier —
+   * rare (blue) → epic (violet) → legendary (gold) → mythic (crimson) →
+   * divine (prismatic). Higher tiers add more rings, light beams, longer
+   * hit-stop, brighter flash and a bigger shake, so each step-up feels "wow".
+   */
+  private rarityEvolveFx(rarity: number): void {
+    const x = this.player.x
+    const y = this.player.y
+    const PAL: Record<number, { rings: number[]; burst: number; flash: [number, number, number] }> = {
+      1: { rings: [0x5ad0ff, 0xdff4ff], burst: 0x5ad0ff, flash: [90, 180, 255] },
+      2: { rings: [0xb06bff, 0xff5aff, 0xe0c0ff], burst: 0xb06bff, flash: [180, 110, 255] },
+      3: { rings: [0xffd700, 0xffb020, 0xfff2a8], burst: 0xffd700, flash: [255, 210, 120] },
+      4: { rings: [0xff3b6b, 0xff2020, 0xffb0c8], burst: 0xff3b6b, flash: [255, 90, 120] },
+      5: { rings: [0x00ffd0, 0x8affff, 0xff5aa0, 0xffe14d], burst: 0x00ffd0, flash: [255, 255, 255] },
+    }
+    const pal = PAL[rarity] ?? PAL[1]!
+    // Escalating punch.
+    this.hitStopUntil = this.frameTime + 60 + rarity * 34
+    this.cameras.main.flash(300, pal.flash[0], pal.flash[1], pal.flash[2])
+    this.shake(220 + rarity * 70, 0.007 + rarity * 0.002)
+    audioService.skill()
+    audioService.win()
+    if (rarity >= 4) audioService.nova()
+    // Staggered expanding rings — more of them, larger, at higher tiers.
+    pal.rings.forEach((c, i) => {
+      this.time.delayedCall(i * 90, () => this.fxRing(x, y, 200 + rarity * 44 + i * 46, c, 560))
+    })
+    // Radial energy burst.
+    this.fxBurst(x, y, 22 + rarity * 8, pal.burst, 260, 820)
+    // A dramatic ring of light beams erupts around legendary+ heroes.
+    if (rarity >= 3) {
+      const beams = 4 + rarity
+      for (let k = 0; k < beams; k++) {
+        const a = (k / beams) * TAU
+        const bx = x + Math.cos(a) * (58 + rarity * 10)
+        const by = y + Math.sin(a) * (58 + rarity * 10)
+        const pil = this.add.image(bx, by, 'shock').setTint(pal.burst).setBlendMode(Phaser.BlendModes.ADD).setDepth(7).setScale(0.42, 0.08).setAlpha(0)
+        this.tweens.add({ targets: pil, scaleY: 2.6 + rarity * 0.2, alpha: { from: 0.95, to: 0 }, delay: k * 36, duration: 380, onComplete: () => pil.destroy() })
+      }
+    }
+    // Divine: a second prismatic shockwave + white bloom for the ultimate moment.
+    if (rarity >= 5) {
+      this.time.delayedCall(220, () => {
+        if (this.isOver) return
+        this.fxRing(x, y, 520, 0xffffff, 640)
+        this.fxBurst(x, y, 40, 0x8affff, 320, 900)
+      })
+    }
+    // A bold pop of the hero itself.
+    const hs = this.heroScale
+    this.tweens.add({ targets: this.player, scaleX: { from: hs * (1.4 + rarity * 0.08), to: hs }, scaleY: { from: hs * (1.4 + rarity * 0.08), to: hs }, duration: 360 + rarity * 30, ease: 'Back.Out' })
   }
 
   // ---- Spawning -----------------------------------------------------------
