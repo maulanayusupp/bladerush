@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, BOSS_MECH, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PET, PLAYER, POWER_LAYERS, QUESTS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SESSION_QUEST_COUNT, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, gearOf, heroRarity, weaponEffect, weaponName, type Quest } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, BOSS_MECH, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PET, PLAYER, POWER_LAYERS, QUESTS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SESSION_QUEST_COUNT, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, XP_GEM, gearOf, heroRarity, weaponEffect, weaponName, type Quest } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -151,6 +151,7 @@ export class BattleScene extends Phaser.Scene {
   private bossMeteorAcc = 0
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   private enemyShots: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
+  private gems: { img: Phaser.GameObjects.Image; xp: number }[] = []
   // ---- Boss Rush (endgame) ----
   private bossRush = false
   private mode: GameMode = 'normal'
@@ -502,6 +503,11 @@ export class BattleScene extends Phaser.Scene {
       vx: 0,
       vy: 0,
     }))
+    // XP gems dropped by kills (magneted to the hero).
+    this.gems = Array.from({ length: XP_GEM.poolSize }, () => ({
+      img: this.add.image(0, 0, 'xpGem').setDepth(3).setActive(false).setVisible(false),
+      xp: 0,
+    }))
     // AI survivors roaming the world.
     this.npcs = Array.from({ length: NPC.count }, () => new NpcHero(this))
     this.npcs.forEach((npc, i) => {
@@ -708,6 +714,7 @@ export class BattleScene extends Phaser.Scene {
     this.checkEvolve()
     this.updateEvolutions(deltaMs)
     this.updateCompanion(deltaMs)
+    this.updateGems(deltaMs)
     // Quests: check/complete + push progress to the HUD a few times a second.
     this.questAcc += deltaMs
     if (this.questAcc >= 400) {
@@ -2155,9 +2162,58 @@ export class BattleScene extends Phaser.Scene {
     }
     if (x >= 0) this.spawnPopup(x, y, `+${formatCompact(gained)}`)
 
-    // XP scales with the kill's value so late-game kills keep leveling moving.
-    this.xp += LEVEL.xpPerKill * (1 + LEVEL.valueScale * Math.log10(1 + gained)) * this.metaXpMul
-    this.checkLevelUp()
+    // XP scales with the kill's value; it drops as a gem to be collected (or is
+    // granted directly if there's no drop position / the pool is exhausted).
+    const xpGain = LEVEL.xpPerKill * (1 + LEVEL.valueScale * Math.log10(1 + gained)) * this.metaXpMul
+    if (x >= 0) this.spawnGem(x, y, xpGain)
+    else {
+      this.xp += xpGain
+      this.checkLevelUp()
+    }
+  }
+
+  /** Drop an XP gem carrying `xp` at a position (granted directly if pool is full). */
+  private spawnGem(x: number, y: number, xp: number): void {
+    const gem = this.gems.find((gm) => !gm.img.active)
+    if (!gem) {
+      this.xp += xp
+      this.checkLevelUp()
+      return
+    }
+    gem.xp = xp
+    const s = 0.8 + Math.min(1.3, Math.log10(1 + xp) * 0.5) // bigger gem = more XP
+    gem.img.setPosition(x + randomRange(-8, 8), y + randomRange(-8, 8)).setScale(s).setActive(true).setVisible(true)
+  }
+
+  /** Magnet gems toward the hero and collect them on contact. */
+  private updateGems(deltaMs: number): void {
+    const dt = deltaMs / 1000
+    const px = this.player.x
+    const py = this.player.y
+    const magnetR = XP_GEM.magnetBase + this.metaMagnet
+    let gained = 0
+    for (const gem of this.gems) {
+      if (!gem.img.active) continue
+      const d = distance(gem.img.x, gem.img.y, px, py)
+      if (d < XP_GEM.pickupDist) {
+        gained += gem.xp
+        this.sparks.explode(2, gem.img.x, gem.img.y)
+        gem.img.setActive(false).setVisible(false)
+        continue
+      }
+      // Fast pull within magnet range; a gentle drift otherwise so no gem (and no
+      // XP) is ever stranded far out on the open map.
+      const a = angleBetween(gem.img.x, gem.img.y, px, py)
+      const sp = (d < magnetR ? XP_GEM.pullSpeed : XP_GEM.pullSpeed * 0.28) * dt
+      gem.img.x += Math.cos(a) * sp
+      gem.img.y += Math.sin(a) * sp
+    }
+    if (gained > 0) {
+      this.xp += gained
+      audioService.pickup()
+      this.emitXp()
+      this.checkLevelUp()
+    }
   }
 
   /** XP needed to reach the next level (grows geometrically). */

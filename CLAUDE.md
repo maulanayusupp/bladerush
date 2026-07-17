@@ -146,7 +146,9 @@ tekstur tetap selesai sebelum scene berikutnya mulai.
 - **Prestige** (`PRESTIGE`, `MetaService.prestige()`): reset koin+upgrade →
   Prestige Star permanen (+5% damage & koin/star, folded ke `damageMul`/`coinMul`).
   UI di `MenuShop`; bintang tampil di menu.
-- **Progres**: XP `LEVEL` (per-kill ikut nilai kill), achievements, Codex, ranking.
+- **Progres**: XP `LEVEL` (per-kill ikut nilai kill) — kill drop **XP gem**
+  (`XP_GEM`, `spawnGem`/`updateGems`) yang ditarik magnet ke hero. Achievements,
+  Codex, ranking.
 - **Loadout** (`LoadoutService`), **Settings** (`SettingsService`: screenShake).
 - **Musik dinamis**: `audioService.setMusicIntensity(0|1|2)` (ambient/boss/rush).
 - **Ring reach**: `ringOuterRadius` (di `updateSwords`) = extent nyata ring pedang;

@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-17",
+      "tag": "feature",
+      "title": "XP gems + magnet",
+      "detail": "Kills now drop XP gems (bigger gem = more XP) that are drawn to your hero — fast within magnet range (boosted by the Magnet upgrade), with a gentle homing drift otherwise so nothing is left behind. Collecting fills your XP bar smoothly."
+    },
+    {
+      "date": "2026-07-17",
       "tag": "fix",
       "title": "Faster, non-freezing load",
       "detail": "Boot bakes ~880 textures; doing it in one frame froze the page. It's now spread across frames with a progress bar, so loading stays smooth and responsive. Everything is still fully baked before the game starts."

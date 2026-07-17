@@ -413,6 +413,7 @@ export class BootScene extends Phaser.Scene {
     t.push(() => this.makeHazardDisc())
     for (let i = 0; i < PET.forms; i++) t.push(() => this.bake(`pet${i}`, 44, 44, (g) => this.drawPet(g, i, PET.forms)))
     t.push(() => this.bake('petShot', 14, 14, (g) => this.drawPetShot(g)))
+    t.push(() => this.bake('xpGem', 14, 14, (g) => this.drawXpGem(g)))
     t.push(() => this.drawProps())
     t.push(() => this.bake('sword', 16, 46, (g) => this.drawSword(g)))
     SWORD_SHAPES.forEach((shape, i) => t.push(() => this.bake(`sword${i}`, 16, 46, (g) => this.drawSwordSkin(g, shape))))
@@ -1221,6 +1222,16 @@ export class BootScene extends Phaser.Scene {
       g.fillStyle(0xffe14d, 1)
       for (const cx of [16, 22, 28]) g.fillTriangle(cx - 2, 8, cx, 1, cx + 2, 8)
     }
+  }
+
+  /** A small XP gem (cyan crystal) dropped by kills. */
+  private drawXpGem(g: Phaser.GameObjects.Graphics): void {
+    g.fillStyle(0x146a5a, 1)
+    g.fillPoints(this.pts([7, 0, 13, 6, 7, 14, 1, 6]), true)
+    g.fillStyle(0x3affd0, 1)
+    g.fillPoints(this.pts([7, 2, 11, 6, 7, 12, 3, 6]), true)
+    g.fillStyle(0xd8fff4, 0.95)
+    g.fillPoints(this.pts([7, 3, 9, 6, 7, 8]), true)
   }
 
   /** The pet's little zap projectile (tinted at runtime). */

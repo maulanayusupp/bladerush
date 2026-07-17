@@ -644,6 +644,18 @@ export const LEVEL = {
 } as const
 
 /**
+ * XP gems — kills drop a gem carrying their XP instead of granting it instantly.
+ * Gems are drawn to the hero within `magnetBase` (+ the Magnet meta upgrade) and
+ * collected on contact, so gathering XP feels tactile (survivor-style).
+ */
+export const XP_GEM = {
+  poolSize: 200,
+  magnetBase: 170, // attract radius before the Magnet upgrade
+  pullSpeed: 560, // px/s toward the hero once magnetized
+  pickupDist: 28,
+} as const
+
+/**
  * Relics — powerful PASSIVE run-modifiers dropped by chests (roguelike style).
  * Each is unique per run (granted once) and stacks with upgrades/meta, so every
  * run builds differently. Effect fields map directly to combat multipliers.

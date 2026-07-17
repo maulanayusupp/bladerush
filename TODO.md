@@ -14,8 +14,6 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 ## 🧩 Backlog / ide
 
-- [ ] **Variasi tempur lanjutan** (elite + caster/splitter sudah ada):
-  - [ ] XP gem drop + magnet (ala survivor.io) sebagai alternatif XP otomatis.
 - [ ] **Kartu level-up**: tandai elemental yang "akan berevolusi" saat di level 4
       (butuh overlay tahu level upgrade saat ini).
 - [ ] **Prestige lanjutan**: milestone bintang (mis. tiap 10 bintang buka bonus
@@ -34,6 +32,7 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- XP gem + magnet (kill drop gem, ditarik ke hero).
 - Performa: baking tekstur bertahap (per-frame) + progress bar (anti-freeze).
 - Musuh elite baru: Caster (penembak) & Splitter (pecah saat mati).
 - Companion pet evolvable (16 bentuk, zap musuh, ikut tier hero).
