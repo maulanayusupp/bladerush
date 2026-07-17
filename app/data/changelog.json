@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-17",
+      "tag": "art",
+      "title": "Ultimates now have real, visible effects",
+      "detail": "Every Divine ultimate got a bespoke effect you can actually see: falling meteors, forked lightning, a blizzard of snow, radiant light pillars, ground-shattering quakes with cracks, a lingering toxic virus cloud, black-hole vortices, and more — no more flat warning rings."
+    },
+    {
+      "date": "2026-07-17",
       "tag": "feature",
       "title": "Boss warnings + bosses hunt NPCs",
       "detail": "A boss now announces itself with a pulsing 'Boss Incoming' banner and telegraph rings where it lands — and it butchers any AI hero that strays into its reach."

@@ -2710,6 +2710,281 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  // ---- Reusable, VISIBLE skill FX -----------------------------------------
+
+  private skillDamage(mult: number): number {
+    return Math.max(1, Math.round(this.power.stats.damage * this.swordDamageMul * mult))
+  }
+
+  /** Damage every enemy, boss, and escort within `radius` of a point. */
+  private fxDamageArea(cx: number, cy: number, radius: number, dmg: number, numColor: string): void {
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active || distance(e.x, e.y, cx, cy) > radius) continue
+      this.skillHitEnemy(e, dmg, numColor)
+    }
+    if (this.bossActive && this.boss.active && distance(this.boss.x, this.boss.y, cx, cy) < radius + this.boss.displayWidth) {
+      const bd = Math.min(this.bossTickDamage(), Math.ceil(this.boss.maxHp * BOSS.maxHitFraction)) * 8
+      this.damageNumber(this.boss.x, this.boss.y - this.boss.displayHeight * 0.3, bd, numColor)
+      this.sparks.explode(12, this.boss.x, this.boss.y)
+      if (this.boss.takeDamage(bd)) this.bossDefeat()
+    }
+    for (const e of this.escorts) {
+      if (!e.active || distance(e.x, e.y, cx, cy) > radius + e.displayWidth) continue
+      const bd = Math.min(this.bossTickDamage(), Math.ceil(e.maxHp * BOSS.maxHitFraction)) * 8
+      this.damageNumber(e.x, e.y - e.displayHeight * 0.3, bd, numColor)
+      if (e.takeDamage(bd)) this.escortDefeat(e)
+    }
+  }
+
+  /** A short colored particle burst (auto-destroyed). */
+  private fxBurst(x: number, y: number, count: number, tint: number, speed = 240, life = 600): void {
+    const p = this.add
+      .particles(x, y, 'spark', {
+        speed: { min: speed * 0.3, max: speed },
+        lifespan: { min: life * 0.5, max: life },
+        scale: { start: 1.2, end: 0 },
+        alpha: { start: 1, end: 0 },
+        blendMode: Phaser.BlendModes.ADD,
+        tint,
+        emitting: false,
+      })
+      .setDepth(6)
+    p.explode(count, x, y)
+    this.time.delayedCall(life + 80, () => p.destroy())
+  }
+
+  /** An expanding shock ring at a point. */
+  private fxRing(x: number, y: number, radius: number, tint: number, dur = 500): void {
+    const ring = this.add.image(x, y, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.25).setDepth(6)
+    this.tweens.add({ targets: ring, scale: (radius * 2) / 64, alpha: { from: 0.9, to: 0 }, duration: dur, ease: 'Cubic.Out', onComplete: () => ring.destroy() })
+  }
+
+  /** Meteors rain down and slam across the area (falling sprites + impacts). */
+  private fxMeteors(cx: number, cy: number, radius: number, count: number, dmg: number, numColor: string, tint = 0xff6a2a): void {
+    for (let k = 0; k < count; k++) {
+      const a = Math.random() * TAU
+      const r = Math.random() * radius
+      const tx = cx + Math.cos(a) * r
+      const ty = cy + Math.sin(a) * r
+      const warn = this.add.image(tx, ty, 'meteorWarn').setDepth(3).setAlpha(0).setScale(0.85)
+      this.tweens.add({ targets: warn, alpha: 0.7, duration: 150, yoyo: true, hold: 120, onComplete: () => warn.destroy() })
+      this.time.delayedCall(150 + k * 55, () => {
+        if (this.isOver) return
+        const m = this.add.image(tx, ty - 130, 'meteor').setTint(tint).setDepth(7)
+        this.tweens.add({
+          targets: m,
+          y: ty,
+          duration: 230,
+          ease: 'Quad.In',
+          onComplete: () => {
+            m.destroy()
+            this.fxRing(tx, ty, 92, tint, 360)
+            this.fxBurst(tx, ty, 14, tint)
+            this.shake(110, 0.006)
+            this.fxDamageArea(tx, ty, 100, dmg, numColor)
+          },
+        })
+      })
+    }
+    audioService.nova()
+  }
+
+  /** A jagged lightning bolt between two points. */
+  private fxBolt(x0: number, y0: number, x1: number, y1: number, tint: number): void {
+    const g = this.add.graphics().setDepth(7).setBlendMode(Phaser.BlendModes.ADD)
+    g.lineStyle(3, tint, 1)
+    g.beginPath()
+    g.moveTo(x0, y0)
+    const segs = 7
+    for (let i = 1; i < segs; i++) {
+      const t = i / segs
+      g.lineTo(x0 + (x1 - x0) * t + (Math.random() - 0.5) * 28, y0 + (y1 - y0) * t)
+    }
+    g.lineTo(x1, y1)
+    g.strokePath()
+    this.tweens.add({ targets: g, alpha: { from: 1, to: 0 }, duration: 200, onComplete: () => g.destroy() })
+  }
+
+  /** Repeated lightning strikes across the area, each flashing + damaging. */
+  private fxLightning(cx: number, cy: number, radius: number, strikes: number, dmg: number, numColor: string, tint = 0x8adfff): void {
+    for (let k = 0; k < strikes; k++) {
+      this.time.delayedCall(k * 90, () => {
+        if (this.isOver) return
+        const a = Math.random() * TAU
+        const r = Math.random() * radius
+        const tx = cx + Math.cos(a) * r
+        const ty = cy + Math.sin(a) * r
+        this.fxBolt(tx, this.cameras.main.scrollY - 10, tx, ty, tint)
+        this.fxBurst(tx, ty, 10, tint)
+        this.cameras.main.flash(50, (tint >> 16) & 255, (tint >> 8) & 255, tint & 255)
+        this.fxDamageArea(tx, ty, 110, dmg, numColor)
+      })
+    }
+    audioService.nova()
+  }
+
+  /** A driving blizzard: snow rains, enemies freeze and shatter. */
+  private fxBlizzard(cx: number, cy: number, radius: number, dmg: number, numColor: string, chillMul = 0.2, tint = 0xbfeeff): void {
+    const p = this.add
+      .particles(cx, cy - radius, 'spark', {
+        x: { min: -radius, max: radius },
+        y: { min: -20, max: 20 },
+        speedY: { min: 130, max: 280 },
+        speedX: { min: -30, max: 30 },
+        lifespan: 900,
+        scale: { start: 1.1, end: 0 },
+        alpha: { start: 0.9, end: 0 },
+        tint,
+        frequency: 10,
+        blendMode: Phaser.BlendModes.ADD,
+      })
+      .setDepth(6)
+    this.time.delayedCall(700, () => {
+      p.stop()
+      this.time.delayedCall(900, () => p.destroy())
+    })
+    this.fxRing(cx, cy, radius, tint, 520)
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active || distance(e.x, e.y, cx, cy) > radius) continue
+      e.chillUntil = this.elapsedMs + 3800
+      e.chillMul = chillMul
+      this.fxBurst(e.x, e.y, 5, tint, 120, 420)
+    }
+    audioService.nova()
+    this.fxDamageArea(cx, cy, radius, dmg, numColor)
+  }
+
+  /** An earthquake: radiating ground cracks, debris, double shockwave. */
+  private fxQuake(cx: number, cy: number, radius: number, dmg: number, numColor: string, tint = 0x9a8a70): void {
+    const g = this.add.graphics().setDepth(-6)
+    g.lineStyle(3, tint, 1)
+    const cracks = 10
+    for (let i = 0; i < cracks; i++) {
+      const a = (i / cracks) * TAU + Math.random() * 0.3
+      g.beginPath()
+      g.moveTo(cx, cy)
+      for (let s = 1; s <= 5; s++) {
+        g.lineTo(cx + Math.cos(a) * (radius * s / 5) + (Math.random() - 0.5) * 18, cy + Math.sin(a) * (radius * s / 5) + (Math.random() - 0.5) * 18)
+      }
+      g.strokePath()
+    }
+    this.tweens.add({ targets: g, alpha: { from: 0.9, to: 0 }, duration: 900, onComplete: () => g.destroy() })
+    this.fxBurst(cx, cy, 22, tint, 220, 720)
+    this.fxRing(cx, cy, radius * 0.6, tint, 420)
+    this.time.delayedCall(180, () => { if (!this.isOver) this.fxRing(cx, cy, radius, tint, 460) })
+    this.shake(520, 0.02)
+    audioService.nova()
+    this.fxDamageArea(cx, cy, radius, dmg, numColor)
+  }
+
+  /** A lingering toxic cloud that poisons everything inside over its lifetime. */
+  private fxPoisonCloud(cx: number, cy: number, radius: number, durationMs: number, dmg: number, numColor: string, tint = 0x8fff3a): void {
+    const cloud = this.add
+      .particles(cx, cy, 'spark', {
+        x: { min: -radius, max: radius },
+        y: { min: -radius, max: radius },
+        speed: { min: 6, max: 26 },
+        lifespan: 1400,
+        scale: { start: 1.6, end: 0 },
+        alpha: { start: 0.4, end: 0 },
+        tint,
+        frequency: 26,
+        blendMode: Phaser.BlendModes.ADD,
+      })
+      .setDepth(4)
+    const ticks = 6
+    const venomDps = this.power.stats.damage * this.swordDamageMul * 2
+    for (let k = 0; k < ticks; k++) {
+      this.time.delayedCall((k * durationMs) / ticks, () => {
+        if (this.isOver) return
+        for (const obj of this.enemies.getChildren()) {
+          const e = obj as Enemy
+          if (!e.active || distance(e.x, e.y, cx, cy) > radius) continue
+          e.poisonUntil = this.elapsedMs + 1600
+          e.poisonDps = venomDps
+          this.skillHitEnemy(e, dmg, numColor)
+        }
+      })
+    }
+    this.time.delayedCall(durationMs, () => {
+      cloud.stop()
+      this.time.delayedCall(1400, () => cloud.destroy())
+    })
+  }
+
+  /** Radiant pillars of light descend across the area (holy). */
+  private fxLightPillars(cx: number, cy: number, radius: number, count: number, dmg: number, numColor: string, tint = 0xfff2b0): void {
+    for (let k = 0; k < count; k++) {
+      const a = Math.random() * TAU
+      const r = Math.random() * radius
+      const tx = cx + Math.cos(a) * r
+      const ty = cy + Math.sin(a) * r
+      this.time.delayedCall(k * 65, () => {
+        if (this.isOver) return
+        const pil = this.add.image(tx, ty, 'shock').setTint(tint).setBlendMode(Phaser.BlendModes.ADD).setDepth(7).setScale(0.6, 0.1).setAlpha(0)
+        this.tweens.add({ targets: pil, scaleY: 3.2, alpha: { from: 0.9, to: 0 }, duration: 320, onComplete: () => pil.destroy() })
+        this.fxBurst(tx, ty, 10, tint)
+        this.fxDamageArea(tx, ty, 92, dmg, numColor)
+      })
+    }
+    this.cameras.main.flash(200, 255, 240, 180)
+  }
+
+  /** A vortex: enemies are dragged inward, then implode. */
+  private fxVortex(cx: number, cy: number, radius: number, dmg: number, numColor: string, tint = 0x9d3cff): void {
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active || distance(e.x, e.y, cx, cy) > radius) continue
+      const a = angleBetween(e.x, e.y, cx, cy)
+      const pull = Math.min(distance(e.x, e.y, cx, cy), radius * 0.7)
+      e.setPosition(e.x + Math.cos(a) * pull, e.y + Math.sin(a) * pull)
+    }
+    const p = this.add
+      .particles(cx, cy, 'spark', {
+        x: { min: -radius, max: radius },
+        y: { min: -radius, max: radius },
+        moveToX: cx,
+        moveToY: cy,
+        lifespan: 500,
+        scale: { start: 1.2, end: 0 },
+        alpha: { start: 0.9, end: 0 },
+        tint,
+        frequency: 18,
+        blendMode: Phaser.BlendModes.ADD,
+      })
+      .setDepth(6)
+    this.time.delayedCall(340, () => {
+      p.stop()
+      this.time.delayedCall(500, () => p.destroy())
+    })
+    this.time.delayedCall(300, () => {
+      if (this.isOver) return
+      this.fxRing(cx, cy, radius * 0.7, tint, 360)
+      this.fxBurst(cx, cy, 24, tint)
+      this.shake(220, 0.012)
+      this.fxDamageArea(cx, cy, radius, dmg, numColor)
+    })
+    audioService.nova()
+  }
+
+  /** A blast of flame that ignites everything in the area. */
+  private fxFlames(cx: number, cy: number, radius: number, dmg: number, numColor: string, tint = 0xff7a2a): void {
+    this.fxRing(cx, cy, radius, tint, 460)
+    this.fxBurst(cx, cy, 26, tint, 260, 720)
+    const burnDps = this.power.stats.damage * this.swordDamageMul * 3
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active || distance(e.x, e.y, cx, cy) > radius) continue
+      e.burnUntil = this.elapsedMs + 4000
+      e.burnDps = burnDps
+    }
+    this.cameras.main.flash(160, 255, 140, 40)
+    audioService.nova()
+    this.fxDamageArea(cx, cy, radius, dmg, numColor)
+  }
+
   // ---- Divine ultimates (one per Divine hero) -----------------------------
 
   private useDivineSkill(): void {
@@ -2727,265 +3002,142 @@ export class BattleScene extends Phaser.Scene {
     this.castDivineSkill(idx)
   }
 
-  /** Big divine shockwave over a wide radius (each enemy shows an impact). */
-  private divineDamageAll(mult: number, ringColor: number, radius: number, numColor: string): void {
-    this.cameras.main.flash(200, (ringColor >> 16) & 255, (ringColor >> 8) & 255, ringColor & 255)
-    const dmg = Math.max(1, Math.round(this.power.stats.damage * this.swordDamageMul * mult))
-    this.skillStrike(radius, dmg, ringColor, numColor, 12)
+  /** Root/chill every enemy within a radius of a point. */
+  private chillArea(cx: number, cy: number, radius: number, mul: number, durationMs: number): void {
+    for (const obj of this.enemies.getChildren()) {
+      const e = obj as Enemy
+      if (!e.active || distance(e.x, e.y, cx, cy) > radius) continue
+      e.chillUntil = this.elapsedMs + durationMs
+      e.chillMul = mul
+    }
   }
 
-  /** Fire the current Divine hero's unique ultimate. */
+  /** Fire the current Divine hero's unique ultimate — each with a bespoke,
+   *  clearly-visible effect (meteors, lightning, blizzard, quake, cloud, …). */
   private castDivineSkill(idx: number): void {
+    const px = this.player.x
+    const py = this.player.y
     switch (idx) {
-      case 0: // Seraph — Divine Judgment: heal to full, shield, radiant nova
+      case 0: // Seraph — Divine Judgment: heal + shield + descending light pillars
         this.player.hp = this.player.maxHp
         this.emitHp()
         this.playerInvulnUntil = this.elapsedMs + 2500
-        this.sparks.explode(30, this.player.x, this.player.y)
-        this.divineDamageAll(18, 0xfff2b0, 560, '#fff2b0')
+        this.fxBurst(px, py, 26, 0xfff2b0)
+        this.fxLightPillars(px, py, 560, 12, this.skillDamage(18), '#fff2b0')
         break
-      case 1: { // Void Sovereign — Black Hole: pull every enemy inward, then implode
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          const a = angleBetween(e.x, e.y, this.player.x, this.player.y)
-          const d = distance(e.x, e.y, this.player.x, this.player.y)
-          const pull = Math.min(d, 260)
-          e.setPosition(e.x + Math.cos(a) * pull, e.y + Math.sin(a) * pull)
-        }
-        this.divineDamageAll(16, 0x9d3cff, 460, '#c9a0ff')
+      case 1: // Void Sovereign — Black Hole: drag foes in, then implode
+        this.fxVortex(px, py, 480, this.skillDamage(16), '#c9a0ff', 0x9d3cff)
         break
-      }
-      case 2: { // Inferno Lord — Meteor Storm: meteors rain across the view
-        const cam = this.cameras.main
-        for (let k = 0; k < 10; k++) {
-          const tx = cam.scrollX + randomRange(60, this.viewW - 60)
-          const ty = cam.scrollY + randomRange(60, this.viewH - 60)
-          this.time.delayedCall(k * 90, () => {
-            if (this.isOver) return
-            this.sparks.explode(14, tx, ty)
-            const r = this.add.image(tx, ty, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(0xff6a2a).setScale(0.2).setDepth(6)
-            this.tweens.add({ targets: r, scale: 2.4, alpha: { from: 0.9, to: 0 }, duration: 300, onComplete: () => r.destroy() })
-            const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 6)
-            for (const obj of this.enemies.getChildren()) {
-              const e = obj as Enemy
-              if (e.active && distance(e.x, e.y, tx, ty) < 150) this.skillHitEnemy(e, dmg, '#ffb060')
-            }
-          })
-        }
+      case 2: // Inferno Lord — Meteor Storm: a rain of falling meteors
+        this.fxMeteors(px, py, 560, 12, this.skillDamage(6), '#ffb060', 0xff6a2a)
         this.shake(300, 0.01)
-        audioService.nova()
         break
-      }
-      case 3: // God-Emperor — Cataclysm: screen-wide gold shockwave + hit-stop
+      case 3: // God-Emperor — Cataclysm: a golden earth-shattering quake
         this.hitStopUntil = this.frameTime + 120
-        this.divineDamageAll(30, 0xffe14d, 820, '#ffe14d')
+        this.cameras.main.flash(220, 255, 225, 120)
+        this.fxQuake(px, py, 820, this.skillDamage(30), '#ffe14d', 0xffe14d)
         break
-      case 4: { // Dragon Ascendant — Dragon Breath: ignite everything
-        this.divineDamageAll(8, 0xff7a2a, 560, '#ffb060')
-        const burnDps = this.power.stats.damage * this.swordDamageMul * 3
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          e.burnUntil = this.elapsedMs + 4000
-          e.burnDps = burnDps
-        }
+      case 4: // Dragon Ascendant — Dragon Breath: a wave of flame that ignites all
+        this.fxFlames(px, py, 600, this.skillDamage(10), '#ffb060', 0xff7a2a)
         break
-      }
-      case 5: // Death Reaper — Soul Harvest: reap the field + heal per kill
-        this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(this.player.maxHp * 0.5))
+      case 5: // Death Reaper — Soul Harvest: reap the field + heal
+        this.player.heal(Math.round(this.player.maxHp * 0.5))
         this.emitHp()
-        this.divineDamageAll(22, 0x6bff9a, 620, '#6bff9a')
+        this.fxRing(px, py, 640, 0x6bff9a, 520)
+        this.fxBurst(px, py, 30, 0x6bff9a, 200, 820)
+        this.fxDamageArea(px, py, 640, this.skillDamage(22), '#6bff9a')
         break
-      case 6: { // Storm Titan — Thunderstorm: repeated chain-lightning strikes
-        for (let k = 0; k < 6; k++) {
-          this.time.delayedCall(k * 120, () => {
-            if (this.isOver) return
-            const foes = this.enemies.getChildren().filter((o) => (o as Enemy).active)
-            const t = foes[Math.floor(Math.random() * foes.length)] as Enemy | undefined
-            if (!t) return
-            this.sparks.explode(10, t.x, t.y)
-            const r = this.add.image(t.x, t.y, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(0x8adfff).setScale(0.2).setDepth(6)
-            this.tweens.add({ targets: r, scale: 2, alpha: { from: 0.9, to: 0 }, duration: 260, onComplete: () => r.destroy() })
-            const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 10)
-            for (const obj of this.enemies.getChildren()) {
-              const e = obj as Enemy
-              if (e.active && distance(e.x, e.y, t.x, t.y) < 130) this.skillHitEnemy(e, dmg, '#8adfff')
-            }
-          })
-        }
+      case 6: // Storm Titan — Thunderstorm: forked lightning rains down
+        this.fxLightning(px, py, 640, 8, this.skillDamage(10), '#8adfff', 0x8adfff)
         this.shake(260, 0.008)
-        audioService.nova()
         break
-      }
-      case 7: { // Frost Monarch — Absolute Zero: freeze all + shatter
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          e.chillUntil = this.elapsedMs + 4000
-          e.chillMul = 0.2
-        }
-        this.divineDamageAll(20, 0x9be7ff, 680, '#dff4ff')
+      case 7: // Frost Monarch — Absolute Zero: a freezing blizzard
+        this.fxBlizzard(px, py, 680, this.skillDamage(20), '#dff4ff', 0.2)
         break
-      }
       case 8: { // Blood Warlord — Bloodbath: massive damage + huge lifesteal
         const before = this.countEnemies()
-        this.divineDamageAll(26, 0xff2020, 700, '#ff5a5a')
-        const healed = Math.max(1, (before - this.countEnemies())) * 4
-        this.player.hp = Math.min(this.player.maxHp, this.player.hp + healed)
+        this.cameras.main.flash(160, 255, 40, 40)
+        this.fxRing(px, py, 700, 0xff2020, 520)
+        this.fxBurst(px, py, 30, 0xff2020)
+        this.fxDamageArea(px, py, 700, this.skillDamage(26), '#ff5a5a')
+        this.player.heal(Math.max(1, before - this.countEnemies()) * 4)
         this.emitHp()
         break
       }
-      case 9: // Cosmic Overlord — Big Bang: the ultimate screen-clearing nuke
+      case 9: // Cosmic Overlord — Big Bang: quake + meteors + twin nova
         this.hitStopUntil = this.frameTime + 140
-        this.divineDamageAll(45, 0x9d5cff, 900, '#c9a0ff')
-        this.divineDamageAll(45, 0x00ffd0, 700, '#8affff')
+        this.fxQuake(px, py, 760, this.skillDamage(30), '#c9a0ff', 0x9d5cff)
+        this.fxMeteors(px, py, 760, 10, this.skillDamage(20), '#8affff', 0x00ffd0)
+        this.time.delayedCall(200, () => { if (!this.isOver) { this.fxRing(px, py, 900, 0x00ffd0, 700); this.fxDamageArea(px, py, 900, this.skillDamage(20), '#8affff') } })
         this.shake(400, 0.02)
         break
-      case 10: { // Verdant Titan — Wild Overgrowth: root everything + big heal
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          e.chillUntil = this.elapsedMs + 3500
-          e.chillMul = 0.08
-        }
-        this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(this.player.maxHp * 0.4))
+      case 10: // Verdant Titan — Wild Overgrowth: roots + heal
+        this.chillArea(px, py, 620, 0.08, 3500)
+        this.player.heal(Math.round(this.player.maxHp * 0.4))
         this.emitHp()
-        this.divineDamageAll(16, 0x6bff6a, 620, '#b6ff8a')
+        this.fxRing(px, py, 620, 0x6bff6a, 520)
+        this.fxBurst(px, py, 26, 0x6bff6a, 180, 760)
+        this.fxDamageArea(px, py, 620, this.skillDamage(16), '#b6ff8a')
         break
-      }
-      case 11: { // Tide Emperor — Maelstrom: pull foes in and drown them
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          const a = angleBetween(e.x, e.y, this.player.x, this.player.y)
-          const d = distance(e.x, e.y, this.player.x, this.player.y)
-          const pull = Math.min(d, 220)
-          e.setPosition(e.x + Math.cos(a) * pull, e.y + Math.sin(a) * pull)
-          e.chillUntil = this.elapsedMs + 2500
-          e.chillMul = 0.45
-        }
-        this.divineDamageAll(18, 0x2ad0ff, 520, '#8fe6ff')
+      case 11: // Tide Emperor — Maelstrom: a drowning whirlpool
+        this.chillArea(px, py, 520, 0.45, 2500)
+        this.fxVortex(px, py, 520, this.skillDamage(18), '#8fe6ff', 0x2ad0ff)
         break
-      }
-      case 12: { // Solar Deity — Supernova Flare: blinding burst + ignite all
-        this.divineDamageAll(20, 0xffe14d, 720, '#fff2a8')
-        const burnDps = this.power.stats.damage * this.swordDamageMul * 4
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          e.burnUntil = this.elapsedMs + 4000
-          e.burnDps = burnDps
-        }
-        this.cameras.main.flash(320, 255, 240, 180)
+      case 12: // Solar Deity — Supernova Flare: blinding light + ignite all
+        this.fxLightPillars(px, py, 700, 14, this.skillDamage(20), '#fff2a8', 0xffe14d)
+        this.fxFlames(px, py, 700, this.skillDamage(8), '#fff2a8', 0xffd23a)
         break
-      }
-      case 13: { // Lunar Sovereign — Eclipse: darkness weakens, then twin pulses
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          e.chillUntil = this.elapsedMs + 4000
-          e.chillMul = 0.35
-        }
-        this.divineDamageAll(12, 0x3a2a6a, 560, '#b9a8ff')
-        this.time.delayedCall(500, () => { if (!this.isOver) this.divineDamageAll(16, 0x1a1030, 620, '#dfd0ff') })
+      case 13: // Lunar Sovereign — Eclipse: darkness weakens, then twin dark pulses
+        this.chillArea(px, py, 620, 0.35, 4000)
+        this.cameras.main.flash(180, 20, 12, 44)
+        this.fxRing(px, py, 560, 0x3a2a6a, 480)
+        this.fxDamageArea(px, py, 560, this.skillDamage(12), '#b9a8ff')
+        this.time.delayedCall(520, () => { if (!this.isOver) { this.fxRing(px, py, 620, 0x6a4aff, 520); this.fxBurst(px, py, 20, 0x6a4aff); this.fxDamageArea(px, py, 620, this.skillDamage(16), '#dfd0ff') } })
         break
-      }
-      case 14: { // Chrono Sovereign — Time Stop: freeze foes in place + ticks
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          e.chillUntil = this.elapsedMs + 5000
-          e.chillMul = 0.02
-        }
-        this.divineDamageAll(14, 0x8afff0, 700, '#dffff8')
-        this.time.delayedCall(900, () => { if (!this.isOver) this.divineDamageAll(14, 0xffe08a, 640, '#ffe08a') })
+      case 14: // Chrono Sovereign — Time Stop: freeze foes in place
+        this.chillArea(px, py, 700, 0.02, 5000)
         this.cameras.main.flash(240, 200, 255, 245)
+        this.fxBlizzard(px, py, 700, this.skillDamage(14), '#dffff8', 0.02, 0x8afff0)
         break
-      }
-      case 15: { // Stone Titan — Earthquake: expanding stone shockwaves + stagger
-        const dmg = Math.max(1, Math.round(this.power.stats.damage * this.swordDamageMul * 12))
-        this.skillStrike(420, dmg, 0x9a8a70, '#e6d8b0', 10)
-        this.time.delayedCall(260, () => { if (!this.isOver) this.skillStrike(680, dmg, 0x6a6156, '#e6d8b0', 10) })
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          e.chillUntil = this.elapsedMs + 2000
-          e.chillMul = 0.3
-        }
-        this.shake(500, 0.02)
-        audioService.nova()
+      case 15: // Stone Titan — Earthquake: ground-shattering shockwaves
+        this.chillArea(px, py, 700, 0.3, 2000)
+        this.fxQuake(px, py, 700, this.skillDamage(14), '#e6d8b0', 0x9a8a70)
         break
-      }
-      case 16: { // Tempest Sovereign — Tornado: roaming cyclones pull & shred
-        const cam = this.cameras.main
-        for (let k = 0; k < 8; k++) {
-          const tx = cam.scrollX + randomRange(60, this.viewW - 60)
-          const ty = cam.scrollY + randomRange(60, this.viewH - 60)
-          this.time.delayedCall(k * 80, () => {
-            if (this.isOver) return
-            const r = this.add.image(tx, ty, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(0xdff4ff).setScale(0.2).setDepth(6)
-            this.tweens.add({ targets: r, scale: 2.2, alpha: { from: 0.9, to: 0 }, duration: 320, onComplete: () => r.destroy() })
-            const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 7)
-            for (const obj of this.enemies.getChildren()) {
-              const e = obj as Enemy
-              if (!e.active) continue
-              const d = distance(e.x, e.y, tx, ty)
-              if (d < 150) {
-                const a = angleBetween(e.x, e.y, tx, ty)
-                const pull = Math.min(d, 80)
-                e.setPosition(e.x + Math.cos(a) * pull, e.y + Math.sin(a) * pull)
-                this.skillHitEnemy(e, dmg, '#dff4ff')
-              }
-            }
-          })
-        }
-        this.shake(300, 0.006)
-        audioService.nova()
+      case 16: // Tempest Sovereign — Tornado: lightning + twin roaming cyclones
+        this.fxLightning(px, py, 620, 6, this.skillDamage(7), '#dff4ff', 0xdff4ff)
+        this.time.delayedCall(120, () => { if (!this.isOver) this.fxVortex(px - 180, py, 280, this.skillDamage(7), '#dff4ff', 0xdff4ff) })
+        this.time.delayedCall(260, () => { if (!this.isOver) this.fxVortex(px + 180, py, 280, this.skillDamage(7), '#dff4ff', 0xdff4ff) })
+        this.shake(300, 0.008)
         break
-      }
-      case 17: { // Plague Lord — Pandemic: toxic cloud + venom over time
-        this.divineDamageAll(10, 0x6aff2a, 640, '#bfff6a')
-        const venomDps = this.power.stats.damage * this.swordDamageMul * 2.5
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (!e.active) continue
-          e.burnUntil = this.elapsedMs + 6000
-          e.burnDps = venomDps
-          e.chillUntil = this.elapsedMs + 6000
-          e.chillMul = 0.6
-        }
+      case 17: // Plague Lord — Pandemic: a lingering toxic virus cloud
+        this.fxPoisonCloud(px, py, 640, 4000, this.skillDamage(6), '#bfff6a', 0x8fff3a)
+        this.fxRing(px, py, 640, 0x6aff2a, 520)
         break
-      }
-      case 18: { // Abyssal Tyrant — Rift of Chaos: reality tears strike at random
-        const cam = this.cameras.main
+      case 18: // Abyssal Tyrant — Rift of Chaos: reality tears strike at random
         for (let k = 0; k < 14; k++) {
-          const tx = cam.scrollX + randomRange(40, this.viewW - 40)
-          const ty = cam.scrollY + randomRange(40, this.viewH - 40)
           this.time.delayedCall(k * 60, () => {
             if (this.isOver) return
-            this.sparks.explode(12, tx, ty)
+            const a = Math.random() * TAU
+            const r = Math.random() * 560
+            const tx = px + Math.cos(a) * r
+            const ty = py + Math.sin(a) * r
             const c = k % 2 ? 0x7a1aff : 0xff2060
-            const r = this.add.image(tx, ty, 'shock').setBlendMode(Phaser.BlendModes.ADD).setTint(c).setScale(0.2).setDepth(6)
-            this.tweens.add({ targets: r, scale: 2, alpha: { from: 0.95, to: 0 }, duration: 260, onComplete: () => r.destroy() })
-            const dmg = Math.round(this.power.stats.damage * this.swordDamageMul * 9)
-            for (const obj of this.enemies.getChildren()) {
-              const e = obj as Enemy
-              if (e.active && distance(e.x, e.y, tx, ty) < 140) this.skillHitEnemy(e, dmg, '#d8a0ff')
-            }
+            this.fxBolt(tx, this.cameras.main.scrollY - 10, tx, ty, c)
+            this.fxBurst(tx, ty, 12, c)
+            this.fxDamageArea(tx, ty, 130, this.skillDamage(9), '#d8a0ff')
           })
         }
         this.shake(360, 0.014)
         audioService.nova()
         break
-      }
-      default: { // Prism Archon — Prismatic Beam: staggered rainbow shockwaves
-        const colors: Array<[number, string]> = [[0xff4d6a, '#ff9db0'], [0x5ad0ff, '#bfeeff'], [0xb06bff, '#e0c8ff']]
-        colors.forEach(([ring, num], i) => {
-          this.time.delayedCall(i * 180, () => {
-            if (!this.isOver) this.divineDamageAll(20, ring, 760, num)
-          })
-        })
+      default: { // Prism Archon — Prismatic Beam: staggered rainbow lightning
+        const cols = [0xff4d6a, 0x5ad0ff, 0xb06bff]
+        const nums = ['#ff9db0', '#bfeeff', '#e0c8ff']
+        cols.forEach((c, i) => this.time.delayedCall(i * 160, () => {
+          if (this.isOver) return
+          this.fxLightning(px, py, 720, 4, this.skillDamage(16), nums[i] as string, c)
+          this.fxRing(px, py, 720, c, 520)
+        }))
         this.shake(320, 0.014)
       }
     }

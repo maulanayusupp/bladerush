@@ -110,6 +110,10 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
   ikut **skor** (`checkEvolve`), ganti hero me-reset cooldown skill.
 - **Divine ultimate**: `DIVINE_SKILLS` (satu per Divine), `castDivineSkill` +
   cut-in sinematik (event `divine:cast`) + SFX `audioService.ultimate(id)`.
+  Efek visual bespoke lewat helper `fx*` (`fxMeteors`, `fxLightning`,
+  `fxBlizzard`, `fxQuake`, `fxPoisonCloud`, `fxLightPillars`, `fxVortex`,
+  `fxFlames`, `fxDamageArea`, `fxRing`, `fxBurst`, `fxBolt`). Pakai helper ini
+  untuk skill baru — jangan cuma warning ring datar.
 - **Mode** (`ModeService`): normal / endless / bossrush / timeattack.
 - **Boss Rush** (`BOSS_RUSH`): gelombang bos (lead + escort) di Lvl 10 (normal).
   Bos muncul dengan warning (banner + telegraph) & membantai NPC yang mendekat
