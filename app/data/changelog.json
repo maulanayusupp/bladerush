@@ -3,6 +3,12 @@
     {
       "date": "2026-07-17",
       "tag": "feature",
+      "title": "New elite enemies: Caster & Splitter",
+      "detail": "Two new elite types join the horde: Casters (pink) hang back and lob homing projectiles at you from range, and Splitters (green) burst into two smaller shards when killed. Adds real moment-to-moment variety to fights."
+    },
+    {
+      "date": "2026-07-17",
+      "tag": "feature",
       "title": "Companion pet (evolvable)",
       "detail": "A little pet now trails your hero and zaps nearby enemies with homing bolts. It evolves through 16 distinct forms — growing bigger and fiercer (horns, wings, a crown) — as your hero climbs tiers."
     },

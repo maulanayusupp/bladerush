@@ -137,6 +137,9 @@ Semua aset **di-bake saat runtime** di `BootScene` (tidak ada file gambar).
 - **Companion pet** (`PET`, `entities/Companion.ts`): 16 bentuk (`pet0..15`,
   parametric `drawPet`), mengikuti hero + zap musuh (`updateCompanion`/`petZap`),
   berevolusi bentuk mengikuti tier hero di `checkEvolve`.
+- **Elite affix** (`ELITE`): swift/brute/shielded/volatile + **caster** (penembak,
+  proyektil `enemyShots`/`fireEnemyShot`) + **splitter** (pecah 2 saat mati, di
+  `killEnemy`). Di-roll di `SpawnService.createEnemy`.
 - **Prestige** (`PRESTIGE`, `MetaService.prestige()`): reset koin+upgrade →
   Prestige Star permanen (+5% damage & koin/star, folded ke `damageMul`/`coinMul`).
   UI di `MenuShop`; bintang tampil di menu.

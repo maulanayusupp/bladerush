@@ -5,7 +5,10 @@ import type { EnemyConfig } from '~/types/game'
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   value = 1
   hp = 1
+  maxHp = 1
   speed = 60
+  /** Caster affix: time since its last shot (scene-elapsed ms accumulator). */
+  shootAcc = 0
   /** Elite modifier ('' = normal) and its incoming-damage multiplier. */
   affix = ''
   private dmgTaken = 1
@@ -27,6 +30,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   spawn(x: number, y: number, config: EnemyConfig): void {
     this.value = config.value
     this.hp = config.hp
+    this.maxHp = config.hp
+    this.shootAcc = 0
     this.speed = config.speed
     this.affix = config.affix
     this.dmgTaken = config.dmgTaken

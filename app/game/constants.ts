@@ -382,12 +382,25 @@ export const ELITE = {
   baseChance: 0.06,
   chancePerMin: 0.012,
   maxChance: 0.24,
-  affixes: ['swift', 'brute', 'shielded', 'volatile'] as const,
+  affixes: ['swift', 'brute', 'shielded', 'volatile', 'caster', 'splitter'] as const,
   swift: { hp: 0.8, speed: 1.7, scale: 0.85, reward: 1.6, dmgTaken: 1, tint: 0xffe14d },
   brute: { hp: 3.6, speed: 0.72, scale: 1.35, reward: 3, dmgTaken: 1, tint: 0xff5a5a },
   shielded: { hp: 1.8, speed: 0.9, scale: 1.12, reward: 2, dmgTaken: 0.5, tint: 0x5ad0ff },
   volatile: { hp: 1.1, speed: 1.15, scale: 1.05, reward: 2.2, dmgTaken: 1, tint: 0xff8a3a },
+  caster: { hp: 1.4, speed: 0.7, scale: 1.05, reward: 2.2, dmgTaken: 1, tint: 0xff8adf }, // ranged shooter
+  splitter: { hp: 1.6, speed: 0.95, scale: 1.24, reward: 2.4, dmgTaken: 1, tint: 0x8aff8a }, // splits on death
   volatileRadius: 95,
+  // Caster (ranged) tuning
+  casterShotMs: 2200,
+  casterRange: 540,
+  casterDamage: 12,
+  casterShotSpeed: 240,
+  casterShotPool: 40,
+  // Splitter tuning
+  splitCount: 2,
+  splitScale: 0.62,
+  splitHpFrac: 0.35,
+  splitMinScale: 0.5, // don't split if already this small (no infinite shards)
 } as const
 
 /**

@@ -66,7 +66,7 @@ export class SpawnService {
     const eliteChance = Math.min(ELITE.maxChance, ELITE.baseChance + (elapsedSec / 60) * ELITE.chancePerMin)
     if (Math.random() < eliteChance) {
       affix = pickOne(ELITE.affixes as unknown as string[])
-      const mod = ELITE[affix as 'swift' | 'brute' | 'shielded' | 'volatile']
+      const mod = ELITE[affix as 'swift' | 'brute' | 'shielded' | 'volatile' | 'caster' | 'splitter']
       hp = Math.round(hp * mod.hp)
       speed *= mod.speed
       scale *= mod.scale

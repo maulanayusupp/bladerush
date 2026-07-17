@@ -14,9 +14,8 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 ## 🧩 Backlog / ide
 
-- [ ] **Variasi tempur lanjutan** (elite sudah ada):
+- [ ] **Variasi tempur lanjutan** (elite + caster/splitter sudah ada):
   - [ ] XP gem drop + magnet (ala survivor.io) sebagai alternatif XP otomatis.
-  - [ ] Tipe musuh baru: penembak jarak jauh, pembelah (split saat mati).
 - [ ] **Kartu level-up**: tandai elemental yang "akan berevolusi" saat di level 4
       (butuh overlay tahu level upgrade saat ini).
 - [ ] **Prestige lanjutan**: milestone bintang (mis. tiap 10 bintang buka bonus
@@ -38,6 +37,7 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- Musuh elite baru: Caster (penembak) & Splitter (pecah saat mati).
 - Companion pet evolvable (16 bentuk, zap musuh, ikut tier hero).
 - Session quests untuk koin (pool 40+, 4 per run, progress di HUD).
 - Mekanik bos unik (summoner/teleporter/charger/bomber/shielder) + fase 2.

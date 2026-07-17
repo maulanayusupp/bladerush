@@ -150,6 +150,7 @@ export class BattleScene extends Phaser.Scene {
   private bossFanAcc = 0
   private bossMeteorAcc = 0
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
+  private enemyShots: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   // ---- Boss Rush (endgame) ----
   private bossRush = false
   private mode: GameMode = 'normal'
@@ -492,6 +493,12 @@ export class BattleScene extends Phaser.Scene {
     // Pooled boss fireballs (fan attack).
     this.bossOrbs = Array.from({ length: BOSS_ATTACK.projectilePool }, () => ({
       img: this.add.image(0, 0, 'bossOrb').setDepth(4).setBlendMode(Phaser.BlendModes.ADD).setActive(false).setVisible(false),
+      vx: 0,
+      vy: 0,
+    }))
+    // Projectiles fired by 'caster' elite enemies.
+    this.enemyShots = Array.from({ length: ELITE.casterShotPool }, () => ({
+      img: this.add.image(0, 0, 'bossOrb').setDepth(4).setBlendMode(Phaser.BlendModes.ADD).setTint(0xff8adf).setActive(false).setVisible(false),
       vx: 0,
       vy: 0,
     }))
@@ -2339,6 +2346,15 @@ export class BattleScene extends Phaser.Scene {
       const angle = angleBetween(enemy.x, enemy.y, this.player.x, this.player.y)
       enemy.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed)
 
+      // Caster elite: lob a projectile at the hero from range on a cadence.
+      if (enemy.affix === 'caster') {
+        enemy.shootAcc += deltaMs
+        if (enemy.shootAcc >= ELITE.casterShotMs && distance(enemy.x, enemy.y, this.player.x, this.player.y) < ELITE.casterRange) {
+          enemy.shootAcc = 0
+          this.fireEnemyShot(enemy.x, enemy.y)
+        }
+      }
+
       // Status tint (burn > poison > chill), else restore normal/elite tint.
       if (now < enemy.burnUntil) enemy.setTint(STATUS.burnTint)
       else if (now < enemy.poisonUntil) enemy.setTint(STATUS.poisonTint)
@@ -2347,6 +2363,46 @@ export class BattleScene extends Phaser.Scene {
 
       // Safety net: recycle anything that somehow strays far off-field.
       if (distance(enemy.x, enemy.y, this.player.x, this.player.y) > limit) enemy.deactivate()
+    }
+    this.updateEnemyShots(deltaMs)
+  }
+
+  /** Launch a caster elite's projectile toward the hero. */
+  private fireEnemyShot(ex: number, ey: number): void {
+    const shot = this.enemyShots.find((s) => !s.img.active)
+    if (!shot) return
+    const a = angleBetween(ex, ey, this.player.x, this.player.y)
+    shot.vx = Math.cos(a) * ELITE.casterShotSpeed
+    shot.vy = Math.sin(a) * ELITE.casterShotSpeed
+    shot.img.setPosition(ex, ey).setScale(1).setActive(true).setVisible(true)
+    audioService.hit()
+  }
+
+  /** Advance caster projectiles; recycle offscreen + damage the hero on contact. */
+  private updateEnemyShots(deltaMs: number): void {
+    const dt = deltaMs / 1000
+    const hitDist = this.player.width / 2 + 10
+    const cam = this.cameras.main
+    const margin = 80
+    for (const shot of this.enemyShots) {
+      if (!shot.img.active) continue
+      shot.img.x += shot.vx * dt
+      shot.img.y += shot.vy * dt
+      shot.img.rotation += deltaMs / 90
+      if (distance(shot.img.x, shot.img.y, this.player.x, this.player.y) < hitDist) {
+        this.sparks.explode(6, shot.img.x, shot.img.y)
+        shot.img.setActive(false).setVisible(false)
+        this.hitPlayer(ELITE.casterDamage)
+        continue
+      }
+      if (
+        shot.img.x < cam.scrollX - margin ||
+        shot.img.x > cam.scrollX + this.viewW + margin ||
+        shot.img.y < cam.scrollY - margin ||
+        shot.img.y > cam.scrollY + this.viewH + margin
+      ) {
+        shot.img.setActive(false).setVisible(false)
+      }
     }
   }
 
@@ -2702,12 +2758,19 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  /** Standard enemy death: fx, reward, chest, volatile chain. */
+  /** Standard enemy death: fx, reward, chest, volatile chain, splitter spawn. */
   private killEnemy(enemy: Enemy): void {
     const ex = enemy.x
     const ey = enemy.y
     const reward = enemy.value
     const volatile = enemy.affix === 'volatile'
+    // Capture split params BEFORE deactivating (a splitter spawns two shards).
+    const doSplit = enemy.affix === 'splitter' && enemy.scaleX > ELITE.splitMinScale
+    const childKey = enemy.texture.key
+    const childScale = enemy.scaleX * ELITE.splitScale
+    const childHp = Math.max(1, Math.round(enemy.maxHp * ELITE.splitHpFrac))
+    const childValue = Math.max(1, Math.round(enemy.value * 0.4))
+    const childSpeed = enemy.speed * 1.15
     codexService.markKey('troop', enemy.texture.key, 'troop')
     this.killFx(ex, ey)
     audioService.death()
@@ -2715,6 +2778,25 @@ export class BattleScene extends Phaser.Scene {
     this.registerKill(reward, ex, ey)
     this.maybeDropChest(ex, ey)
     if (volatile) this.explodeVolatile(ex, ey)
+    if (doSplit) {
+      for (let i = 0; i < ELITE.splitCount; i++) {
+        const child = this.enemies.get(0, 0) as Enemy | null
+        if (!child) break
+        const a = (i / ELITE.splitCount) * TAU + Math.random()
+        child.spawn(ex + Math.cos(a) * 22, ey + Math.sin(a) * 22, {
+          value: childValue,
+          hp: childHp,
+          speed: childSpeed,
+          textureKey: childKey,
+          scale: childScale,
+          tier: '',
+          affix: '', // shards are plain — no endless splitting
+          dmgTaken: 1,
+          tint: 0x8aff8a,
+        })
+        this.sparks.explode(4, child.x, child.y)
+      }
+    }
   }
 
   /** Apply owned elemental status upgrades to an enemy on a sword hit. */
