@@ -16,6 +16,25 @@ sistem yang sudah ada di `CLAUDE.md`.
       thread ke `SpawnService`/pemilihan map/gate (ganti `Math.random` di jalur
       yang relevan saat mode daily).
 
+- [ ] **Mekanik bos unik + multi-fase** — tiap arketipe bos (dari `bossName`/
+      skin) dapat gimmick sendiri: teleport, summon lebih agresif, perisai fase,
+      pola enrage berbeda. Tambah **fase kedua** saat HP < ambang (ganti pola +
+      efek transisi). Sentuh `updateBoss`/`castFan`/`castMeteors` + state fase.
+
+- [ ] **Hazard per map** — bahaya lingkungan khas tiap map: genangan lava
+      (Caldera, damage berkala), pasir hisap (Desert, memperlambat), es licin
+      (Tundra, gerak meluncur), pusaran (Abyss, menyeret). Tambah field `hazard`
+      di `MAPS`, spawn zona hazard + cek overlap player/enemy di `update`.
+
+- [ ] **Objective/quest untuk koin** — 2-3 target per sesi (bunuh N bos, capai
+      Divine, bertahan X menit, serap N NPC) yang memberi koin saat tercapai.
+      Bisa reuse `RunStats`/achievement infra. Tampilkan progress ringkas di HUD
+      + reward di layar game-over.
+
+- [ ] **Companion/pet evolvable** — sekutu panggilan yang mengorbit/mengikuti
+      hero, menyerang musuh terdekat, dan **berevolusi** ikut tier hero. Entity
+      baru (`entities/Companion.ts`) + sprite baked + kontribusi damage kecil.
+
 ## 🧩 Backlog / ide
 
 - [ ] **Variasi tempur lanjutan** (elite sudah ada):
