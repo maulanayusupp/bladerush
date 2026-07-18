@@ -6,6 +6,7 @@ const STORAGE_KEY = 'blade-rush:settings'
 
 class SettingsService {
   private _screenShake = true
+  private _reduceFlash = false
   private loaded = false
 
   private load(): void {
@@ -14,8 +15,9 @@ class SettingsService {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (!raw) return
-      const s = JSON.parse(raw) as Partial<{ screenShake: boolean }>
+      const s = JSON.parse(raw) as Partial<{ screenShake: boolean; reduceFlash: boolean }>
       if (typeof s.screenShake === 'boolean') this._screenShake = s.screenShake
+      if (typeof s.reduceFlash === 'boolean') this._reduceFlash = s.reduceFlash
     } catch {
       /* ignore malformed prefs */
     }
@@ -23,7 +25,7 @@ class SettingsService {
 
   private persist(): void {
     if (typeof localStorage === 'undefined') return
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ screenShake: this._screenShake }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ screenShake: this._screenShake, reduceFlash: this._reduceFlash }))
   }
 
   get screenShake(): boolean {
@@ -34,6 +36,18 @@ class SettingsService {
   setScreenShake(on: boolean): void {
     this.load()
     this._screenShake = on
+    this.persist()
+  }
+
+  /** When true, suppress full-screen colour flashes (photosensitivity). */
+  get reduceFlash(): boolean {
+    this.load()
+    return this._reduceFlash
+  }
+
+  setReduceFlash(on: boolean): void {
+    this.load()
+    this._reduceFlash = on
     this.persist()
   }
 }

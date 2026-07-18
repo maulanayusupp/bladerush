@@ -261,6 +261,7 @@
     "musicVolume": "Music volume",
     "sfxVolume": "SFX volume",
     "shake": "Screen shake",
+    "reduceFlash": "Reduce flashes",
     "on": "On",
     "off": "Off"
   },

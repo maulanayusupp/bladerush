@@ -19,6 +19,7 @@ class AudioService {
   private musicTimer: number | null = null
   private nextNoteAt = 0
   private step = 0
+  private bar = 0 // alternates 0/1 each 16-step bar for melodic variety
   private intensity = 0 // 0 = ambient, 1 = boss, 2 = boss rush — drives tempo & layers
 
   constructor() {
@@ -137,6 +138,7 @@ class AudioService {
       this.playStep(this.step, this.nextNoteAt)
       this.nextNoteAt += stepDur
       this.step = (this.step + 1) % 16
+      if (this.step === 0) this.bar ^= 1 // new bar → alternate the lead melody
     }
   }
 
@@ -144,13 +146,23 @@ class AudioService {
     if (this._muted || !this._musicOn || !this.musicBus) return
     // Am-pentatonic: bass on the quarter, a sparse lead arpeggio, soft hats.
     const bass = [110, 0, 0, 0, 146.83, 0, 0, 0, 130.81, 0, 0, 0, 98, 0, 0, 0]
-    const lead = [440, 0, 523.25, 0, 392, 0, 659.25, 0, 523.25, 0, 440, 0, 587.33, 0, 392, 0]
+    // Two alternating lead bars so the loop feels less repetitive.
+    const leadA = [440, 0, 523.25, 0, 392, 0, 659.25, 0, 523.25, 0, 440, 0, 587.33, 0, 392, 0]
+    const leadB = [587.33, 0, 440, 0, 659.25, 0, 523.25, 0, 493.88, 0, 587.33, 0, 392, 0, 330, 0]
+    const lead = this.bar === 0 ? leadA : leadB
     if (bass[step]) this.musicTone(bass[step] as number, 0.36, 'triangle', 0.5, when)
     if (lead[step]) this.musicTone(lead[step] as number, 0.2, 'sine', 0.2, when)
     if (step % 4 === 2) this.musicNoise(0.03, 0.05, when, 8000)
-    // Intensity layers: a driving off-beat bass, then an urgent hi-hat pattern.
-    if (this.intensity >= 1 && step % 2 === 1) this.musicTone((bass[step - 1] as number || 110) * 2, 0.12, 'sawtooth', 0.16, when)
-    if (this.intensity >= 2 && step % 2 === 0) this.musicNoise(0.02, 0.06, when, 9000)
+    // Intensity layers: driving off-beat bass + an octave-up arp echo, then an
+    // urgent hi-hat and a downbeat kick during Boss Rush.
+    if (this.intensity >= 1) {
+      if (step % 2 === 1) this.musicTone((bass[step - 1] as number || 110) * 2, 0.12, 'sawtooth', 0.16, when)
+      if (lead[step]) this.musicTone((lead[step] as number) * 2, 0.14, 'sine', 0.09, when + 0.06)
+    }
+    if (this.intensity >= 2) {
+      if (step % 2 === 0) this.musicNoise(0.02, 0.06, when, 9000)
+      if (step % 4 === 0) this.musicTone(70, 0.16, 'sine', 0.5, when) // kick
+    }
   }
 
   private musicTone(freq: number, dur: number, type: OscType, peak: number, when: number): void {
@@ -294,6 +306,20 @@ class AudioService {
     const t = this.t
     ;[440, 330, 247, 165].forEach((f, i) => this.beep(f, 0.22, 'sawtooth', 0.32, t + i * 0.09))
     this.noise(0.5, 0.3, t, 600, 0.7)
+  }
+
+  /** An elite enemy appears — a short ominous two-note sting. */
+  elite(): void {
+    const t = this.t
+    this.beep(180, 0.16, 'sawtooth', 0.24, t, 150)
+    this.beep(240, 0.2, 'square', 0.18, t + 0.08, 200)
+    this.noise(0.12, 0.12, t, 2200, 0.7)
+  }
+
+  /** Combo milestone — a bright blip that rises with the combo tier. */
+  combo(tier: number): void {
+    const f = 520 + Math.min(9, tier) * 60
+    this.beep(f, 0.08, 'square', 0.2, this.t, f + 240)
   }
 
   /**

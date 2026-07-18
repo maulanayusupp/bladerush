@@ -16,8 +16,7 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 - [ ] **Onboarding**: pop-up tutorial singkat saat pertama main (guide sudah ada
       di `/guide`, tinggal auto-show sekali).
-- [ ] **Audio/musik**: lebih banyak layer musik dinamis; SFX unik per elite affix.
-- [ ] **Aksesibilitas**: opsi colorblind, toggle reduce-flash (selain screen shake).
+- [ ] **Aksesibilitas lanjutan**: opsi colorblind palette (reduce-flash + screen shake sudah ada).
 - [ ] **Sosial**: papan skor lokal multi-entri + share skor.
 - [ ] **Daily Challenge** (ditunda, bukan prioritas) — RNG deterministik berbasis
       seed tanggal (map/spawn/gate sama untuk semua orang di hari yang sama) +
@@ -28,6 +27,8 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- Musik lebih kaya (2 lead bar + layer) + SFX elite & combo milestone.
+- Aksesibilitas: toggle "Kurangi kilatan" (reduce flashes).
 - Prestige milestones (perk permanen di ambang bintang) + strip di Shop.
 - Kartu level-up menandai upgrade yang "akan berevolusi" (badge emas).
 - XP gem + magnet (kill drop gem, ditarik ke hero).

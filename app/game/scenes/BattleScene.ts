@@ -152,6 +152,7 @@ export class BattleScene extends Phaser.Scene {
   private bossOrbs: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   private enemyShots: { img: Phaser.GameObjects.Image; vx: number; vy: number }[] = []
   private gems: { img: Phaser.GameObjects.Image; xp: number }[] = []
+  private lastEliteSfxAt = 0
   // ---- Boss Rush (endgame) ----
   private bossRush = false
   private mode: GameMode = 'normal'
@@ -869,7 +870,7 @@ export class BattleScene extends Phaser.Scene {
     this.emitScore()
     this.spawnPopup(npc.x, npc.y, `+${formatCompact(gained)}`)
     this.playClashFx(npc.x, npc.y, 0x8ce99a)
-    this.cameras.main.flash(200, 120, 255, 150)
+    this.flash(200, 120, 255, 150)
     audioService.win()
     this.npcDie(npc)
   }
@@ -1246,7 +1247,7 @@ export class BattleScene extends Phaser.Scene {
       ease: 'Back.Out',
     })
     this.hitStopUntil = this.frameTime + 60
-    this.cameras.main.flash(260, 255, 230, 150)
+    this.flash(260, 255, 230, 150)
     this.shake(220, 0.006)
     audioService.skill()
     audioService.win()
@@ -1271,7 +1272,7 @@ export class BattleScene extends Phaser.Scene {
     const pal = PAL[rarity] ?? PAL[1]!
     // Escalating punch.
     this.hitStopUntil = this.frameTime + 60 + rarity * 34
-    this.cameras.main.flash(300, pal.flash[0], pal.flash[1], pal.flash[2])
+    this.flash(300, pal.flash[0], pal.flash[1], pal.flash[2])
     this.shake(220 + rarity * 70, 0.007 + rarity * 0.002)
     audioService.skill()
     audioService.win()
@@ -1313,7 +1314,13 @@ export class BattleScene extends Phaser.Scene {
     if (!enemy) return
 
     const { x, y } = this.randomEdgePoint()
-    enemy.spawn(x, y, this.spawner.createEnemy(elapsedSec, this.power.power))
+    const cfg = this.spawner.createEnemy(elapsedSec, this.power.power)
+    enemy.spawn(x, y, cfg)
+    // An elite arriving gets an audible sting (throttled so it never spams).
+    if (cfg.affix && this.elapsedMs - this.lastEliteSfxAt > 700) {
+      this.lastEliteSfxAt = this.elapsedMs
+      audioService.elite()
+    }
   }
 
   /** A point just outside the current camera view, so foes enter from a screen
@@ -1584,7 +1591,7 @@ export class BattleScene extends Phaser.Scene {
     if (this.bossPhase === 1 && this.boss.hp < this.boss.maxHp * BOSS_MECH.phase2Frac) {
       this.bossPhase = 2
       this.hitStopUntil = this.frameTime + 120
-      this.cameras.main.flash(300, 255, 60, 40)
+      this.flash(300, 255, 60, 40)
       this.shake(360, 0.014)
       this.fxRing(this.boss.x, this.boss.y, this.boss.displayWidth * 1.4, 0xff3b3b, 620)
       this.fxBurst(this.boss.x, this.boss.y, 28, 0xff5a3a)
@@ -1838,7 +1845,7 @@ export class BattleScene extends Phaser.Scene {
         this.emitHp()
         if (this.elapsedMs - this.lastHazardFxAt > 260) {
           this.lastHazardFxAt = this.elapsedMs
-          this.cameras.main.flash(120, 255, 90, 40)
+          this.flash(120, 255, 90, 40)
         }
         if (dead) this.gameOver()
       }
@@ -1852,6 +1859,12 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity)
   }
 
+  /** Full-screen colour flash, gated by the "reduce flashes" accessibility setting. */
+  private flash(duration: number, r?: number, g?: number, b?: number): void {
+    if (settingsService.reduceFlash) return
+    this.cameras.main.flash(duration, r, g, b)
+  }
+
   private hitPlayer(amount: number): void {
     if (this.isOver) return
     if (this.elapsedMs < this.playerInvulnUntil) return
@@ -1859,7 +1872,7 @@ export class BattleScene extends Phaser.Scene {
     const dead = this.player.takeDamage(Math.round(amount * this.playerDefenseMul))
     this.emitHp()
     audioService.hurt()
-    this.cameras.main.flash(120, 255, 80, 40)
+    this.flash(120, 255, 80, 40)
     if (dead) this.gameOver()
   }
 
@@ -1891,7 +1904,7 @@ export class BattleScene extends Phaser.Scene {
     this.emitScore()
     this.playClashFx(x, y, 0xffd700)
     this.sparks.explode(30, x, y)
-    this.cameras.main.flash(260, 255, 220, 120)
+    this.flash(260, 255, 220, 120)
     this.shake(300, 0.012)
     audioService.win()
     if (!this.bossRush) audioService.setMusicIntensity(0)
@@ -1907,7 +1920,7 @@ export class BattleScene extends Phaser.Scene {
     this.bossRush = true
     this.rushWave = 0
     this.rushGapUntil = 0
-    this.cameras.main.flash(400, 120, 0, 0)
+    this.flash(400, 120, 0, 0)
     this.shake(360, 0.01)
     audioService.nova()
     audioService.setMusicIntensity(2)
@@ -2114,7 +2127,7 @@ export class BattleScene extends Phaser.Scene {
     // A golden flourish so the pickup reads as a big moment.
     this.sparks.explode(24, x, y)
     this.playClashFx(x, y, 0xffd700)
-    this.cameras.main.flash(200, 255, 220, 120)
+    this.flash(200, 255, 220, 120)
     audioService.win()
   }
 
@@ -2161,6 +2174,7 @@ export class BattleScene extends Phaser.Scene {
     this.comboCount++
     this.statTopCombo = Math.max(this.statTopCombo, this.comboCount)
     this.comboUntil = this.elapsedMs + COMBO.windowMs
+    if (this.comboCount >= 10 && this.comboCount % 10 === 0) audioService.combo(Math.floor(this.comboCount / 10))
     this.power.addEnemyValue(gained)
     this.scorer.add(Math.round(gained * this.comboMult()))
     this.emitPower()
@@ -2261,7 +2275,7 @@ export class BattleScene extends Phaser.Scene {
     if (id in EVOLUTIONS && this.upgrades.levelOf(id) === UPGRADE_EVOLVE_AT) {
       gameEventBus.emit('upgrade:evolved', { id })
       this.evolveFx()
-      this.cameras.main.flash(300, 255, 200, 80)
+      this.flash(300, 255, 200, 80)
       this.shake(220, 0.01)
       audioService.win()
     }
@@ -2661,7 +2675,7 @@ export class BattleScene extends Phaser.Scene {
     this.scorer.add(loot * RIVAL.scoreMultiplier)
     this.emitScore()
     this.playClashFx(x, y, 0x8ce99a)
-    this.cameras.main.flash(220, 120, 255, 150)
+    this.flash(220, 120, 255, 150)
     audioService.win()
   }
 
@@ -2673,7 +2687,7 @@ export class BattleScene extends Phaser.Scene {
     this.emitPower()
     this.playClashFx(x, y, 0xff6b6b)
     this.shake(260, 0.012)
-    this.cameras.main.flash(240, 255, 60, 60)
+    this.flash(240, 255, 60, 60)
     audioService.lose()
     const dead = this.player.takeDamage(RIVAL.loseDamage)
     this.emitHp()
@@ -3116,7 +3130,7 @@ export class BattleScene extends Phaser.Scene {
 
     if (id === 'fury') {
       this.furyUntil = this.elapsedMs + SKILLS.fury.durationMs
-      this.cameras.main.flash(220, 150, 120, 255)
+      this.flash(220, 150, 120, 255)
       audioService.skill()
     } else if (id === 'nova') {
       this.castNova()
@@ -3291,7 +3305,7 @@ export class BattleScene extends Phaser.Scene {
         const ty = cy + Math.sin(a) * r
         this.fxBolt(tx, this.cameras.main.scrollY - 10, tx, ty, tint)
         this.fxBurst(tx, ty, 10, tint)
-        this.cameras.main.flash(50, (tint >> 16) & 255, (tint >> 8) & 255, tint & 255)
+        this.flash(50, (tint >> 16) & 255, (tint >> 8) & 255, tint & 255)
         this.fxDamageArea(tx, ty, 110, dmg, numColor)
       })
     }
@@ -3403,7 +3417,7 @@ export class BattleScene extends Phaser.Scene {
         this.fxDamageArea(tx, ty, 92, dmg, numColor)
       })
     }
-    this.cameras.main.flash(200, 255, 240, 180)
+    this.flash(200, 255, 240, 180)
   }
 
   /** A vortex: enemies are dragged inward, then implode. */
@@ -3454,7 +3468,7 @@ export class BattleScene extends Phaser.Scene {
       e.burnUntil = this.elapsedMs + 4000
       e.burnDps = burnDps
     }
-    this.cameras.main.flash(160, 255, 140, 40)
+    this.flash(160, 255, 140, 40)
     audioService.nova()
     this.fxDamageArea(cx, cy, radius, dmg, numColor)
   }
@@ -3593,7 +3607,7 @@ export class BattleScene extends Phaser.Scene {
         break
       case 3: // God-Emperor — Cataclysm: a golden earth-shattering quake
         this.hitStopUntil = this.frameTime + 120
-        this.cameras.main.flash(220, 255, 225, 120)
+        this.flash(220, 255, 225, 120)
         this.fxQuake(px, py, 820, this.skillDamage(30), '#ffe14d', 0xffe14d)
         break
       case 4: // Dragon Ascendant — Dragon Breath: a wave of flame that ignites all
@@ -3615,7 +3629,7 @@ export class BattleScene extends Phaser.Scene {
         break
       case 8: { // Blood Warlord — Bloodbath: massive damage + huge lifesteal
         const before = this.countEnemies()
-        this.cameras.main.flash(160, 255, 40, 40)
+        this.flash(160, 255, 40, 40)
         this.fxRing(px, py, 700, 0xff2020, 520)
         this.fxBurst(px, py, 30, 0xff2020)
         this.fxDamageArea(px, py, 700, this.skillDamage(26), '#ff5a5a')
@@ -3648,14 +3662,14 @@ export class BattleScene extends Phaser.Scene {
         break
       case 13: // Lunar Sovereign — Eclipse: darkness weakens, then twin dark pulses
         this.chillArea(px, py, 620, 0.35, 4000)
-        this.cameras.main.flash(180, 20, 12, 44)
+        this.flash(180, 20, 12, 44)
         this.fxRing(px, py, 560, 0x3a2a6a, 480)
         this.fxDamageArea(px, py, 560, this.skillDamage(12), '#b9a8ff')
         this.time.delayedCall(520, () => { if (!this.isOver) { this.fxRing(px, py, 620, 0x6a4aff, 520); this.fxBurst(px, py, 20, 0x6a4aff); this.fxDamageArea(px, py, 620, this.skillDamage(16), '#dfd0ff') } })
         break
       case 14: // Chrono Sovereign — Time Stop: freeze foes in place
         this.chillArea(px, py, 700, 0.02, 5000)
-        this.cameras.main.flash(240, 200, 255, 245)
+        this.flash(240, 200, 255, 245)
         this.fxBlizzard(px, py, 700, this.skillDamage(14), '#dffff8', 0.02, 0x8afff0)
         break
       case 15: // Stone Titan — Earthquake: ground-shattering shockwaves
@@ -3771,7 +3785,7 @@ export class BattleScene extends Phaser.Scene {
       this.emitHp()
       this.playerInvulnUntil = this.elapsedMs + 2000
       this.castNova()
-      this.cameras.main.flash(320, 180, 255, 220)
+      this.flash(320, 180, 255, 220)
       audioService.win()
       return
     }

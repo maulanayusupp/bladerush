@@ -151,8 +151,10 @@ tekstur tetap selesai sebelum scene berikutnya mulai.
 - **Progres**: XP `LEVEL` (per-kill ikut nilai kill) — kill drop **XP gem**
   (`XP_GEM`, `spawnGem`/`updateGems`) yang ditarik magnet ke hero. Achievements,
   Codex, ranking.
-- **Loadout** (`LoadoutService`), **Settings** (`SettingsService`: screenShake).
-- **Musik dinamis**: `audioService.setMusicIntensity(0|1|2)` (ambient/boss/rush).
+- **Loadout** (`LoadoutService`), **Settings** (`SettingsService`: screenShake,
+  reduceFlash → gated via `this.shake()`/`this.flash()` di scene).
+- **Musik dinamis**: `audioService.setMusicIntensity(0|1|2)` (ambient/boss/rush),
+  2 lead bar bergantian + layer per intensity. SFX cue: `elite()`, `combo(tier)`.
 - **Ring reach**: `ringOuterRadius` (di `updateSwords`) = extent nyata ring pedang;
   dipakai `npcDuel`/`updateRivals` supaya bilah mengiris hero yang tertutup ring.
 - **Halaman**: `/` (menu), `/play`, `/codex`, `/guide`, `/changelog`.

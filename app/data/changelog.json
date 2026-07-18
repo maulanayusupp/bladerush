@@ -1,6 +1,18 @@
 {
   "entries": [
     {
+      "date": "2026-07-18",
+      "tag": "feature",
+      "title": "Accessibility: reduce flashes",
+      "detail": "A new 'Reduce flashes' toggle in the pause settings suppresses the game's full-screen colour flashes (for photosensitivity), joining the existing Screen Shake toggle. Persisted."
+    },
+    {
+      "date": "2026-07-18",
+      "tag": "feature",
+      "title": "Richer music + new sound cues",
+      "detail": "The soundtrack now alternates two lead melodies per bar (less repetitive) and layers an octave arp + a driving kick during boss fights and Boss Rush. New cues: an ominous sting when an elite appears, and a rising blip on every 10-combo milestone."
+    },
+    {
       "date": "2026-07-17",
       "tag": "feature",
       "title": "Prestige milestones",

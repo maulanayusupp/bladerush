@@ -141,6 +141,7 @@ const musicOn = ref(audioService.musicOn)
 const musicVolume = ref(Math.round(audioService.musicVolume * 100))
 const sfxVolume = ref(Math.round(audioService.sfxVolume * 100))
 const screenShake = ref(settingsService.screenShake)
+const reduceFlash = ref(settingsService.reduceFlash)
 
 function openPause(): void {
   if (isOver.value) return
@@ -169,6 +170,10 @@ function onSfxVolume(e: Event): void {
 function toggleShake(): void {
   screenShake.value = !screenShake.value
   settingsService.setScreenShake(screenShake.value)
+}
+function toggleFlash(): void {
+  reduceFlash.value = !reduceFlash.value
+  settingsService.setReduceFlash(reduceFlash.value)
 }
 
 const hpRatio = computed(() => (maxHp.value > 0 ? hp.value / maxHp.value : 0))
@@ -586,6 +591,10 @@ function restart(): void {
           <button class="hud__setting" type="button" @click="toggleShake">
             <span>{{ $t('pause.shake') }}</span>
             <b>{{ screenShake ? $t('pause.on') : $t('pause.off') }}</b>
+          </button>
+          <button class="hud__setting" type="button" @click="toggleFlash">
+            <span>{{ $t('pause.reduceFlash') }}</span>
+            <b>{{ reduceFlash ? $t('pause.on') : $t('pause.off') }}</b>
           </button>
         </div>
         <BaseButton variant="primary" block @click="resume">{{ $t('pause.resume') }}</BaseButton>
