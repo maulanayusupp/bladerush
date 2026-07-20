@@ -20,9 +20,17 @@ let raf = 0
 let w = 0
 let h = 0
 let last = 0
+let lastRender = 0
+let hidden = false
 let t = 0
 let angle = 0
 let reduced = false
+// Cached gradients (rebuilt on resize) so we don't allocate ~17 per frame.
+let skyGrad: CanvasGradient | null = null
+let rayGrad: CanvasGradient | null = null
+let raySpread = 0
+// Cap the render rate; the fan-spinning cost was an uncapped 60–120fps loop.
+const RENDER_MS = 33 // ~30fps
 
 // Smoothed, normalized pointer (-1..1) driving parallax.
 let px = 0
@@ -34,7 +42,7 @@ interface Mote { x: number; y: number; vy: number; vx: number; r: number; a: num
 let motes: Mote[] = []
 
 function seedMotes(): void {
-  const count = Math.min(90, Math.max(36, Math.round((w * h) / 26000)))
+  const count = Math.min(54, Math.max(28, Math.round((w * h) / 40000)))
   motes = Array.from({ length: count }, () => {
     const depth = Math.random()
     return {
@@ -98,6 +106,17 @@ function resize(): void {
   c.height = Math.round(h * dpr)
   ctx = c.getContext('2d')
   ctx?.setTransform(dpr, 0, 0, dpr, 0, 0)
+  // Rebuild the static gradients once per resize instead of every frame.
+  if (ctx) {
+    skyGrad = ctx.createLinearGradient(0, 0, 0, h)
+    skyGrad.addColorStop(0, '#150c24')
+    skyGrad.addColorStop(0.5, '#0b0715')
+    skyGrad.addColorStop(1, '#040309')
+    raySpread = Math.min(h * 0.46, 380) * 3
+    rayGrad = ctx.createLinearGradient(0, 0, 0, raySpread)
+    rayGrad.addColorStop(0, `${RAY}0.14)`)
+    rayGrad.addColorStop(1, `${RAY}0)`)
+  }
   seedMotes()
   if (reduced) render()
 }
@@ -114,11 +133,7 @@ function render(): void {
   const k = heroH / 64
 
   // 1) Moody sky + bloom behind the hero.
-  const sky = c.createLinearGradient(0, 0, 0, h)
-  sky.addColorStop(0, '#150c24')
-  sky.addColorStop(0.5, '#0b0715')
-  sky.addColorStop(1, '#040309')
-  c.fillStyle = sky
+  c.fillStyle = skyGrad ?? '#0b0715'
   c.fillRect(0, 0, w, h)
 
   const bloom = c.createRadialGradient(hx, hy - heroH * 0.15, 0, hx, hy - heroH * 0.15, heroH * 1.5)
@@ -133,20 +148,18 @@ function render(): void {
   c.globalCompositeOperation = 'lighter'
   const sx = hx + px * 10
   const sy = hy - heroH * 0.55
-  const rays = 15
-  const spread = heroH * 3
+  const rays = 12
+  const spread = raySpread || heroH * 3
+  c.fillStyle = rayGrad ?? `${RAY}0.1)` // one cached gradient; flicker via globalAlpha
   for (let i = 0; i < rays; i++) {
     const base = (i / rays) * TAU
     const a = base + angle * 0.15
     const flick = 0.5 + 0.5 * Math.sin(t * 1.3 + i * 1.7)
     const wob = Math.sin(t * 0.4 + i) * 0.05
     c.save()
+    c.globalAlpha = flick
     c.translate(sx, sy)
     c.rotate(a + wob)
-    const grad = c.createLinearGradient(0, 0, 0, spread)
-    grad.addColorStop(0, `${RAY}${0.14 * flick})`)
-    grad.addColorStop(1, `${RAY}0)`)
-    c.fillStyle = grad
     c.beginPath()
     c.moveTo(0, 0)
     c.lineTo(-spread * 0.06, spread)
@@ -235,14 +248,18 @@ function render(): void {
 }
 
 function frame(ts: number): void {
+  raf = requestAnimationFrame(frame)
+  // Throttle to ~30fps — the uncapped loop (up to 120fps on some Macs) was the
+  // real idle CPU/GPU cost. Advance simulation, but only paint on schedule.
+  if (ts - lastRender < RENDER_MS) return
   const dt = last ? Math.min(0.05, (ts - last) / 1000) : 0
   last = ts
+  lastRender = ts
   t += dt
   angle = (angle + 0.12 * dt) % TAU
   px += (tx - px) * Math.min(1, dt * 3)
   py += (ty - py) * Math.min(1, dt * 3)
   render()
-  raf = requestAnimationFrame(frame)
 }
 
 function onPointer(e: PointerEvent): void {
@@ -250,10 +267,23 @@ function onPointer(e: PointerEvent): void {
   ty = (e.clientY / window.innerHeight) * 2 - 1
 }
 
+// Stop animating entirely when the tab/window is hidden (saves battery + fan).
+function onVisibility(): void {
+  hidden = document.hidden
+  if (hidden) {
+    cancelAnimationFrame(raf)
+    raf = 0
+  } else if (!raf && !reduced) {
+    last = 0
+    raf = requestAnimationFrame(frame)
+  }
+}
+
 onMounted(() => {
   reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   resize()
   window.addEventListener('resize', resize)
+  document.addEventListener('visibilitychange', onVisibility)
   if (!reduced) {
     window.addEventListener('pointermove', onPointer, { passive: true })
     raf = requestAnimationFrame(frame)
@@ -264,6 +294,7 @@ onBeforeUnmount(() => {
   cancelAnimationFrame(raf)
   window.removeEventListener('resize', resize)
   window.removeEventListener('pointermove', onPointer)
+  document.removeEventListener('visibilitychange', onVisibility)
 })
 </script>
 

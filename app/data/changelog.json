@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-20",
+      "tag": "fix",
+      "title": "Menu no longer spins your fan",
+      "detail": "The animated menu key-art ran an uncapped render loop (up to 120fps on some Macs) that re-created ~17 gradients every frame — so the fan revved even before playing. It's now capped to ~30fps, reuses cached gradients, uses fewer dust motes, and stops entirely when the tab is hidden."
+    },
+    {
+      "date": "2026-07-20",
       "tag": "art",
       "title": "Fierce weapon-evolution effects",
       "detail": "Evolving your weapon now erupts in an effect-themed spectacle that also blasts nearby foes: a flame nova (Ignite), a blizzard (Frost), a toxic cloud (Venom), forked lightning (Chain), a life-draining red nova (Lifesteal), a void implosion (Execute), pillars of light (Holy), gold shockwaves (Crit/Cleave/Pierce) — with a themed flash, shake, and hit-stop."
