@@ -2182,8 +2182,7 @@ export class BattleScene extends Phaser.Scene {
     if (newStage > this.weaponStage) {
       this.weaponStage = newStage
       gameEventBus.emit('weapon:evolve', { stage: newStage })
-      this.evolveFx()
-      this.flash(260, 120, 220, 255)
+      this.weaponEvolveFx()
       audioService.skill()
     }
     this.power.addEnemyValue(gained)
@@ -3494,6 +3493,77 @@ export class BattleScene extends Phaser.Scene {
     this.flash(160, 255, 140, 40)
     audioService.nova()
     this.fxDamageArea(cx, cy, radius, dmg, numColor)
+  }
+
+  /**
+   * A fierce, effect-themed spectacle when the weapon evolves a stage — each
+   * signature effect erupts in its own way and blasts nearby foes. Scales with
+   * the new stage.
+   */
+  private weaponEvolveFx(): void {
+    const px = this.player.x
+    const py = this.player.y
+    const st = this.weaponStage
+    const r = 320 + st * 46
+    switch (this.weaponEffect) {
+      case 'burn':
+        this.fxFlames(px, py, r, this.skillDamage(4), '#ffb060', 0xff7a2a)
+        this.flash(220, 255, 140, 40)
+        break
+      case 'frost':
+        this.fxBlizzard(px, py, r, this.skillDamage(3), '#dff4ff', 0.3)
+        this.flash(200, 150, 220, 255)
+        break
+      case 'venom':
+        this.fxPoisonCloud(px, py, r * 0.9, 2600, this.skillDamage(2), '#bfff6a', 0x8fff3a)
+        this.fxRing(px, py, r, 0x6aff2a, 520)
+        this.fxBurst(px, py, 24, 0x6aff2a, 240, 780)
+        this.flash(200, 120, 255, 90)
+        break
+      case 'chain':
+        this.fxLightning(px, py, r + 90, 4 + st, this.skillDamage(4), '#8adfff')
+        this.flash(180, 150, 240, 255)
+        break
+      case 'lifesteal':
+        this.fxRing(px, py, r, 0xff2020, 520)
+        this.fxBurst(px, py, 28, 0xff3b3b)
+        this.fxDamageArea(px, py, r, this.skillDamage(5), '#ff5a5a')
+        this.player.heal(Math.round(this.player.maxHp * 0.15))
+        this.emitHp()
+        this.flash(200, 255, 60, 60)
+        break
+      case 'execute':
+        this.fxVortex(px, py, r, this.skillDamage(6), '#ff5a5a', 0xff2060)
+        this.flash(220, 140, 20, 40)
+        break
+      case 'holy':
+        this.fxLightPillars(px, py, r, 8 + st, this.skillDamage(4), '#fff2b0')
+        break
+      case 'cleave':
+        this.fxRing(px, py, r, 0xffd24a, 560)
+        this.fxRing(px, py, r * 0.6, 0xffe14d, 420)
+        this.fxBurst(px, py, 26, 0xffd24a)
+        this.fxDamageArea(px, py, r, this.skillDamage(5), '#ffe14d')
+        this.flash(200, 255, 220, 120)
+        break
+      case 'pierce':
+        this.fxRing(px, py, r, 0xdff4ff, 520)
+        this.fxBurst(px, py, 24, 0xffffff)
+        this.fxDamageArea(px, py, r, this.skillDamage(6), '#dff4ff')
+        this.flash(200, 220, 240, 255)
+        break
+      default: // crit + any other
+        this.fxRing(px, py, r, 0xffd700, 520)
+        this.fxBurst(px, py, 30, 0xffd700, 260, 820)
+        this.fxDamageArea(px, py, r, this.skillDamage(6), '#ffe14d')
+        this.flash(220, 255, 210, 120)
+    }
+    this.shake(300 + st * 60, 0.013)
+    this.hitStopUntil = this.frameTime + 90
+    // A crisp hero pop to punctuate the upgrade.
+    const hs = this.heroScale
+    this.tweens.add({ targets: this.player, scaleX: { from: hs * 1.3, to: hs }, scaleY: { from: hs * 1.3, to: hs }, duration: 300, ease: 'Back.Out' })
+    this.heroPopUntil = this.elapsedMs + 320
   }
 
   // ---- Evolved elemental upgrades (auto-cast skills) ----------------------

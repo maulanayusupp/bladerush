@@ -2,6 +2,12 @@
   "entries": [
     {
       "date": "2026-07-20",
+      "tag": "art",
+      "title": "Fierce weapon-evolution effects",
+      "detail": "Evolving your weapon now erupts in an effect-themed spectacle that also blasts nearby foes: a flame nova (Ignite), a blizzard (Frost), a toxic cloud (Venom), forked lightning (Chain), a life-draining red nova (Lifesteal), a void implosion (Execute), pillars of light (Holy), gold shockwaves (Crit/Cleave/Pierce) — with a themed flash, shake, and hit-stop."
+    },
+    {
+      "date": "2026-07-20",
       "tag": "feature",
       "title": "Weapon evolution",
       "detail": "Your weapon's signature effect now evolves during a run — every 140 kills it advances a stage (up to ★★★), scaling its potency: stronger burn/venom/lifesteal/execute, colder frost, wider cleave, extra chain arcs, more crit & armor-pierce. The HUD shows the tier and announces each evolution."
