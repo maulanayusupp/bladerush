@@ -45,6 +45,9 @@ const divineSkill = computed(() => (divineIndex.value >= 0 ? DIVINE_SKILLS[divin
 const heroIndex = ref(0)
 const heroLabel = computed(() => heroName(heroIndex.value))
 const weaponInfo = ref<{ name: string; effect: string } | null>(null)
+const weaponStage = ref(0)
+const weaponEvolveMsg = ref('')
+let weaponEvolveTimer: ReturnType<typeof setTimeout> | null = null
 const heroColor = computed(() => {
   const r = HERO_RARITIES[heroRarity(heroIndex.value / (HERO.skins - 1))]
   return `#${(r?.color ?? 0xffffff).toString(16).padStart(6, '0')}`
@@ -235,7 +238,16 @@ onMounted(() => {
     }),
     gameEventBus.on('skill:divine', ({ index }) => (divineIndex.value = index)),
     gameEventBus.on('hero:changed', ({ index }) => (heroIndex.value = index)),
-    gameEventBus.on('weapon:set', (w) => (weaponInfo.value = w)),
+    gameEventBus.on('weapon:set', (w) => {
+      weaponInfo.value = w
+      weaponStage.value = 0
+    }),
+    gameEventBus.on('weapon:evolve', ({ stage }) => {
+      weaponStage.value = stage
+      weaponEvolveMsg.value = t('weapon.evolved', { effect: weaponInfo.value ? t('weffect.' + weaponInfo.value.effect) : '' })
+      if (weaponEvolveTimer) clearTimeout(weaponEvolveTimer)
+      weaponEvolveTimer = setTimeout(() => (weaponEvolveMsg.value = ''), 2400)
+    }),
     gameEventBus.on('boss:spawn', ({ maxHp, warn }) => {
       bossActive.value = true
       bossMax.value = maxHp
@@ -340,6 +352,8 @@ onMounted(() => {
       bossPhaseUp.value = false
       quests.value = []
       questToast.value = ''
+      weaponStage.value = 0
+      weaponEvolveMsg.value = ''
     }),
   )
   cooldownTimer = setInterval(() => (now.value = Date.now()), 100)
@@ -356,6 +370,7 @@ onUnmounted(() => {
   if (rarityTimer) clearTimeout(rarityTimer)
   if (bossPhaseTimer) clearTimeout(bossPhaseTimer)
   if (questToastTimer) clearTimeout(questToastTimer)
+  if (weaponEvolveTimer) clearTimeout(weaponEvolveTimer)
 })
 
 function restart(): void {
@@ -472,6 +487,10 @@ function restart(): void {
       <div v-if="questToast" class="hud__quest-toast">🎯 {{ questToast }}</div>
     </Transition>
 
+    <Transition name="hud-rush">
+      <div v-if="weaponEvolveMsg" class="hud__weapon-banner">🗡️ {{ weaponEvolveMsg }}</div>
+    </Transition>
+
     <div v-if="bossRush" class="hud__rush-vignette" aria-hidden="true" />
 
     <Transition name="hud-ult">
@@ -522,7 +541,9 @@ function restart(): void {
     </div>
 
     <div class="hud__hero" :style="{ '--rarity': heroColor }">{{ heroLabel }}</div>
-    <div v-if="weaponInfo" class="hud__weapon">🗡️ {{ weaponInfo.name }} · {{ $t('weffect.' + weaponInfo.effect) }}</div>
+    <div v-if="weaponInfo" class="hud__weapon">
+      🗡️ {{ weaponInfo.name }} · {{ $t('weffect.' + weaponInfo.effect) }}<span v-if="weaponStage > 0" class="hud__weapon-tier">{{ '★'.repeat(weaponStage) }}</span>
+    </div>
 
     <div class="hud__health">
       <span class="hud__health-icon" aria-hidden="true">❤️</span>

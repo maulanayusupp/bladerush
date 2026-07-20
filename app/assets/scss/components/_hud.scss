@@ -698,6 +698,31 @@
     margin-bottom: 3px;
   }
 
+  &__weapon-tier {
+    margin-left: 0.3em;
+    color: $color-warning;
+    letter-spacing: -0.05em;
+    text-shadow: 0 0 8px rgba($color-warning, 0.7);
+  }
+
+  &__weapon-banner {
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: $space-2 $space-5;
+    border-radius: $radius-pill;
+    font-size: $font-size-base;
+    font-weight: $font-weight-bold;
+    white-space: nowrap;
+    color: #fff;
+    background: linear-gradient(90deg, transparent, rgba(#8adfff, 0.3), transparent);
+    border-top: 2px solid rgba(#8adfff, 0.75);
+    border-bottom: 2px solid rgba(#8adfff, 0.75);
+    text-shadow: 0 0 12px rgba(#8adfff, 0.85), 0 2px 6px rgba(#000, 0.8);
+    pointer-events: none;
+  }
+
   &__health {
     display: flex;
     align-items: center;

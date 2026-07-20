@@ -78,6 +78,7 @@ export interface GameEventMap {
   'skill:divine': { index: number }
   'hero:changed': { index: number }
   'weapon:set': { name: string; effect: string }
+  'weapon:evolve': { stage: number }
   'xp:changed': { level: number; xp: number; next: number }
   'levelup:offer': { ids: string[]; evolving: string[] }
   'levelup:pick': { id: string }

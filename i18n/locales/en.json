@@ -149,6 +149,9 @@
     "title": "Level Up! Choose an upgrade",
     "evolves": "Evolves → {name}"
   },
+  "weapon": {
+    "evolved": "Weapon Evolved — {effect}"
+  },
   "rush": {
     "start": "BOSS RUSH!",
     "wave": "Wave {wave} — bosses incoming!",

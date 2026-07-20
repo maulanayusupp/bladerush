@@ -10,7 +10,7 @@
 // hero (it does not fire) — the sword count grows with power (+1 every 50).
 // =============================================================================
 import Phaser from 'phaser'
-import { AURA, BOSS, BOSS_ATTACK, BOSS_MECH, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PET, PLAYER, POWER_LAYERS, QUESTS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SESSION_QUEST_COUNT, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WORLD, XP_GEM, gearOf, heroRarity, weaponEffect, weaponName, type Quest } from '../constants'
+import { AURA, BOSS, BOSS_ATTACK, BOSS_MECH, BOSS_RUSH, COMBO, DECOR_COUNT, DIVINE_SKILLS, ELITE, ENEMY, EVOLUTIONS, GATE, GEAR, HAZARD, HEAL, HERO, HERO_RARITIES, LEVEL, MAPS, MEGA_AURA, MINIMAP, NPC, OBSTACLE, PET, PLAYER, POWER_LAYERS, QUESTS, RELIC_CHEST_CHANCE, RELICS, RIVAL, SESSION_QUEST_COUNT, SKILLS, STATUS, SWORD, SWORD_SHAPES, UPGRADE_EVOLVE_AT, UPGRADE_TUNE, WEAPON_EVOLVE, WORLD, XP_GEM, gearOf, heroRarity, weaponEffect, weaponName, type Quest } from '../constants'
 import { UpgradeService } from '~/services/UpgradeService'
 import { metaService } from '~/services/MetaService'
 import { COINS_PER_SCORE, CHEST, HITSTOP_MS } from '../constants'
@@ -183,6 +183,7 @@ export class BattleScene extends Phaser.Scene {
   private paused = false
   private swordTintable = true
   private weaponEffect = 'crit'
+  private weaponStage = 0 // weapon-evolution stage this run (grows with kills)
   // Floating virtual joystick (touch/drag): origin set on press, vector from drag.
   private joyActive = false
   private joyOriginX = 0
@@ -461,6 +462,7 @@ export class BattleScene extends Phaser.Scene {
     const SPECIAL_BLADES = ['energy', 'holy', 'chakram', 'sawblade', 'demon', 'runic', 'warscythe']
     this.swordTintable = !SPECIAL_BLADES.includes(SWORD_SHAPES[swordSkin] as string)
     this.weaponEffect = weaponEffect(swordSkin) // this run's signature on-hit effect
+    this.weaponStage = 0
     gameEventBus.emit('weapon:set', { name: weaponName(swordSkin), effect: this.weaponEffect })
     codexService.load()
     codexService.mark('weapon', swordSkin)
@@ -2175,6 +2177,15 @@ export class BattleScene extends Phaser.Scene {
     this.statTopCombo = Math.max(this.statTopCombo, this.comboCount)
     this.comboUntil = this.elapsedMs + COMBO.windowMs
     if (this.comboCount >= 10 && this.comboCount % 10 === 0) audioService.combo(Math.floor(this.comboCount / 10))
+    // Weapon evolves as kills mount — a stronger signature effect each stage.
+    const newStage = Math.min(WEAPON_EVOLVE.maxStage, Math.floor(this.statKills / WEAPON_EVOLVE.killsPerStage))
+    if (newStage > this.weaponStage) {
+      this.weaponStage = newStage
+      gameEventBus.emit('weapon:evolve', { stage: newStage })
+      this.evolveFx()
+      this.flash(260, 120, 220, 255)
+      audioService.skill()
+    }
     this.power.addEnemyValue(gained)
     this.scorer.add(Math.round(gained * this.comboMult()))
     this.emitPower()
@@ -2768,10 +2779,12 @@ export class BattleScene extends Phaser.Scene {
     this.applyStatusOnHit(enemy)
 
     const eff = this.weaponEffect
-    // Weapon crit stacks with the meta crit chance.
-    const crit = Math.random() < this.metaCrit + (eff === 'crit' ? 0.25 : 0)
+    // Weapon crit stacks with the meta crit chance; both crit chance and pierce
+    // bonus grow as the weapon evolves.
+    const critBonus = eff === 'crit' ? Math.min(0.6, 0.25 + this.weaponStage * 0.1) : 0
+    const crit = Math.random() < this.metaCrit + critBonus
     let mul = crit ? 2 : 1
-    if (eff === 'pierce') mul *= 1.35 // armor-piercing: flat bonus damage
+    if (eff === 'pierce') mul *= 1.35 + this.weaponStage * 0.18 // armor-piercing bonus
     const hitDmg = Math.round(this.power.stats.damage * this.swordDamageMul * mul)
     this.damageNumber(enemy.x, enemy.y - 14, hitDmg, crit ? '#ff5a5a' : '#ffffff')
     const killed = enemy.takeDamage(hitDmg)
@@ -2791,53 +2804,63 @@ export class BattleScene extends Phaser.Scene {
   /** The current weapon's signature on-hit effect. */
   private applyWeaponEffect(enemy: Enemy, dmg: number, killed: boolean): void {
     const base = this.power.stats.damage * this.swordDamageMul
+    // Effect potency scales with the weapon's evolution stage.
+    const pot = 1 + this.weaponStage * WEAPON_EVOLVE.potencyPerStage
     switch (this.weaponEffect) {
       case 'burn':
-        if (enemy.active) { enemy.burnUntil = this.elapsedMs + STATUS.burnMs; enemy.burnDps = base * 0.5 }
+        if (enemy.active) { enemy.burnUntil = this.elapsedMs + STATUS.burnMs; enemy.burnDps = base * 0.5 * pot }
         break
       case 'frost':
-        if (enemy.active) { enemy.chillUntil = this.elapsedMs + STATUS.chillMs; enemy.chillMul = 0.45 }
+        if (enemy.active) { enemy.chillUntil = this.elapsedMs + STATUS.chillMs; enemy.chillMul = Math.max(0.15, 0.45 - this.weaponStage * 0.08) }
         break
       case 'venom':
-        if (enemy.active) { enemy.poisonUntil = this.elapsedMs + STATUS.poisonMs; enemy.poisonDps = base * 0.4 }
+        if (enemy.active) { enemy.poisonUntil = this.elapsedMs + STATUS.poisonMs; enemy.poisonDps = base * 0.4 * pot }
         break
       case 'lifesteal':
-        this.player.heal(2)
+        this.player.heal(Math.round(2 * pot))
         if (Math.random() < 0.15) this.emitHp()
         break
-      case 'cleave': { // splash to nearby foes
+      case 'cleave': { // splash to nearby foes (wider + harder as it evolves)
+        const radius = 48 + this.weaponStage * 10
         for (const obj of this.enemies.getChildren()) {
           const e = obj as Enemy
           if (e === enemy || !e.active) continue
-          if (distance(e.x, e.y, enemy.x, enemy.y) < 48 && e.takeDamage(dmg * 0.5)) this.killEnemy(e)
+          if (distance(e.x, e.y, enemy.x, enemy.y) < radius && e.takeDamage(dmg * 0.5 * pot)) this.killEnemy(e)
         }
         break
       }
-      case 'chain': { // arc lightning to one nearby foe
-        let best: Enemy | null = null
-        let bestD = 140
-        for (const obj of this.enemies.getChildren()) {
-          const e = obj as Enemy
-          if (e === enemy || !e.active) continue
-          const d = distance(e.x, e.y, enemy.x, enemy.y)
-          if (d < bestD) { bestD = d; best = e }
-        }
-        if (best) {
+      case 'chain': { // arc lightning to nearby foes (more arcs as it evolves)
+        const reach = 140 + this.weaponStage * 24
+        const arcs = 1 + this.weaponStage
+        let from = enemy
+        const hit = new Set<Enemy>([enemy])
+        for (let n = 0; n < arcs; n++) {
+          let best: Enemy | null = null
+          let bestD = reach
+          for (const obj of this.enemies.getChildren()) {
+            const e = obj as Enemy
+            if (hit.has(e) || !e.active) continue
+            const d = distance(e.x, e.y, from.x, from.y)
+            if (d < bestD) { bestD = d; best = e }
+          }
+          if (!best) break
+          hit.add(best)
           this.ringBlur.lineStyle(2, 0x8adfff, 0.9)
-          this.ringBlur.lineBetween(enemy.x, enemy.y, best.x, best.y)
-          if (best.takeDamage(dmg * 0.6)) this.killEnemy(best)
+          this.ringBlur.lineBetween(from.x, from.y, best.x, best.y)
+          if (best.takeDamage(dmg * 0.6 * pot)) this.killEnemy(best)
           else this.sparks.explode(3, best.x, best.y)
+          from = best
         }
         break
       }
       case 'execute': // chance to detonate a survivor for massive damage
-        if (!killed && enemy.active && Math.random() < 0.12) {
+        if (!killed && enemy.active && Math.random() < Math.min(0.3, 0.12 + this.weaponStage * 0.05)) {
           this.sparks.explode(10, enemy.x, enemy.y)
-          if (enemy.takeDamage(dmg * 5)) this.killEnemy(enemy)
+          if (enemy.takeDamage(dmg * 5 * pot)) this.killEnemy(enemy)
         }
         break
       case 'holy':
-        if (killed) { this.player.heal(3); if (Math.random() < 0.2) this.emitHp() }
+        if (killed) { this.player.heal(Math.round(3 * pot)); if (Math.random() < 0.2) this.emitHp() }
         break
       default:
         break

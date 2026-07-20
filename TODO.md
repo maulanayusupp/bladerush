@@ -27,6 +27,7 @@ _Semua item prioritas sudah selesai — ambil berikutnya dari Backlog di bawah._
 
 Lihat `/changelog` untuk daftar lengkap & bertanggal. Sorotan:
 
+- Evolusi senjata (efek naik stage tiap 140 kill, ★ di HUD).
 - Musik lebih kaya (2 lead bar + layer) + SFX elite & combo milestone.
 - Aksesibilitas: toggle "Kurangi kilatan" (reduce flashes).
 - Prestige milestones (perk permanen di ambang bintang) + strip di Shop.

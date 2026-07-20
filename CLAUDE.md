@@ -153,6 +153,9 @@ tekstur tetap selesai sebelum scene berikutnya mulai.
   Codex, ranking.
 - **Loadout** (`LoadoutService`), **Settings** (`SettingsService`: screenShake,
   reduceFlash → gated via `this.shake()`/`this.flash()` di scene).
+- **Evolusi senjata** (`WEAPON_EVOLVE`): efek senjata (`weaponEffect`) naik stage
+  tiap `killsPerStage` kill (`weaponStage`), skala potensi di `applyWeaponEffect`/
+  crit-pierce. Event `weapon:evolve`; HUD tampil ★ + banner.
 - **Musik dinamis**: `audioService.setMusicIntensity(0|1|2)` (ambient/boss/rush),
   2 lead bar bergantian + layer per intensity. SFX cue: `elite()`, `combo(tier)`.
 - **Ring reach**: `ringOuterRadius` (di `updateSwords`) = extent nyata ring pedang;

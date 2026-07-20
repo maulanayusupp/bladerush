@@ -270,6 +270,17 @@ export function weaponEffect(index: number): string {
 }
 
 /**
+ * Weapon EVOLUTION — your weapon's signature effect grows stronger over a run.
+ * Every `killsPerStage` kills the weapon advances a stage (up to `maxStage`),
+ * scaling its effect potency (and announcing the evolution).
+ */
+export const WEAPON_EVOLVE = {
+  killsPerStage: 140,
+  maxStage: 3,
+  potencyPerStage: 0.6, // +60% effect potency per stage
+} as const
+
+/**
  * Hero equipment held in-hand (by skin index): a sword, dual swords, a spear,
  * or a shield. Carrying a shield reduces incoming damage.
  */

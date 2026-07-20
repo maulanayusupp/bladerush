@@ -149,6 +149,9 @@
     "title": "Naik Level! Pilih upgrade",
     "evolves": "Berevolusi → {name}"
   },
+  "weapon": {
+    "evolved": "Senjata Berevolusi — {effect}"
+  },
   "rush": {
     "start": "BOSS RUSH!",
     "wave": "Gelombang {wave} — bos datang!",

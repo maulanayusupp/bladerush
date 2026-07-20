@@ -1,6 +1,12 @@
 {
   "entries": [
     {
+      "date": "2026-07-20",
+      "tag": "feature",
+      "title": "Weapon evolution",
+      "detail": "Your weapon's signature effect now evolves during a run — every 140 kills it advances a stage (up to ★★★), scaling its potency: stronger burn/venom/lifesteal/execute, colder frost, wider cleave, extra chain arcs, more crit & armor-pierce. The HUD shows the tier and announces each evolution."
+    },
+    {
       "date": "2026-07-18",
       "tag": "feature",
       "title": "Accessibility: reduce flashes",
